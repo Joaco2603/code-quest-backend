@@ -6,10 +6,11 @@ import { CreateUserDto, LoginUserDto, Verify2FADto } from '../dtos/index.js';
 import { UnauthorizedException } from '@nestjs/common';
 import { ValidRoles } from '../interfaces/index.js';
 import { PassportModule } from '@nestjs/passport';
+import { vi } from 'vitest';
 
 describe('AuthController', () => {
   let controller: AuthController;
-  let authService: jest.Mocked<AuthService>;
+  let authService: vi.Mocked<AuthService>;
 
   const mockUser: Partial<User> = {
     id: 'user-uuid-123',
@@ -23,10 +24,10 @@ describe('AuthController', () => {
   };
 
   const mockAuthService = {
-    create: jest.fn(),
-    loginUser: jest.fn(),
-    checkAuthStatus: jest.fn(),
-    verify2FA: jest.fn(),
+    create: vi.fn(),
+    loginUser: vi.fn(),
+    checkAuthStatus: vi.fn(),
+    verify2FA: vi.fn(),
   };
 
   beforeEach(async () => {
@@ -45,7 +46,7 @@ describe('AuthController', () => {
     authService = module.get(AuthService);
 
     // Reset all mocks
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should be defined', () => {

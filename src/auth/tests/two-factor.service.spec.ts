@@ -6,17 +6,18 @@ import { EncryptionService } from '../../common/encryption/encryption.service';
 import { AuditLogService } from '../../common/services/audit-log.service';
 import { authenticator } from 'otplib';
 import * as QRCode from 'qrcode';
+import { vi } from 'vitest';
 
-jest.mock('otplib', () => ({
+vi.mock('otplib', () => ({
   authenticator: {
-    generateSecret: jest.fn(),
-    keyuri: jest.fn(),
-    verify: jest.fn(),
+    generateSecret: vi.fn(),
+    keyuri: vi.fn(),
+    verify: vi.fn(),
   },
 }));
 
-jest.mock('qrcode', () => ({
-  toDataURL: jest.fn(),
+vi.mock('qrcode', () => ({
+  toDataURL: vi.fn(),
 }));
 
 describe('TwoFactorService', () => {
@@ -32,22 +33,22 @@ describe('TwoFactorService', () => {
   };
 
   const mockUserService = {
-    findOneWithSecret: jest.fn(),
-    update: jest.fn(),
+    findOneWithSecret: vi.fn(),
+    update: vi.fn(),
   };
 
   const mockConfigService = {
-    get: jest.fn(),
+    get: vi.fn(),
   };
 
   const mockEncryptionService = {
-    encrypt: jest.fn(),
-    decrypt: jest.fn(),
+    encrypt: vi.fn(),
+    decrypt: vi.fn(),
   };
 
   const mockAuditLogService = {
-    recordDomainEvent: jest.fn().mockResolvedValue(undefined),
-    log: jest.fn().mockResolvedValue(undefined),
+    recordDomainEvent: vi.fn().mockResolvedValue(undefined),
+    log: vi.fn().mockResolvedValue(undefined),
   };
 
   beforeEach(async () => {
@@ -76,7 +77,7 @@ describe('TwoFactorService', () => {
     service = module.get<TwoFactorService>(TwoFactorService);
 
     // Reset all mocks
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Default config mock
     mockConfigService.get.mockReturnValue('CodeQuest');
@@ -103,8 +104,8 @@ describe('TwoFactorService', () => {
 
       mockUserService.findOneWithSecret.mockResolvedValue(userWithPending);
       mockEncryptionService.decrypt.mockReturnValue(decryptedSecret);
-      (authenticator.keyuri as jest.Mock).mockReturnValue(otpauthUrl);
-      (QRCode.toDataURL as jest.Mock).mockResolvedValue(qrDataUrl);
+      (authenticator.keyuri as vi.Mock).mockReturnValue(otpauthUrl);
+      (QRCode.toDataURL as vi.Mock).mockResolvedValue(qrDataUrl);
 
       const result = await service.generateSecretIfNotExists(userId);
 
@@ -126,10 +127,10 @@ describe('TwoFactorService', () => {
       const qrDataUrl = 'data:image/png;base64,newqr';
 
       mockUserService.findOneWithSecret.mockResolvedValue(userWithoutSecret);
-      (authenticator.generateSecret as jest.Mock).mockReturnValue(newSecret);
+      (authenticator.generateSecret as vi.Mock).mockReturnValue(newSecret);
       mockEncryptionService.encrypt.mockReturnValue(encryptedSecret);
-      (authenticator.keyuri as jest.Mock).mockReturnValue(otpauthUrl);
-      (QRCode.toDataURL as jest.Mock).mockResolvedValue(qrDataUrl);
+      (authenticator.keyuri as vi.Mock).mockReturnValue(otpauthUrl);
+      (QRCode.toDataURL as vi.Mock).mockResolvedValue(qrDataUrl);
 
       const result = await service.generateSecretIfNotExists(userId);
 
@@ -151,9 +152,9 @@ describe('TwoFactorService', () => {
     it('should use app name from config for keyuri', async () => {
       mockConfigService.get.mockReturnValue('CustomAppName');
       mockUserService.findOneWithSecret.mockResolvedValue(mockUser);
-      (authenticator.generateSecret as jest.Mock).mockReturnValue('secret');
+      (authenticator.generateSecret as vi.Mock).mockReturnValue('secret');
       mockEncryptionService.encrypt.mockReturnValue('encrypted');
-      (QRCode.toDataURL as jest.Mock).mockResolvedValue('qr');
+      (QRCode.toDataURL as vi.Mock).mockResolvedValue('qr');
 
       await service.generateSecretIfNotExists(userId);
 
@@ -190,7 +191,7 @@ describe('TwoFactorService', () => {
         two_factor_secret: encryptedSecret,
       });
       mockEncryptionService.decrypt.mockReturnValue(decryptedSecret);
-      (authenticator.verify as jest.Mock).mockReturnValue(true);
+      (authenticator.verify as vi.Mock).mockReturnValue(true);
 
       const result = await service.verifyCode(userId, code);
 
@@ -210,7 +211,7 @@ describe('TwoFactorService', () => {
         two_factor_secret: 'encrypted-secret',
       });
       mockEncryptionService.decrypt.mockReturnValue('secret');
-      (authenticator.verify as jest.Mock).mockReturnValue(false);
+      (authenticator.verify as vi.Mock).mockReturnValue(false);
 
       const result = await service.verifyCode(userId, 'wrong-code');
 

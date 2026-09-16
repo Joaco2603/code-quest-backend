@@ -8,11 +8,11 @@ import {
 } from '../dtos/index.js';
 import { AuthGuard } from '@nestjs/passport';
 import { GetUser } from '../decorators/get-user.decorators';
-import { User } from 'src/user/entities/user.entity';
+import { User } from '../../user/entities/user.entity.js';
 import { JwtAuthGuard } from '../guards/jwt.guard';
 import { ValidRoles } from '../interfaces/index.js';
 import { Auth } from '../decorators';
-import { RateLimit } from 'src/common/decorators/rate-limit.decorator';
+import { RateLimit } from '../../common/decorators/rate-limit.decorator.js';
 import { PendingTwoFactorGuard } from '../guards/pending-two-factor.guard';
 import { ChangePasswordGuard } from '../guards/change-password.guard.js';
 import {

@@ -3,8 +3,8 @@ import { authenticator } from 'otplib';
 import * as QRCode from 'qrcode';
 import { UserService } from '../../user/user.service';
 import { ConfigService } from '@nestjs/config';
-import { EncryptionService } from 'src/common/encryption/encryption.service';
-import { AuditLogService } from 'src/common/services/audit-log.service';
+import { EncryptionService } from '../../common/encryption/encryption.service.js';
+import { AuditLogService } from '../../common/services/audit-log.service.js';
 
 @Injectable()
 export class TwoFactorService {

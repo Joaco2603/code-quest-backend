@@ -9,6 +9,7 @@ import { AuditLogService } from '../../common/services/audit-log.service';
 import { UnauthorizedException } from '@nestjs/common';
 import { User } from '../../user/entities/user.entity';
 import { ValidRoles } from '../interfaces/index.js';
+import { vi } from 'vitest';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -26,31 +27,31 @@ describe('AuthService', () => {
   };
 
   const mockUserService = {
-    create: jest.fn(),
-    findOneByEmail: jest.fn(),
-    findOneById: jest.fn(),
-    updatePassword: jest.fn(),
-    clearMustChangePassword: jest.fn(),
+    create: vi.fn(),
+    findOneByEmail: vi.fn(),
+    findOneById: vi.fn(),
+    updatePassword: vi.fn(),
+    clearMustChangePassword: vi.fn(),
   };
 
   const mockJwtService = {
-    sign: jest.fn(),
+    sign: vi.fn(),
   };
 
   const mockTwoFactorService = {
-    generateSecretIfNotExists: jest.fn(),
-    verifyCode: jest.fn(),
-    enable: jest.fn(),
-    disable: jest.fn(),
+    generateSecretIfNotExists: vi.fn(),
+    verifyCode: vi.fn(),
+    enable: vi.fn(),
+    disable: vi.fn(),
   };
 
   const mockAuditLogService = {
-    recordDomainEvent: jest.fn().mockResolvedValue(undefined),
-    log: jest.fn().mockResolvedValue(undefined),
+    recordDomainEvent: vi.fn().mockResolvedValue(undefined),
+    log: vi.fn().mockResolvedValue(undefined),
   };
 
   const mockConfigService = {
-    get: jest.fn().mockReturnValue(false),
+    get: vi.fn().mockReturnValue(false),
   };
 
   beforeEach(async () => {
@@ -87,7 +88,7 @@ describe('AuthService', () => {
     service = module.get<AuthService>(AuthService);
 
     // Reset all mocks
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockConfigService.get.mockReturnValue(false);
     mockAuditLogService.recordDomainEvent.mockResolvedValue(undefined);
   });
