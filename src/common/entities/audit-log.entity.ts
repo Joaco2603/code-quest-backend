@@ -1,3 +1,4 @@
+import { User } from 'src/user/entities/user.entity';
 import {
   Column,
   CreateDateColumn,
@@ -23,9 +24,9 @@ export class AuditLog {
   @Column('uuid', { nullable: true })
   user_id: string | null;
 
-  @ManyToOne('User', { nullable: true, onDelete: 'SET NULL' })
+  @ManyToOne(() => User, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'user_id' })
-  user?: { id: string } | null;
+  user?: User | null;
 
   @Column('varchar', { length: 64, nullable: true })
   user_role: string | null;

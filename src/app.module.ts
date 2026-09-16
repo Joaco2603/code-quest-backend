@@ -3,6 +3,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { createObserveModule } from '@nestjs/observe';
 import configuration from './config/envs.js';
+import { AuthModule } from './auth/auth.module.js';
+import { UserModule } from './user/user.module.js';
 import { CommonModule } from './common/common.module.js';
 
 const { ObserveModule, ObserveInstrument } = createObserveModule();
@@ -41,6 +43,8 @@ export { ObserveInstrument };
       serviceId: 'code-quest',
     }),
     CommonModule,
+    UserModule,
+    AuthModule,
   ],
 })
 export class AppModule {}
