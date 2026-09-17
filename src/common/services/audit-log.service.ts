@@ -6,9 +6,9 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { AuditLog } from '../entities/audit-log.entity';
-import { requestContext } from '../request-context/request-context';
-import { StructuredLoggerService } from '../logger/structured-logger.service';
+import { AuditLog } from '../entities/audit-log.entity.js';
+import { requestContext } from '../request-context/request-context.js';
+import { StructuredLoggerService } from '../logger/structured-logger.service.js';
 
 export type CreateAuditLogInput = {
   statusCode: number;
@@ -169,22 +169,28 @@ export class AuditLogService implements OnModuleInit, OnApplicationShutdown {
 
   private async insertBatch(batch: AuditLogWriteModel[]): Promise<void> {
     try {
-      await this.auditLogRepository.insert(batch);
+      await this.auditLogRepository.insert(
+        batch as unknown as Parameters<Repository<AuditLog>['insert']>[0],
+      );
       return;
     } catch (error) {
       const safeBatch = batch.map((entry) => this.toLegacySafeEntry(entry));
-      await this.auditLogRepository.insert(safeBatch).catch((safeError) => {
-        this.logger.error(
-          {
-            event: 'audit.flush.safe_retry_failed',
-            batchSize: safeBatch.length,
-            message:
-              'Buffered audit log safe retry failed. Dropping batch to avoid infinite retry loop.',
-          },
-          safeError instanceof Error ? safeError.stack : undefined,
-          AuditLogService.name,
-        );
-      });
+      await this.auditLogRepository
+        .insert(
+          safeBatch as unknown as Parameters<Repository<AuditLog>['insert']>[0],
+        )
+        .catch((safeError) => {
+          this.logger.error(
+            {
+              event: 'audit.flush.safe_retry_failed',
+              batchSize: safeBatch.length,
+              message:
+                'Buffered audit log safe retry failed. Dropping batch to avoid infinite retry loop.',
+            },
+            safeError instanceof Error ? safeError.stack : undefined,
+            AuditLogService.name,
+          );
+        });
     }
   }
 

@@ -1,5 +1,5 @@
 import { FindManyOptions, MoreThan, LessThan, FindOptionsOrder } from 'typeorm';
-import { PaginationDto } from '../dto/pagination.dto';
+import { PaginationDto } from '../dto/pagination.dto.js';
 
 export class PaginationUtil {
   static buildFindOptions<T>(

@@ -3,8 +3,6 @@ import {
   CreateDateColumn,
   Entity,
   Index,
-  JoinColumn,
-  ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 
@@ -22,10 +20,6 @@ export class AuditLog {
 
   @Column('uuid', { nullable: true })
   user_id: string | null;
-
-  @ManyToOne('User', { nullable: true, onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'user_id' })
-  user?: { id: string } | null;
 
   @Column('varchar', { length: 64, nullable: true })
   user_role: string | null;

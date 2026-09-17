@@ -6,9 +6,9 @@ import {
 } from '@nestjs/common';
 import { Observable, from } from 'rxjs';
 import { mergeMap } from 'rxjs/operators';
-import { requestContext } from '../request-context/request-context';
-import { StructuredLoggerService } from '../logger/structured-logger.service';
-import { AuditLogService } from '../services/audit-log.service';
+import { requestContext } from '../request-context/request-context.js';
+import { StructuredLoggerService } from '../logger/structured-logger.service.js';
+import { AuditLogService } from '../services/audit-log.service.js';
 
 @Injectable()
 export class HttpLoggingInterceptor implements NestInterceptor {

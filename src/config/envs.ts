@@ -98,9 +98,7 @@ export const parseAllowedOrigins = (
     const encryptionKey = getEnv('ENCRYPTION_KEY', undefined, {
       requiredInProd: true,
     });
-    const encryptionIv = getEnv('ENCRYPTION_IV', undefined, {
-      requiredInProd: true,
-    });
+    const encryptionIv = getEnv('ENCRYPTION_IV');
   
     return {
       app: {
