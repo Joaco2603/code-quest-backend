@@ -2,15 +2,13 @@ import { DataSource } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { config } from 'dotenv';
 import * as path from 'path';
+import { fileURLToPath } from 'node:url';
 
 config();
 
+const dirname = path.dirname(fileURLToPath(import.meta.url));
 const configService = new ConfigService();
 const isProd = configService.get('NODE_ENV') === 'production';
-const synchronize = configService.get('DB_SYNCHRONIZE')
-  ? configService.get('DB_SYNCHRONIZE') === 'true'
-  : !isProd;
-const migrationsRun = configService.get('DB_MIGRATIONS_RUN') === 'true';
 const logging = configService.get('DB_LOGGING')
   ? configService.get('DB_LOGGING') === 'true'
   : !isProd;
@@ -22,17 +20,12 @@ const AppDataSource = new DataSource({
   username: configService.get('DB_USERNAME'),
   password: configService.get('DB_PASSWORD'),
   database: configService.get('DB_NAME'),
-  synchronize,
-  migrationsRun,
+  synchronize: false,
+  migrationsRun: false,
   logging,
 
-  entities: isProd
-    ? [path.join(__dirname, '..', '**', '*.entity.js')]
-    : ['src/**/*.entity.ts'],
-
-  migrations: isProd
-    ? [path.join(__dirname, '..', 'database', 'migrations', '*.js')]
-    : ['src/database/migrations/*.ts'],
+  entities: [path.join(dirname, '..', '**', '*.entity.js')],
+  migrations: [path.join(dirname, '..', 'database', 'migrations', '*.js')],
 
   ssl: isProd ? { rejectUnauthorized: false } : false,
 });

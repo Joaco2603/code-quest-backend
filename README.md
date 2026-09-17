@@ -113,16 +113,28 @@ ALLOWED_ORIGINS=http://localhost:3000
 RATE_LIMIT_TTL_MS=60000
 RATE_LIMIT_MAX=120
 
+# JWT (requerido, mínimo 32 caracteres, no usar change-me)
+JWT_SECRET=replace-with-a-long-random-secret-value
+
+# Discord OAuth (requerido en production)
+DISCORD_CLIENT_ID=
+DISCORD_CLIENT_SECRET=
+DISCORD_CALLBACK_URL=http://localhost:3000/api/auth/discord/callback
+FRONTEND_URL=http://localhost:8080
+# DISCORD_FRONTEND_REDIRECT_PATH=/auth/discord
+
 # TypeORM
-# DB_SYNCHRONIZE=true   # por defecto true fuera de production
-# DB_MIGRATIONS_RUN=false
+# En production synchronize queda en false y las migraciones corren al arrancar.
+# DB_SYNCHRONIZE=false
+# DB_MIGRATIONS_RUN=true
 # DB_LOGGING=true
 ```
 
-4. Crea la base de datos:
+4. Crea la base de datos y aplica el schema:
 
-```sql
-CREATE DATABASE code_quest;
+```bash
+docker compose up -d
+pnpm migration:run
 ```
 
 ---
@@ -144,6 +156,17 @@ Cuando Swagger esté cableado en el bootstrap:
 
 - Documentación: `http://localhost:3000/api/docs`
 - Referencia Scalar: `http://localhost:3000/api/reference`
+
+### Login con Discord
+
+1. Crea una aplicación en el [portal de Discord](https://discord.com/developers/applications).
+2. En **OAuth2 → Redirects** agrega `http://localhost:3000/api/auth/discord/callback`.
+3. Copia el Client ID y el Client Secret al `.env`.
+4. El botón de login del frontend debe abrir `http://localhost:3000/api/auth/discord`.
+5. Discord vuelve al callback; la API redirige a `FRONTEND_URL/auth/discord?code=...` con un ticket de un solo uso (60s).
+6. El frontend intercambia el ticket con `POST /api/auth/discord/exchange`.
+
+Para vincular Discord a una cuenta ya existente (admin/password), usa `POST /api/auth/discord/link` con un JWT que ya haya pasado 2FA. El login de Discord **no** asocia cuentas solo porque el email coincida.
 
 ### Scripts
 

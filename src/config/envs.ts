@@ -61,7 +61,30 @@ export const parseAllowedOrigins = (
     const auditFlushIntervalMs = Number(
       getEnv('AUDIT_FLUSH_INTERVAL_MS', '2000')!,
     );
-    const mfaBypassForTests = getEnv('MFA_BYPASS_FOR_TESTS', 'false') === 'true';
+    const mfaBypassForTests =
+      nodeEnv === 'test' &&
+      getEnv('MFA_BYPASS_FOR_TESTS', 'false') === 'true';
+    const discordClientId = getEnv('DISCORD_CLIENT_ID', undefined, {
+      requiredInProd: true,
+    });
+    const discordClientSecret = getEnv('DISCORD_CLIENT_SECRET', undefined, {
+      requiredInProd: true,
+    });
+    const discordCallbackUrl = getEnv(
+      'DISCORD_CALLBACK_URL',
+      nodeEnv === 'production'
+        ? undefined
+        : `http://localhost:${portRaw}/api/auth/discord/callback`,
+      { requiredInProd: true },
+    );
+    const frontendUrl = getEnv(
+      'FRONTEND_URL',
+      nodeEnv === 'production' ? undefined : 'http://localhost:8080',
+    );
+    const discordFrontendRedirectPath = getEnv(
+      'DISCORD_FRONTEND_REDIRECT_PATH',
+      '/auth/discord',
+    );
     if (Number.isNaN(port)) {
       throw new Error('PORT must be a valid number');
     }
@@ -94,7 +117,17 @@ export const parseAllowedOrigins = (
     const encodedPassword = encodeURIComponent(dbPassword);
     const databaseUrl = `postgresql://${encodedUser}:${encodedPassword}@${dbHost}:${dbPort}/${dbName}`;
   
-    // Encryption configuration
+    const jwtSecret = getEnv('JWT_SECRET');
+    if (!jwtSecret) {
+      throw new Error('JWT_SECRET is required');
+    }
+    if (jwtSecret.length < 32) {
+      throw new Error('JWT_SECRET must be at least 32 characters');
+    }
+    if (/change-me/i.test(jwtSecret.trim())) {
+      throw new Error('JWT_SECRET must not use the placeholder value change-me');
+    }
+
     const encryptionKey = getEnv('ENCRYPTION_KEY', undefined, {
       requiredInProd: true,
     });
@@ -115,6 +148,14 @@ export const parseAllowedOrigins = (
         },
         auth: {
           mfaBypassForTests,
+          jwtSecret,
+          discord: {
+            clientId: discordClientId,
+            clientSecret: discordClientSecret,
+            callbackUrl: discordCallbackUrl,
+            frontendUrl,
+            frontendRedirectPath: discordFrontendRedirectPath,
+          },
         },
       },
       database: {
@@ -127,5 +168,6 @@ export const parseAllowedOrigins = (
       },
       ENCRYPTION_KEY: encryptionKey,
       ENCRYPTION_IV: encryptionIv,
+      JWT_SECRET: jwtSecret,
     } as const;
   };

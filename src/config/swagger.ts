@@ -466,7 +466,7 @@ export function setupSwagger(app: INestApplication, configService: ConfigService
     )
     .addServer(localServer, 'Local API')
     .addTag('Code Quest Used Endpoints')
-    .addTag('Auth', 'Login, 2FA, password recovery, and user registration.')
+    .addTag('Auth', 'Login, Discord OAuth, 2FA, password recovery, and user registration.')
     .addTag('Users', 'User administration used by the app.')
     .addTag('Challenges', 'Coding challenges, listing, and detail.')
     .addTag('Submissions', 'Challenge submissions and evaluation results.')
