@@ -451,7 +451,7 @@ export function setupSwagger(app: INestApplication, configService: ConfigService
     .setDescription(
       [
         'REST API for Code Quest, the Devtalles coding challenges platform.',
-        'These endpoints cover authentication, users, challenges, submissions, and supporting catalogs.',
+        'These endpoints cover authentication, users, assessments, challenges, submissions, and supporting catalogs.',
       ].join(' '),
     )
     .setVersion('1.0')
@@ -468,6 +468,7 @@ export function setupSwagger(app: INestApplication, configService: ConfigService
     .addTag('Code Quest Used Endpoints')
     .addTag('Auth', 'Login, Discord OAuth, 2FA, password recovery, and user registration.')
     .addTag('Users', 'User administration used by the app.')
+    .addTag('Assessments', 'Questionnaire attempts and typed student responses.')
     .addTag('Challenges', 'Coding challenges, listing, and detail.')
     .addTag('Submissions', 'Challenge submissions and evaluation results.')
     .addTag('Health', 'API and database health checks.')
