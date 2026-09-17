@@ -1,48 +1,20 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { createObserveModule } from '@nestjs/observe';
+import { CatalogModule } from './catalog/catalog.module.js';
+import { databaseOptions } from './config/database.js';
 import configuration from './config/envs.js';
+import { createObserveModule } from '@nestjs/observe';
 import { AuthModule } from './auth/auth.module.js';
 import { UserModule } from './user/user.module.js';
 import { CommonModule } from './common/common.module.js';
 import { QuestionsModule } from './questions/questions.module.js';
-
 const { ObserveModule, ObserveInstrument } = createObserveModule();
 export { ObserveInstrument };
-
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      load: [configuration],
-    }),
-    TypeOrmModule.forRootAsync({
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => {
-        const nodeEnv = configService.get<string>('app.nodeEnv');
-        const isProd = nodeEnv === 'production';
-        const synchronize = process.env.DB_SYNCHRONIZE
-          ? process.env.DB_SYNCHRONIZE === 'true'
-          : !isProd;
-        const migrationsRun = process.env.DB_MIGRATIONS_RUN
-          ? process.env.DB_MIGRATIONS_RUN === 'true'
-          : !synchronize;
-
-        return {
-          type: 'postgres',
-          url: configService.get<string>('database.url'),
-          autoLoadEntities: true,
-          synchronize,
-          migrationsRun,
-          migrations: ['dist/database/migrations/*.js'],
-          logging: process.env.DB_LOGGING
-            ? process.env.DB_LOGGING === 'true'
-            : !isProd,
-          ssl: isProd ? { rejectUnauthorized: false } : false,
-        };
-      },
-    }),
+    ConfigModule.forRoot({ isGlobal: true, load: [configuration] }),
+    TypeOrmModule.forRootAsync({ useFactory: () => databaseOptions() }),
     ObserveModule.forRoot({
       appKey: 'YOUR_APP_KEY',
       appSecret: 'YOUR_APP_SECRET',
@@ -52,6 +24,7 @@ export { ObserveInstrument };
     UserModule,
     AuthModule,
     QuestionsModule,
+    CatalogModule,
   ],
 })
 export class AppModule {}

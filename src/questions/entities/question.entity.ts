@@ -10,6 +10,7 @@ import {
 import { QuestionType } from '../enums/question-type.enum.js';
 import { Questionnaire } from './questionnaire.entity.js';
 import { AnswerOption } from './answer-option.entity.js';
+import type { Relation } from 'typeorm';
 
 @Entity({ name: 'questions' })
 @Index('IDX_questions_questionnaire_sort', ['questionnaire', 'sortOrder'])
@@ -23,7 +24,7 @@ export class Question {
     nullable: false,
   })
   @JoinColumn({ name: 'questionnaire_id' })
-  questionnaire: Questionnaire;
+  questionnaire: Relation<Questionnaire>;
 
   @Column('text')
   question: string;

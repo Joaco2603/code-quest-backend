@@ -16,6 +16,10 @@ type StructuredPayload = {
 
 @Injectable()
 export class StructuredLoggerService extends ConsoleLogger {
+  constructor() {
+    super();
+  }
+
   log(message: unknown, context?: string) {
     this.write('log', message, context);
   }

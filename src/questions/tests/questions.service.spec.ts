@@ -144,7 +144,7 @@ describe('QuestionsService', () => {
       ],
     });
 
-    expect(created.options.map((item) => item.label)).toEqual([
+    expect(created.options.map((item: AnswerOption) => item.label)).toEqual([
       'Python',
       'JavaScript',
     ]);
@@ -224,7 +224,7 @@ describe('QuestionsService', () => {
     );
 
     const detail = await service.getActiveQuestionnaire(1);
-    expect(detail.questions.map((item) => item.id)).toEqual([10]);
+    expect(detail.questions.map((item: Question) => item.id)).toEqual([10]);
   });
 
   it('lets admins see inactive questions', async () => {
@@ -249,7 +249,7 @@ describe('QuestionsService', () => {
     );
 
     const detail = await service.getQuestionnaireForAdmin(1);
-    expect(detail.questions.map((item) => item.id)).toEqual([11, 10]);
+    expect(detail.questions.map((item: Question) => item.id)).toEqual([11, 10]);
   });
 
   it('orders questions and options by sortOrder then id', async () => {
@@ -275,8 +275,8 @@ describe('QuestionsService', () => {
     );
 
     const detail = await service.getActiveQuestionnaire(1);
-    expect(detail.questions.map((item) => item.id)).toEqual([10, 12]);
-    expect(detail.questions[1].options.map((item) => item.id)).toEqual([
+    expect(detail.questions.map((item: Question) => item.id)).toEqual([10, 12]);
+    expect(detail.questions[1].options.map((item: AnswerOption) => item.id)).toEqual([
       101, 102, 103,
     ]);
   });

@@ -2,14 +2,10 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
 import { parseAllowedOrigins } from './envs.js';
 
-const DEFAULT_ALLOWED_ORIGINS = parseAllowedOrigins(
-  process.env.ALLOWED_ORIGINS,
-);
-
 type CorsOriginCallback = (err: Error | null, allow?: boolean) => void;
 
 function resolveAllowedOrigins(allowedOrigins?: string[]) {
-  if (allowedOrigins?.length) {
+  if (allowedOrigins !== undefined) {
     return allowedOrigins;
   }
 
@@ -59,7 +55,7 @@ export function setupValidation(app: INestApplication) {
       forbidNonWhitelisted: true,
       transform: true,
       transformOptions: {
-        enableImplicitConversion: true, // Automatically converts compatible types
+        enableImplicitConversion: false,
       },
     }),
   );
@@ -74,10 +70,7 @@ export function setupHelmet(app: INestApplication) {
   );
 }
 
-export function setupCors(
-  app: INestApplication,
-  allowedOrigins: string[] = DEFAULT_ALLOWED_ORIGINS,
-) {
+export function setupCors(app: INestApplication, allowedOrigins?: string[]) {
   app.enableCors(buildCorsOptions(allowedOrigins));
 }
 

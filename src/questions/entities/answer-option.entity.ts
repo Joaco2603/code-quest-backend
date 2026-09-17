@@ -7,6 +7,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Question } from './question.entity.js';
+import type { Relation } from 'typeorm';
 
 @Entity({ name: 'answer_options' })
 @Index('IDX_answer_options_question', ['question'])
@@ -19,7 +20,7 @@ export class AnswerOption {
     nullable: false,
   })
   @JoinColumn({ name: 'question_id' })
-  question: Question;
+  question: Relation<Question>;
 
   @Column('varchar')
   label: string;
