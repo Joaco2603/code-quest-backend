@@ -7,9 +7,9 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 import { WsException } from '@nestjs/websockets';
-import { requestContext } from '../request-context/request-context';
-import { StructuredLoggerService } from '../logger/structured-logger.service';
-import { AuditLogService } from '../services/audit-log.service';
+import { requestContext } from '../request-context/request-context.js';
+import { StructuredLoggerService } from '../logger/structured-logger.service.js';
+import { AuditLogService } from '../services/audit-log.service.js';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {

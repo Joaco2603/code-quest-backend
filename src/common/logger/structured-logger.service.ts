@@ -1,5 +1,5 @@
 import { ConsoleLogger, Injectable, LogLevel } from '@nestjs/common';
-import { requestContext } from '../request-context/request-context';
+import { requestContext } from '../request-context/request-context.js';
 
 type StructuredPayload = {
   timestamp: string;
