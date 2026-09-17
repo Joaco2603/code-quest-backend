@@ -3,11 +3,27 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CatalogModule } from './catalog/catalog.module.js';
 import { databaseOptions } from './config/database.js';
-import { readEnvironment } from './config/envs.js';
+import configuration from './config/envs.js';
+import { createObserveModule } from '@nestjs/observe';
+import { AuthModule } from './auth/auth.module.js';
+import { UserModule } from './user/user.module.js';
+import { CommonModule } from './common/common.module.js';
+import { QuestionsModule } from './questions/questions.module.js';
+const { ObserveModule, ObserveInstrument } = createObserveModule();
+export { ObserveInstrument };
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true, load: [readEnvironment] }),
+    ConfigModule.forRoot({ isGlobal: true, load: [configuration] }),
     TypeOrmModule.forRootAsync({ useFactory: () => databaseOptions() }),
+    ObserveModule.forRoot({
+      appKey: 'YOUR_APP_KEY',
+      appSecret: 'YOUR_APP_SECRET',
+      serviceId: 'code-quest',
+    }),
+    CommonModule,
+    UserModule,
+    AuthModule,
+    QuestionsModule,
     CatalogModule,
   ],
 })

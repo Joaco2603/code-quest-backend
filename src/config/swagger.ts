@@ -446,7 +446,20 @@ export function setupSwagger(
     .addTag(
       'Catalog administration',
       'Blocked until administrator authentication is integrated.',
-    );
+    )
+    .addTag('Code Quest Used Endpoints')
+    .addTag(
+      'Auth',
+      'Login, Discord OAuth, 2FA, password recovery, and user registration.',
+    )
+    .addTag('Users', 'User administration used by the app.')
+    .addTag('Questionnaires', 'Admin and student questionnaire APIs.')
+    .addTag('Questions', 'Question authoring for questionnaires.')
+    .addTag('Answer options', 'Choice options for questionnaire questions.')
+    .addTag('Challenges', 'Coding challenges, listing, and detail.')
+    .addTag('Submissions', 'Challenge submissions and evaluation results.')
+    .addTag('Health', 'API and database health checks.')
+    .addTag('System', 'Seed, version, and operational utility endpoints.');
 
   if (hostApi) {
     config.addServer(hostApi, 'Configured API host');

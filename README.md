@@ -108,6 +108,16 @@ ALLOWED_ORIGINS=http://localhost:3000
 # Requeridos en production
 # DB_HOST, DB_NAME, DB_USERNAME y DB_PASSWORD deben definirse explícitamente.
 
+# JWT_SECRET: mínimo 32 caracteres aleatorios.
+# ENCRYPTION_KEY: 32 bytes en hexadecimal (64 caracteres).
+JWT_SECRET=
+ENCRYPTION_KEY=
+# Discord OAuth: requerido en production
+DISCORD_CLIENT_ID=
+DISCORD_CLIENT_SECRET=
+DISCORD_CALLBACK_URL=http://localhost:3000/api/auth/discord/callback
+FRONTEND_URL=http://localhost:8080
+
 # TypeORM
 DB_SYNCHRONIZE=false   # usar migraciones
 # DB_MIGRATIONS_RUN=false
@@ -127,7 +137,7 @@ Si ya usas otra instancia PostgreSQL, ajusta host, puerto y credenciales en `.en
 CREATE DATABASE code_quest;
 ```
 
-5. Aplica las migraciones del catálogo (en una base nueva):
+5. Aplica las migraciones de usuarios, auditoría, catálogo y cuestionarios (en una base nueva):
 
 ```bash
 pnpm migration:run
