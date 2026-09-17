@@ -18,8 +18,8 @@ import {
 } from './dtos/index.js';
 import { Auth, GetUser } from '../auth/decorators/index.js';
 import { ValidRoles } from '../auth/interfaces/index.js';
+import type { AuthUser } from '../auth/interfaces/auth-user.type.js';
 import { PaginationDto } from '../common/dto/pagination.dto.js';
-import { User } from './entities/user.entity.js';
 import { AuthGuard } from '@nestjs/passport';
 import { JwtAuthGuard } from '../auth/guards/jwt.guard.js';
 import { TwoFactorGuard } from '../auth/guards/two-factor.guard.js';
@@ -60,12 +60,17 @@ export class UserController {
     },
   })
   @UseGuards(AuthGuard())
-  createAdmin(@GetUser() user: User, @Body() createUserDto: CreateUserDto) {
+  @Auth(ValidRoles.admin, ValidRoles.client)
+  createAdmin(@GetUser() user: AuthUser, @Body() createUserDto: CreateUserDto) {
     if (user.role !== ValidRoles.admin) {
-      return this.userService.create({ ...createUserDto, role: ValidRoles.user });
+      return this.userService.create({
+        ...createUserDto,
+        role: ValidRoles.user,
+        client_id: user.id,
+      });
     }
 
-    return this.userService.create({ ...createUserDto, role: ValidRoles.admin });
+    return this.userService.create(createUserDto);
   }
 
   @Get()
@@ -90,8 +95,11 @@ export class UserController {
     },
   })
   @Auth(ValidRoles.admin, ValidRoles.client)
-  findAll(@Query() paginationDto: PaginationDto) {
-    return this.userService.findAll(paginationDto);
+  findAll(
+    @GetUser() actor: AuthUser,
+    @Query() paginationDto: PaginationDto,
+  ) {
+    return this.userService.findAll(paginationDto, actor);
   }
 
   @Get(':id')
@@ -113,8 +121,11 @@ export class UserController {
   })
   @ApiNotFoundResponse({ description: 'User was not found.' })
   @Auth(ValidRoles.admin, ValidRoles.client)
-  findOneById(@Param('id', ParseUUIDPipe) id: string) {
-    return this.userService.findOneById(id);
+  findOneById(
+    @GetUser() actor: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.userService.findOneById(id, actor);
   }
 
   @Post('search')
@@ -131,8 +142,8 @@ export class UserController {
     },
   })
   @Auth(ValidRoles.admin, ValidRoles.client)
-  search(@Body() search: { key: string }) {
-    return this.userService.search(search);
+  search(@GetUser() actor: AuthUser, @Body() search: { key: string }) {
+    return this.userService.search(search, actor);
   }
 
   @Post('byClient')
@@ -154,8 +165,8 @@ export class UserController {
     },
   })
   @Auth(ValidRoles.client)
-  byClient(@Body() data: ListUsersByClientDto) {
-    return this.userService.byClient(data);
+  byClient(@GetUser() actor: AuthUser, @Body() data: ListUsersByClientDto) {
+    return this.userService.byClient(data, actor);
   }
 
   @Patch(':id')
@@ -176,10 +187,11 @@ export class UserController {
   @ApiNotFoundResponse({ description: 'User was not found.' })
   @Auth(ValidRoles.admin, ValidRoles.client)
   update(
+    @GetUser() actor: AuthUser,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateUserDto: UpdateUserDto,
   ) {
-    return this.userService.update(id, updateUserDto);
+    return this.userService.update(id, updateUserDto, actor);
   }
 
   @Delete(':id')

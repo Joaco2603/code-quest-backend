@@ -11,6 +11,7 @@ import {
   CreateUserDto,
   ChangePasswordDto,
 } from '../dtos/index.js';
+import { AuthUser } from '../interfaces/auth-user.type.js';
 import { JwtPayload } from '../interfaces/jwt-payload.type.js';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -28,12 +29,10 @@ export class AuthService {
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-    private bcryptAdapter: BcryptAdapter,
+    private readonly bcryptAdapter: BcryptAdapter,
     private readonly twoFA: TwoFactorService,
     private readonly auditLogService: AuditLogService,
-  ) {
-    this.bcryptAdapter = new BcryptAdapter();
-  }
+  ) {}
 
   create = asyncHandler(async (createUserDto: CreateUserDto) => {
     const { password, role, ...userData } = createUserDto;
@@ -46,12 +45,18 @@ export class AuthService {
     const user = await this.userService.create({
       ...userData,
       role: assignedRole,
-      password: this.bcryptAdapter.hashing(password, 10),
+      password,
     });
 
     return {
       ...user,
-      token: this.getJwtToken({ uuid: user.id, rol: user.role || ValidRoles.user }),
+      token: this.getJwtToken({
+        sub: user.id,
+        email: user.email,
+        rol: user.role || ValidRoles.user,
+        is_two_factor_enabled: user.is_two_factor_enabled,
+        is_two_factor_validated: false,
+      }),
     };
   });
 
@@ -61,12 +66,18 @@ export class AuthService {
     const user = await this.userService.create({
       ...userData,
       role: userData.role || ValidRoles.admin,
-      password: this.bcryptAdapter.hashing(password, 10),
+      password,
     });
 
     return {
       ...user,
-      token: this.getJwtToken({ uuid: user.id, rol: user.role }),
+      token: this.getJwtToken({
+        sub: user.id,
+        email: user.email,
+        rol: user.role,
+        is_two_factor_enabled: user.is_two_factor_enabled,
+        is_two_factor_validated: false,
+      }),
     };
   });
 
@@ -123,16 +134,16 @@ export class AuthService {
       });
       throw new UnauthorizedException('Credentials are not valid password');
     }
-    delete user.password;
 
     const tempToken = this.jwtService.sign({
       sub: user.id,
       email: user.email,
+      is_two_factor_enabled: user.is_two_factor_enabled,
       is_two_factor_validated: false,
       rol: user.role,
-      client: user.client,
+      client: user.client?.id ?? null,
       mustChangePassword: user.mustChangePassword,
-    });
+    } satisfies JwtPayload);
 
     if (user.mustChangePassword) {
       await this.auditLogService.recordDomainEvent({
@@ -196,9 +207,7 @@ export class AuthService {
 
       const user = await this.userService.findOneById(tokenUserId);
 
-      const hashedPassword = this.bcryptAdapter.hashing(password, 10);
-
-      await this.userService.updatePassword(user.id, hashedPassword);
+      await this.userService.updatePassword(user.id, password);
       await this.userService.clearMustChangePassword(user.id);
       await this.auditLogService.recordDomainEvent({
         statusCode: 200,
@@ -213,10 +222,18 @@ export class AuthService {
     },
   );
 
-  checkAuthStatus = asyncHandler(async (user: User) => {
+  checkAuthStatus = asyncHandler(async (user: AuthUser) => {
     return {
       ...user,
-      token: this.getJwtToken({ uuid: user.id, rol: user.role }),
+      token: this.getJwtToken({
+        sub: user.id,
+        email: user.email,
+        rol: user.role,
+        is_two_factor_enabled: user.is_two_factor_enabled,
+        is_two_factor_validated: user.is_two_factor_validated,
+        client: user.client_id ?? null,
+        mustChangePassword: user.mustChangePassword,
+      }),
     };
   });
 
@@ -260,12 +277,14 @@ export class AuthService {
   }
 
   private generateToken(user: User) {
-    const payload = {
+    const payload: JwtPayload = {
       sub: user.id,
       email: user.email,
       is_two_factor_enabled: user.is_two_factor_enabled,
       is_two_factor_validated: true,
       rol: user.role,
+      client: user.client?.id ?? null,
+      mustChangePassword: user.mustChangePassword,
     };
 
     const { password: _password, ...userWithoutPassword } = user;

@@ -2,8 +2,10 @@ import {
     CanActivate,
     ExecutionContext,
     ForbiddenException,
+    Injectable,
   } from '@nestjs/common';
-  
+
+  @Injectable()
   export class TwoFactorGuard implements CanActivate {
     canActivate(context: ExecutionContext): boolean {
       const req = context.switchToHttp().getRequest();

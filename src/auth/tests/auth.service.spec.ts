@@ -1,13 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AuthService } from '../services/auth.service';
-import { UserService } from '../../user/user.service';
+import { AuthService } from '../services/auth.service.js';
+import { UserService } from '../../user/user.service.js';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { BcryptAdapter } from '../adapters/bcrypt.adapter.js';
-import { TwoFactorService } from '../services/two-factor.service';
-import { AuditLogService } from '../../common/services/audit-log.service';
+import { TwoFactorService } from '../services/two-factor.service.js';
+import { AuditLogService } from '../../common/services/audit-log.service.js';
 import { UnauthorizedException } from '@nestjs/common';
-import { User } from '../../user/entities/user.entity';
+import { User } from '../../user/entities/user.entity.js';
+import { AuthUser } from '../interfaces/auth-user.type.js';
 import { ValidRoles } from '../interfaces/index.js';
 import { vi } from 'vitest';
 
@@ -120,16 +121,15 @@ describe('AuthService', () => {
       expect(result).toEqual(expect.objectContaining({ token }));
     });
 
-    it('should hash password before creating user', async () => {
+    it('should pass the password to UserService for hashing', async () => {
       mockUserService.create.mockResolvedValue(mockUser);
       mockJwtService.sign.mockReturnValue('token');
 
       await service.create(createUserDto);
 
-      // Verify that password was hashed (not the plain password)
       expect(mockUserService.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          password: expect.not.stringContaining(createUserDto.password),
+          password: createUserDto.password,
         }),
       );
     });
@@ -303,21 +303,21 @@ describe('AuthService', () => {
       const token = 'new-jwt-token';
       mockJwtService.sign.mockReturnValue(token);
 
-      const result = await service.checkAuthStatus(mockUser as User);
+      const result = await service.checkAuthStatus(mockUser as AuthUser);
 
       expect(result.token).toBe(token);
       expect(mockJwtService.sign).toHaveBeenCalledWith(
-        expect.objectContaining({ uuid: mockUser.id }),
+        expect.objectContaining({ sub: mockUser.id }),
       );
     });
 
     it('should generate token with user uuid', async () => {
       mockJwtService.sign.mockReturnValue('token');
 
-      await service.checkAuthStatus(mockUser as User);
+      await service.checkAuthStatus(mockUser as AuthUser);
 
       expect(mockJwtService.sign).toHaveBeenCalledWith(
-        expect.objectContaining({ uuid: 'user-uuid-123' }),
+        expect.objectContaining({ sub: 'user-uuid-123' }),
       );
     });
   });

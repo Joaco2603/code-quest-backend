@@ -1,12 +1,27 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { CreateUserDto, ListUsersByClientDto, UpdateUserDto } from './dtos/index.js';
+import {
+  BadRequestException,
+  ForbiddenException,
+  Injectable,
+} from '@nestjs/common';
+import {
+  CreateUserDto,
+  ListUsersByClientDto,
+  UpdateUserDto,
+} from './dtos/index.js';
 import { User } from './entities/user.entity.js';
 import { Brackets, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { asyncHandler } from '../common/helpers/async-handler.js';
 import { PaginationDto } from '../common/dto/pagination.dto.js';
-import { ValidRoles } from '../auth/interfaces/index.js';
+import { AuthUser, ValidRoles } from '../auth/interfaces/index.js';
 import { AuditLogService } from '../common/services/audit-log.service.js';
+import { BcryptAdapter } from '../auth/adapters/bcrypt.adapter.js';
+
+type TwoFactorState = {
+  two_factor_secret?: string | null;
+  is_two_factor_enabled?: boolean;
+  is_two_factor_pending?: boolean;
+};
 
 @Injectable()
 export class UserService {
@@ -14,10 +29,11 @@ export class UserService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly auditLogService: AuditLogService,
+    private readonly bcryptAdapter: BcryptAdapter,
   ) {}
 
   create = asyncHandler(async (createUserDto: CreateUserDto) => {
-    const { client_id, ...userData } = createUserDto;
+    const { client_id, password, ...userData } = createUserDto;
 
     const existingUser = await this.userRepository.findOne({
       where: { email: userData.email },
@@ -31,12 +47,12 @@ export class UserService {
 
     const user = this.userRepository.create({
       ...userData,
+      password: this.hashPassword(password),
       role: (userData.role as ValidRoles) || ValidRoles.user,
       client: client_id ? ({ id: client_id } as User) : null,
     });
 
     await this.userRepository.save(user);
-    delete user.password;
     await this.auditLogService.recordDomainEvent({
       statusCode: 201,
       outcome: 'success',
@@ -50,49 +66,71 @@ export class UserService {
       },
     });
 
-    return user;
+    return this.toPublicUser(user);
   });
 
-  findAll = asyncHandler(async (paginationDto: PaginationDto) => {
-    const { limit = 1000, offset = 0, isActive = true } = paginationDto;
-    const all = paginationDto.all;
+  findAll = asyncHandler(
+    async (paginationDto: PaginationDto, actor: AuthUser) => {
+      const { limit = 1000, offset = 0, isActive = true } = paginationDto;
+      const all = paginationDto.all;
 
-    const query = this.userRepository
-      .createQueryBuilder('user')
-      .leftJoinAndSelect('user.client', 'client')
-      .loadRelationCountAndMap('user.quantity_users', 'user.users');
+      const query = this.userRepository
+        .createQueryBuilder('user')
+        .leftJoinAndSelect('user.client', 'client')
+        .loadRelationCountAndMap('user.quantity_users', 'user.users');
 
-    if (!all) {
-      query.where('user.isActive = :isActive', { isActive });
-    }
+      if (!all) {
+        query.where('user.isActive = :isActive', { isActive });
+      }
 
-    return await query.skip(offset).take(limit).getMany();
-  });
+      this.applyActorScope(query, actor);
 
-  findOneById = asyncHandler(async (id: string) => {
-    const user = await this.userRepository.findOneBy({ id: id });
+      return await query.skip(offset).take(limit).getMany();
+    },
+  );
+
+  findOneById = asyncHandler(async (id: string, actor?: AuthUser) => {
+    const user = await this.userRepository.findOne({
+      where: { id },
+      relations: { client: true },
+    });
 
     if (!user) {
       throw new BadRequestException(`User with id ${id} not found`);
     }
+
+    if (actor) {
+      this.assertCanAccessUser(actor, user);
+    }
+
     return user;
   });
 
-  byClient = asyncHandler(async (data: ListUsersByClientDto) => {
-    const { user_id } = data;
+  byClient = asyncHandler(
+    async (data: ListUsersByClientDto, actor: AuthUser) => {
+      const clientId =
+        actor.role === ValidRoles.admin ? data.user_id : actor.id;
 
-    return this.userRepository.find({
-      where: {
-        client: { id: user_id },
-      },
-      relations: ['client'],
-    });
-  });
+      if (actor.role === ValidRoles.client && data.user_id !== actor.id) {
+        throw new ForbiddenException(
+          'Clients can only list users that belong to them',
+        );
+      }
 
-  search = asyncHandler(async (key: { key: string }) => {
+      return this.userRepository.find({
+        where: {
+          client: { id: clientId },
+        },
+        relations: ['client'],
+      });
+    },
+  );
+
+  search = asyncHandler(async (key: { key: string }, actor: AuthUser) => {
     const word = key.key;
-    return this.userRepository
+    const query = this.userRepository
       .createQueryBuilder('user')
+      .leftJoinAndSelect('user.client', 'client')
       .where(
         new Brackets((qb) => {
           qb.where('user.email ILIKE :word', { word: `%${word}%` })
@@ -102,8 +140,11 @@ export class UserService {
             )
             .orWhere('user.role::text ILIKE :word', { word: `%${word}%` });
         }),
-      )
-      .getMany();
+      );
+
+    this.applyActorScope(query, actor);
+
+    return query.getMany();
   });
 
   findOneByEmail = asyncHandler(async (email: string) => {
@@ -131,45 +172,71 @@ export class UserService {
     return user;
   });
 
-  update = asyncHandler(async (id: string, updateUserDto: UpdateUserDto) => {
-    if (updateUserDto.email) {
-      const existingUser = await this.userRepository.findOne({
-        where: { email: updateUserDto.email },
+  update = asyncHandler(
+    async (id: string, updateUserDto: UpdateUserDto, actor: AuthUser) => {
+      if (updateUserDto.email) {
+        const existingUser = await this.userRepository.findOne({
+          where: { email: updateUserDto.email },
+        });
+        if (existingUser && existingUser.id !== id) {
+          throw new BadRequestException(
+            `Email ${updateUserDto.email} is already in use`,
+          );
+        }
+      }
+
+      const user = await this.userRepository.findOne({
+        where: { id },
+        relations: { client: true },
       });
-      if (existingUser && existingUser.id !== id) {
-        throw new BadRequestException(
-          `Email ${updateUserDto.email} is already in use`,
+
+      if (!user) {
+        throw new BadRequestException(`User with id ${id} not found`);
+      }
+
+      this.assertCanAccessUser(actor, user);
+
+      const { role, password, client_id, ...profile } = updateUserDto;
+
+      Object.assign(user, profile);
+
+      if (password) {
+        user.password = this.hashPassword(password);
+      }
+
+      if (actor.role === ValidRoles.admin) {
+        if (role) {
+          user.role = role as ValidRoles;
+        }
+        if (client_id !== undefined) {
+          user.client = client_id ? ({ id: client_id } as User) : null;
+        }
+      } else if (role !== undefined || client_id !== undefined) {
+        throw new ForbiddenException(
+          'Only administrators can change user roles or ownership',
         );
       }
-    }
 
-    const user = await this.userRepository.preload({
-      id: id,
-      ...updateUserDto,
-      password: updateUserDto.password ?? undefined,
-      role: updateUserDto.role as ValidRoles | undefined,
-    });
+      await this.userRepository.save(user);
+      await this.auditLogService.recordDomainEvent({
+        statusCode: 200,
+        outcome: 'success',
+        eventType: 'user.updated',
+        userId: user.id,
+        userRole: user.role,
+        message: 'User updated successfully',
+        metadata: {
+          email: user.email,
+          updatedFields: Object.keys(updateUserDto),
+        },
+      });
+      return this.toPublicUser(user);
+    },
+  );
 
-    if (!user) {
-      throw new BadRequestException(`User with id ${id} not found`);
-    }
-
-    await this.userRepository.save(user);
-    delete user.password;
-    await this.auditLogService.recordDomainEvent({
-      statusCode: 200,
-      outcome: 'success',
-      eventType: 'user.updated',
-      userId: user.id,
-      userRole: user.role,
-      message: 'User updated successfully',
-      metadata: {
-        email: user.email,
-        updatedFields: Object.keys(updateUserDto),
-      },
-    });
-    return user;
-  });
+  async updateTwoFactorState(id: string, state: TwoFactorState) {
+    await this.userRepository.update(id, state);
+  }
 
   remove = asyncHandler(async (id: string) => {
     const user = await this.userRepository.findOneBy({ id });
@@ -206,7 +273,9 @@ export class UserService {
   });
 
   async updatePassword(id: string, password: string) {
-    await this.userRepository.update(id, { password });
+    await this.userRepository.update(id, {
+      password: this.hashPassword(password),
+    });
     await this.auditLogService.recordDomainEvent({
       statusCode: 200,
       outcome: 'success',
@@ -218,5 +287,50 @@ export class UserService {
 
   async clearMustChangePassword(id: string) {
     await this.userRepository.update(id, { mustChangePassword: false });
+  }
+
+  private hashPassword(password: string) {
+    return this.bcryptAdapter.hashing(password, 10);
+  }
+
+  private toPublicUser(user: User) {
+    const { password: _password, two_factor_secret: _secret, ...publicUser } =
+      user;
+    return publicUser;
+  }
+
+  private assertCanAccessUser(actor: AuthUser, target: User) {
+    if (actor.role === ValidRoles.admin) {
+      return;
+    }
+
+    if (actor.role === ValidRoles.client) {
+      const ownsTarget = target.client?.id === actor.id;
+      if (target.id === actor.id || ownsTarget) {
+        return;
+      }
+    }
+
+    throw new ForbiddenException(
+      'You can only manage users that belong to you',
+    );
+  }
+
+  private applyActorScope(
+    query: ReturnType<Repository<User>['createQueryBuilder']>,
+    actor: AuthUser,
+  ) {
+    if (actor.role === ValidRoles.admin) {
+      return;
+    }
+
+    if (actor.role === ValidRoles.client) {
+      query.andWhere('(user.id = :actorId OR client.id = :actorId)', {
+        actorId: actor.id,
+      });
+      return;
+    }
+
+    query.andWhere('user.id = :actorId', { actorId: actor.id });
   }
 }

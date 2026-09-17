@@ -6,6 +6,7 @@ import { User } from './entities/user.entity.js';
 import { PassportModule } from '@nestjs/passport';
 import { UserExistsValidator } from './validators/user-exists.validator.js';
 import { CommonModule } from '../common/common.module.js';
+import { BcryptAdapter } from '../auth/adapters/bcrypt.adapter.js';
 
 @Module({
   imports: [
@@ -14,7 +15,7 @@ import { CommonModule } from '../common/common.module.js';
     CommonModule,
   ],
   controllers: [UserController],
-  providers: [UserService, UserExistsValidator],
+  providers: [UserService, UserExistsValidator, BcryptAdapter],
   exports: [UserService, UserExistsValidator, TypeOrmModule],
 })
 export class UserModule {}

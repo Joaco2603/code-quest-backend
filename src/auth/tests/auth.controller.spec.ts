@@ -1,25 +1,22 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { AuthController } from '../controllers/auth.controller';
-import { AuthService } from '../services/auth.service';
-import { User } from '../../user/entities/user.entity';
+import { AuthController } from '../controllers/auth.controller.js';
+import { AuthService } from '../services/auth.service.js';
+import { AuthUser } from '../interfaces/auth-user.type.js';
 import { CreateUserDto, LoginUserDto, Verify2FADto } from '../dtos/index.js';
 import { UnauthorizedException } from '@nestjs/common';
 import { ValidRoles } from '../interfaces/index.js';
 import { PassportModule } from '@nestjs/passport';
-import { vi } from 'vitest';
+import { vi, type Mocked } from 'vitest';
 
 describe('AuthController', () => {
   let controller: AuthController;
-  let authService: vi.Mocked<AuthService>;
+  let authService: Mocked<AuthService>;
 
-  const mockUser: Partial<User> = {
+  const mockUser: AuthUser = {
     id: 'user-uuid-123',
     email: 'test@example.com',
-    first_name: 'Test',
-    last_name: 'User',
-    isActive: true,
     is_two_factor_enabled: false,
-    is_two_factor_pending: false,
+    is_two_factor_validated: true,
     role: ValidRoles.admin,
   };
 
@@ -70,7 +67,7 @@ describe('AuthController', () => {
 
       mockAuthService.create.mockResolvedValue(expectedResult);
 
-      const result = await controller.create(mockUser as User, createUserDto);
+      const result = await controller.create(mockUser, createUserDto);
 
       expect(authService.create).toHaveBeenCalledWith(createUserDto);
       expect(result).toEqual(expectedResult);
@@ -79,7 +76,7 @@ describe('AuthController', () => {
     it('should call authService.create with correct dto', async () => {
       mockAuthService.create.mockResolvedValue(mockUser);
 
-      await controller.create(mockUser as User, createUserDto);
+      await controller.create(mockUser, createUserDto);
 
       expect(authService.create).toHaveBeenCalledTimes(1);
       expect(authService.create).toHaveBeenCalledWith(createUserDto);
@@ -143,7 +140,7 @@ describe('AuthController', () => {
 
       mockAuthService.checkAuthStatus.mockResolvedValue(expectedResult);
 
-      const result = await controller.checkAuthStatus(mockUser as User);
+      const result = await controller.checkAuthStatus(mockUser);
 
       expect(authService.checkAuthStatus).toHaveBeenCalledWith(mockUser);
       expect(result).toEqual(expectedResult);
@@ -152,7 +149,7 @@ describe('AuthController', () => {
     it('should call checkAuthStatus with the user from decorator', async () => {
       mockAuthService.checkAuthStatus.mockResolvedValue(mockUser);
 
-      await controller.checkAuthStatus(mockUser as User);
+      await controller.checkAuthStatus(mockUser);
 
       expect(authService.checkAuthStatus).toHaveBeenCalledTimes(1);
       expect(authService.checkAuthStatus).toHaveBeenCalledWith(mockUser);
@@ -165,10 +162,7 @@ describe('AuthController', () => {
     };
 
     const mockRequest = {
-      user: {
-        id: 'user-uuid-123',
-        email: 'test@example.com',
-      },
+      user: mockUser,
     };
 
     it('should verify 2FA code and return access token', async () => {

@@ -1,19 +1,18 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { TwoFactorService } from '../services/two-factor.service';
-import { UserService } from '../../user/user.service';
+import { ForbiddenException } from '@nestjs/common';
+import { TwoFactorService } from '../services/two-factor.service.js';
+import { UserService } from '../../user/user.service.js';
 import { ConfigService } from '@nestjs/config';
-import { EncryptionService } from '../../common/encryption/encryption.service';
-import { AuditLogService } from '../../common/services/audit-log.service';
-import { authenticator } from 'otplib';
+import { EncryptionService } from '../../common/encryption/encryption.service.js';
+import { AuditLogService } from '../../common/services/audit-log.service.js';
+import { generateSecret, generateURI, verifySync } from 'otplib';
 import * as QRCode from 'qrcode';
-import { vi } from 'vitest';
+import { vi, type Mock } from 'vitest';
 
 vi.mock('otplib', () => ({
-  authenticator: {
-    generateSecret: vi.fn(),
-    keyuri: vi.fn(),
-    verify: vi.fn(),
-  },
+  generateSecret: vi.fn(),
+  generateURI: vi.fn(),
+  verifySync: vi.fn(),
 }));
 
 vi.mock('qrcode', () => ({
@@ -34,7 +33,7 @@ describe('TwoFactorService', () => {
 
   const mockUserService = {
     findOneWithSecret: vi.fn(),
-    update: vi.fn(),
+    updateTwoFactorState: vi.fn(),
   };
 
   const mockConfigService = {
@@ -76,10 +75,8 @@ describe('TwoFactorService', () => {
 
     service = module.get<TwoFactorService>(TwoFactorService);
 
-    // Reset all mocks
     vi.clearAllMocks();
 
-    // Default config mock
     mockConfigService.get.mockReturnValue('CodeQuest');
     mockAuditLogService.recordDomainEvent.mockResolvedValue(undefined);
   });
@@ -104,8 +101,8 @@ describe('TwoFactorService', () => {
 
       mockUserService.findOneWithSecret.mockResolvedValue(userWithPending);
       mockEncryptionService.decrypt.mockReturnValue(decryptedSecret);
-      (authenticator.keyuri as vi.Mock).mockReturnValue(otpauthUrl);
-      (QRCode.toDataURL as vi.Mock).mockResolvedValue(qrDataUrl);
+      (generateURI as Mock).mockReturnValue(otpauthUrl);
+      (QRCode.toDataURL as Mock).mockResolvedValue(qrDataUrl);
 
       const result = await service.generateSecretIfNotExists(userId);
 
@@ -115,7 +112,7 @@ describe('TwoFactorService', () => {
         qr: qrDataUrl,
         pending: true,
       });
-      expect(mockUserService.update).not.toHaveBeenCalled();
+      expect(mockUserService.updateTwoFactorState).not.toHaveBeenCalled();
     });
 
     it('should generate new secret if user does not have one', async () => {
@@ -127,14 +124,14 @@ describe('TwoFactorService', () => {
       const qrDataUrl = 'data:image/png;base64,newqr';
 
       mockUserService.findOneWithSecret.mockResolvedValue(userWithoutSecret);
-      (authenticator.generateSecret as vi.Mock).mockReturnValue(newSecret);
+      (generateSecret as Mock).mockReturnValue(newSecret);
       mockEncryptionService.encrypt.mockReturnValue(encryptedSecret);
-      (authenticator.keyuri as vi.Mock).mockReturnValue(otpauthUrl);
-      (QRCode.toDataURL as vi.Mock).mockResolvedValue(qrDataUrl);
+      (generateURI as Mock).mockReturnValue(otpauthUrl);
+      (QRCode.toDataURL as Mock).mockResolvedValue(qrDataUrl);
 
       const result = await service.generateSecretIfNotExists(userId);
 
-      expect(mockUserService.update).toHaveBeenCalledWith(
+      expect(mockUserService.updateTwoFactorState).toHaveBeenCalledWith(
         userId,
         expect.objectContaining({
           two_factor_secret: encryptedSecret,
@@ -149,20 +146,33 @@ describe('TwoFactorService', () => {
       });
     });
 
-    it('should use app name from config for keyuri', async () => {
-      mockConfigService.get.mockReturnValue('CustomAppName');
+    it('should not replace an already enabled 2FA secret', async () => {
+      mockUserService.findOneWithSecret.mockResolvedValue({
+        ...mockUser,
+        two_factor_secret: 'encrypted-secret',
+        is_two_factor_enabled: true,
+        is_two_factor_pending: false,
+      });
+
+      await expect(service.generateSecretIfNotExists(userId)).rejects.toThrow(
+        ForbiddenException,
+      );
+      expect(mockUserService.updateTwoFactorState).not.toHaveBeenCalled();
+    });
+
+    it('should use app name from config for otpauth URI', async () => {
       mockUserService.findOneWithSecret.mockResolvedValue(mockUser);
-      (authenticator.generateSecret as vi.Mock).mockReturnValue('secret');
+      (generateSecret as Mock).mockReturnValue('secret');
       mockEncryptionService.encrypt.mockReturnValue('encrypted');
-      (QRCode.toDataURL as vi.Mock).mockResolvedValue('qr');
+      (QRCode.toDataURL as Mock).mockResolvedValue('qr');
 
       await service.generateSecretIfNotExists(userId);
 
-      expect(authenticator.keyuri).toHaveBeenCalledWith(
-        mockUser.email,
-        'CodeQuest', // This comes from constructor initialization
-        'secret',
-      );
+      expect(generateURI).toHaveBeenCalledWith({
+        issuer: 'CodeQuest',
+        label: mockUser.email,
+        secret: 'secret',
+      });
     });
   });
 
@@ -179,7 +189,7 @@ describe('TwoFactorService', () => {
       const result = await service.verifyCode(userId, code);
 
       expect(result).toBe(false);
-      expect(authenticator.verify).not.toHaveBeenCalled();
+      expect(verifySync).not.toHaveBeenCalled();
     });
 
     it('should verify code against decrypted secret', async () => {
@@ -191,14 +201,14 @@ describe('TwoFactorService', () => {
         two_factor_secret: encryptedSecret,
       });
       mockEncryptionService.decrypt.mockReturnValue(decryptedSecret);
-      (authenticator.verify as vi.Mock).mockReturnValue(true);
+      (verifySync as Mock).mockReturnValue({ valid: true });
 
       const result = await service.verifyCode(userId, code);
 
       expect(mockEncryptionService.decrypt).toHaveBeenCalledWith(
         encryptedSecret,
       );
-      expect(authenticator.verify).toHaveBeenCalledWith({
+      expect(verifySync).toHaveBeenCalledWith({
         token: code,
         secret: decryptedSecret,
       });
@@ -211,7 +221,7 @@ describe('TwoFactorService', () => {
         two_factor_secret: 'encrypted-secret',
       });
       mockEncryptionService.decrypt.mockReturnValue('secret');
-      (authenticator.verify as vi.Mock).mockReturnValue(false);
+      (verifySync as Mock).mockReturnValue({ valid: false });
 
       const result = await service.verifyCode(userId, 'wrong-code');
 
@@ -223,14 +233,17 @@ describe('TwoFactorService', () => {
     const userId = 'user-uuid-123';
 
     it('should update user to enable 2FA', async () => {
-      mockUserService.update.mockResolvedValue(undefined);
+      mockUserService.updateTwoFactorState.mockResolvedValue(undefined);
 
       const result = await service.enable(userId);
 
-      expect(mockUserService.update).toHaveBeenCalledWith(userId, {
-        is_two_factor_enabled: true,
-        is_two_factor_pending: false,
-      });
+      expect(mockUserService.updateTwoFactorState).toHaveBeenCalledWith(
+        userId,
+        {
+          is_two_factor_enabled: true,
+          is_two_factor_pending: false,
+        },
+      );
       expect(result).toEqual({ message: '2FA enabled' });
     });
   });
@@ -239,14 +252,18 @@ describe('TwoFactorService', () => {
     const userId = 'user-uuid-123';
 
     it('should update user to disable 2FA and clear secret', async () => {
-      mockUserService.update.mockResolvedValue(undefined);
+      mockUserService.updateTwoFactorState.mockResolvedValue(undefined);
 
       const result = await service.disable(userId);
 
-      expect(mockUserService.update).toHaveBeenCalledWith(userId, {
-        is_two_factor_enabled: false,
-        two_factor_secret: null,
-      });
+      expect(mockUserService.updateTwoFactorState).toHaveBeenCalledWith(
+        userId,
+        {
+          is_two_factor_enabled: false,
+          is_two_factor_pending: false,
+          two_factor_secret: null,
+        },
+      );
       expect(result).toEqual({ message: '2FA disabled' });
     });
   });

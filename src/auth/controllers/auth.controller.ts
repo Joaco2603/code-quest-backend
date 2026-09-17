@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
-import { AuthService } from '../services/auth.service';
+import { AuthService } from '../services/auth.service.js';
 import {
   CreateUserDto,
   LoginUserDto,
@@ -7,13 +7,13 @@ import {
   ChangePasswordDto,
 } from '../dtos/index.js';
 import { AuthGuard } from '@nestjs/passport';
-import { GetUser } from '../decorators/get-user.decorators';
-import { User } from '../../user/entities/user.entity.js';
-import { JwtAuthGuard } from '../guards/jwt.guard';
+import { GetUser } from '../decorators/get-user.decorators.js';
+import type { AuthUser } from '../interfaces/auth-user.type.js';
+import { JwtAuthGuard } from '../guards/jwt.guard.js';
 import { ValidRoles } from '../interfaces/index.js';
-import { Auth } from '../decorators';
+import { Auth } from '../decorators/index.js';
 import { RateLimit } from '../../common/decorators/rate-limit.decorator.js';
-import { PendingTwoFactorGuard } from '../guards/pending-two-factor.guard';
+import { PendingTwoFactorGuard } from '../guards/pending-two-factor.guard.js';
 import { ChangePasswordGuard } from '../guards/change-password.guard.js';
 import {
   ApiBearerAuth,
@@ -60,7 +60,7 @@ export class AuthController {
   })
   @UseGuards(AuthGuard())
   @Auth(ValidRoles.admin, ValidRoles.client)
-  create(@GetUser() user: User, @Body() createUserDto: CreateUserDto) {
+  create(@GetUser() user: AuthUser, @Body() createUserDto: CreateUserDto) {
     if (user.role === ValidRoles.client) {
       return this.authService.create({
         ...createUserDto,
@@ -156,7 +156,7 @@ export class AuthController {
     },
   })
   @UseGuards(AuthGuard())
-  checkAuthStatus(@GetUser() user: User) {
+  checkAuthStatus(@GetUser() user: AuthUser) {
     return this.authService.checkAuthStatus(user);
   }
 
@@ -186,7 +186,10 @@ export class AuthController {
     description: 'Invalid or expired temporary token/code.',
   })
   @RateLimit(5, 60_000)
-  async verify(@Req() req, @Body() dto: Verify2FADto) {
+  async verify(
+    @Req() req: { user: AuthUser },
+    @Body() dto: Verify2FADto,
+  ) {
     return this.authService.verify2FA(req.user.id, dto.code);
   }
 
@@ -206,7 +209,10 @@ export class AuthController {
     description: 'Password does not satisfy validation rules.',
   })
   @RateLimit(5, 60_000)
-  changePassword(@Req() req, @Body() changePasswordDto: ChangePasswordDto) {
+  changePassword(
+    @Req() req: { user: AuthUser },
+    @Body() changePasswordDto: ChangePasswordDto,
+  ) {
     return this.authService.changePassword(req.user.id, changePasswordDto);
   }
 

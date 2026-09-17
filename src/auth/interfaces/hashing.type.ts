@@ -1,4 +1,4 @@
 export interface Hash {
-    hashing<T>(password, saltPassword): string;
-    compareHash<T>(password, userPassword): boolean;
+  hashing(password: string, saltPassword?: number): string;
+  compareHash(password: string, userPassword: string): boolean;
 }
