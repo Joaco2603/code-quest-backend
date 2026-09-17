@@ -414,44 +414,20 @@ const swaggerCustomCss = `
   }
 `;
 
-const scalarCustomCss = `
-  :root {
-    --scalar-font: "DM Sans", ui-sans-serif, system-ui, sans-serif;
-    --scalar-heading-font: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
-  }
-
-  .light-mode,
-  .dark-mode {
-    --scalar-background-1: #171027;
-    --scalar-background-2: #1c1829;
-    --scalar-background-3: #241c36;
-    --scalar-color-1: #ffffff;
-    --scalar-color-2: #c0b9fc;
-    --scalar-color-3: #7b72c0;
-    --scalar-color-accent: #7e70f9;
-    --scalar-border-color: rgba(192, 185, 252, 0.22);
-    --scalar-button-1: #3a14c4;
-    --scalar-button-1-color: #ffffff;
-    --scalar-button-1-hover: #7e70f9;
-    --scalar-color-green: #a8ad5c;
-    --scalar-color-red: #f4aea3;
-    --scalar-color-orange: #c0b9fc;
-    --scalar-color-blue: #7e70f9;
-    --scalar-color-purple: #3a14c4;
-  }
-`;
-
-export function setupSwagger(app: INestApplication, configService: ConfigService) {
+export function setupSwagger(
+  app: INestApplication,
+  configService: ConfigService,
+) {
   const port = configService.get<number>('app.port') ?? 3000;
   const hostApi = configService.get<string>('HOST_API');
-  const localServer = `http://localhost:${port}/api`;
+  const localServer = `http://localhost:${port}`;
 
   const config = new DocumentBuilder()
     .setTitle('Code Quest API')
     .setDescription(
       [
-        'REST API for Code Quest, the Devtalles coding challenges platform.',
-        'These endpoints cover authentication, users, challenges, submissions, and supporting catalogs.',
+        'REST API for Code Quest learning paths.',
+        'Published courses and catalogs are readable. Administration requires the pending authentication integration.',
       ].join(' '),
     )
     .setVersion('1.0')
@@ -465,13 +441,12 @@ export function setupSwagger(app: INestApplication, configService: ConfigService
       'access-token',
     )
     .addServer(localServer, 'Local API')
-    .addTag('Code Quest Used Endpoints')
-    .addTag('Auth', 'Login, 2FA, password recovery, and user registration.')
-    .addTag('Users', 'User administration used by the app.')
-    .addTag('Challenges', 'Coding challenges, listing, and detail.')
-    .addTag('Submissions', 'Challenge submissions and evaluation results.')
-    .addTag('Health', 'API and database health checks.')
-    .addTag('System', 'Seed, version, and operational utility endpoints.');
+    .addTag('Courses', 'Published learning resources.')
+    .addTag('Catalog', 'Categories, technologies and fixed levels.')
+    .addTag(
+      'Catalog administration',
+      'Blocked until administrator authentication is integrated.',
+    );
 
   if (hostApi) {
     config.addServer(hostApi, 'Configured API host');
@@ -506,7 +481,6 @@ export function setupSwagger(app: INestApplication, configService: ConfigService
       pageTitle: 'Code Quest',
       theme: 'purple',
       persistAuth: true,
-      customCss: scalarCustomCss,
     }),
   );
 }

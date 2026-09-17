@@ -1,18 +1,14 @@
 import { Module } from '@nestjs/common';
-import { createObserveModule } from '@nestjs/observe';
-
-const { ObserveModule, ObserveInstrument } = createObserveModule();
-export { ObserveInstrument };
-
+import { ConfigModule } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { CatalogModule } from './catalog/catalog.module.js';
+import { databaseOptions } from './config/database.js';
+import { readEnvironment } from './config/envs.js';
 @Module({
   imports: [
-    // Distributed tracing, auto-correlated logs, request/job metrics, error
-    // telemetry, alarms, and more — out of the box. Sign up at https://observe.nestjs.com
-    ObserveModule.forRoot({
-      appKey: 'YOUR_APP_KEY',
-      appSecret: 'YOUR_APP_SECRET',
-      serviceId: 'code-quest',
-    }),
+    ConfigModule.forRoot({ isGlobal: true, load: [readEnvironment] }),
+    TypeOrmModule.forRootAsync({ useFactory: () => databaseOptions() }),
+    CatalogModule,
   ],
 })
 export class AppModule {}

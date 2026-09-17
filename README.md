@@ -97,7 +97,7 @@ NODE_ENV=development
 PORT=3000
 
 DB_HOST=localhost
-DB_PORT=5432
+DB_PORT=5433
 DB_NAME=code_quest
 DB_USERNAME=postgres
 DB_PASSWORD=postgres
@@ -106,26 +106,35 @@ DB_PASSWORD=postgres
 ALLOWED_ORIGINS=http://localhost:3000
 
 # Requeridos en production
-# ENCRYPTION_KEY=
-# ENCRYPTION_IV=
-
-# Rate limit (valores por defecto)
-RATE_LIMIT_TTL_MS=60000
-RATE_LIMIT_MAX=120
+# DB_HOST, DB_NAME, DB_USERNAME y DB_PASSWORD deben definirse explícitamente.
 
 # TypeORM
-# DB_SYNCHRONIZE=true   # por defecto true fuera de production
+DB_SYNCHRONIZE=false   # usar migraciones
 # DB_MIGRATIONS_RUN=false
+DB_SSL=false          # production usa TLS verificado por defecto
 # DB_LOGGING=true
 ```
 
-4. Crea la base de datos:
+4. Inicia PostgreSQL con Docker (crea la base y conserva sus datos en un volumen):
+
+```bash
+docker compose -p codequest-dev -f compose.dev.yml up -d --wait
+```
+
+Si ya usas otra instancia PostgreSQL, ajusta host, puerto y credenciales en `.env` y crea la base allí:
 
 ```sql
 CREATE DATABASE code_quest;
 ```
 
----
+5. Aplica las migraciones del catálogo (en una base nueva):
+
+```bash
+pnpm migration:run
+```
+
+La configuración completa está en [`.env.example`](.env.example). No se cargan cursos automáticamente.
+Si ya existen tablas creadas desde un esquema anterior, revisa su adaptación antes de ejecutar la migración inicial.
 
 ## Cómo ejecutar
 
@@ -140,7 +149,7 @@ pnpm start:prod
 
 La API queda en `http://localhost:3000/api`.
 
-Cuando Swagger esté cableado en el bootstrap:
+Documentación disponible al iniciar:
 
 - Documentación: `http://localhost:3000/api/docs`
 - Referencia Scalar: `http://localhost:3000/api/reference`
@@ -151,7 +160,7 @@ Cuando Swagger esté cableado en el bootstrap:
 | --- | --- |
 | `pnpm start:dev` | Servidor en watch |
 | `pnpm build` | Compila a `dist/` |
-| `pnpm start:prod` | Corre `dist/main` |
+| `pnpm start:prod` | Corre `dist/main.js` |
 | `pnpm lint` | Oxlint |
 | `pnpm test` | Tests unitarios (Vitest) |
 | `pnpm test:e2e` | Tests e2e |
@@ -165,6 +174,8 @@ Cuando Swagger esté cableado en el bootstrap:
 src/
   main.ts              bootstrap
   app.module.ts        módulo raíz
+  catalog/             cursos, categorías, tecnologías y contrato para roadmaps
+  database/migrations/ esquema versionado del catálogo
   config/
     envs.ts            variables de entorno
     typeorm.ts         DataSource
@@ -173,6 +184,13 @@ src/
 ```
 
 ---
+
+## Catálogo implementado
+
+Consulta [la guía del catálogo](docs/catalog.md) para endpoints, publicación, pruebas y contratos de integración.
+Las lecturas muestran cursos publicados. Las escrituras administrativas devuelven `403` hasta integrar
+la autenticación de Persona 2 mediante `CatalogAdminGuard`. No hay credenciales ni bypass de desarrollo.
+Usuarios, cuestionarios y generación de roadmaps siguen pendientes.
 
 ## Fechas de la misión
 
