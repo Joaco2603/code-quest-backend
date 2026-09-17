@@ -24,12 +24,17 @@ export { ObserveInstrument };
         const synchronize = process.env.DB_SYNCHRONIZE
           ? process.env.DB_SYNCHRONIZE === 'true'
           : !isProd;
+        const migrationsRun = process.env.DB_MIGRATIONS_RUN
+          ? process.env.DB_MIGRATIONS_RUN === 'true'
+          : !synchronize;
 
         return {
           type: 'postgres',
           url: configService.get<string>('database.url'),
           autoLoadEntities: true,
           synchronize,
+          migrationsRun,
+          migrations: ['dist/database/migrations/*.js'],
           logging: process.env.DB_LOGGING
             ? process.env.DB_LOGGING === 'true'
             : !isProd,

@@ -1,7 +1,14 @@
-import { Controller, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Req,
+  Body,
+  UseGuards,
+} from '@nestjs/common';
 import { TwoFactorService } from '../services/two-factor.service.js';
 import { JwtAuthGuard } from '../guards/jwt.guard.js';
 import { TwoFactorGuard } from '../guards/two-factor.guard.js';
+import { Verify2FADto } from '../dtos/index.js';
 import {
   ApiBearerAuth,
   ApiCreatedResponse,
@@ -41,7 +48,7 @@ export class TwoFactorController {
   @ApiOperation({
     summary: 'Enable 2FA',
     description:
-      'Enables two-factor authentication for the authenticated user after enrollment.',
+      'Enables two-factor authentication after verifying a valid TOTP code from the authenticator app.',
   })
   @ApiCreatedResponse({
     description: '2FA enabled.',
@@ -52,8 +59,11 @@ export class TwoFactorController {
       },
     },
   })
-  async enable(@Req() req: { user: AuthUser }) {
-    return this.twoFactorService.enable(req.user.id);
+  async enable(
+    @Req() req: { user: AuthUser },
+    @Body() dto: Verify2FADto,
+  ) {
+    return this.twoFactorService.confirmEnable(req.user.id, dto.code);
   }
 
   @Post('disable')

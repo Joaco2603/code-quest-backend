@@ -69,7 +69,7 @@ describe('UserService', () => {
       }),
     );
     const hashed = userRepository.create.mock.calls[0][0].password as string;
-    expect(bcryptAdapter.compareHash('Password1!', hashed)).toBe(true);
+    expect(await bcryptAdapter.compareHash('Password1!', hashed)).toBe(true);
   });
 
   it('rejects role changes from client users', async () => {
@@ -135,7 +135,7 @@ describe('UserService', () => {
 
     await service.update('user-2', { password: 'NewPassword1!' }, adminActor);
 
-    expect(bcryptAdapter.compareHash('NewPassword1!', target.password)).toBe(
+    expect(await bcryptAdapter.compareHash('NewPassword1!', target.password)).toBe(
       true,
     );
   });

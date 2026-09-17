@@ -34,7 +34,9 @@ import { CommonModule } from '../common/common.module.js';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
         return {
-          secret: configService.get('JWT_SECRET'),
+          secret:
+            configService.get('JWT_SECRET') ??
+            configService.get('app.auth.jwtSecret'),
           signOptions: {
             expiresIn: '4h',
           },

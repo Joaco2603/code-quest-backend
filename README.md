@@ -113,8 +113,8 @@ ALLOWED_ORIGINS=http://localhost:3000
 RATE_LIMIT_TTL_MS=60000
 RATE_LIMIT_MAX=120
 
-# JWT (requerido)
-JWT_SECRET=change-me
+# JWT (requerido, mínimo 32 caracteres, no usar change-me)
+JWT_SECRET=replace-with-a-long-random-secret-value
 
 # Discord OAuth (requerido en production)
 DISCORD_CLIENT_ID=
@@ -124,15 +124,17 @@ FRONTEND_URL=http://localhost:8080
 # DISCORD_FRONTEND_REDIRECT_PATH=/auth/discord
 
 # TypeORM
-# DB_SYNCHRONIZE=true   # por defecto true fuera de production
-# DB_MIGRATIONS_RUN=false
+# En production synchronize queda en false y las migraciones corren al arrancar.
+# DB_SYNCHRONIZE=false
+# DB_MIGRATIONS_RUN=true
 # DB_LOGGING=true
 ```
 
-4. Crea la base de datos:
+4. Crea la base de datos y aplica el schema:
 
-```sql
-CREATE DATABASE code_quest;
+```bash
+docker compose up -d
+pnpm migration:run
 ```
 
 ---
