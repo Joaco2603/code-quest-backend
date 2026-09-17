@@ -6,6 +6,7 @@ import configuration from './config/envs.js';
 import { AuthModule } from './auth/auth.module.js';
 import { UserModule } from './user/user.module.js';
 import { CommonModule } from './common/common.module.js';
+import { QuestionsModule } from './questions/questions.module.js';
 
 const { ObserveModule, ObserveInstrument } = createObserveModule();
 export { ObserveInstrument };
@@ -45,6 +46,7 @@ export { ObserveInstrument };
     CommonModule,
     UserModule,
     AuthModule,
+    QuestionsModule,
   ],
 })
 export class AppModule {}
