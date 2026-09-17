@@ -1,0 +1,11 @@
+.git
+node_modules
+dist
+.env
+.env.*
+coverage
+*.log
+*.tsbuildinfo
+test
+docs
+COURSES.json
