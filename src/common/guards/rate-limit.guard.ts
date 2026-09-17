@@ -28,7 +28,7 @@ export class RateLimitGuard implements CanActivate {
   ) {}
 
   canActivate(context: ExecutionContext): boolean {
-    if (context.getType<'http' | 'ws' | 'rpc'>() !== 'http') {
+    if (context.getType() !== 'http') {
       return true;
     }
 
