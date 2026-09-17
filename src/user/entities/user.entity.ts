@@ -19,15 +19,22 @@ export class User {
   email: string;
 
   @Column('text', {
-    select: false,
+    unique: true,
+    nullable: true,
   })
-  password: string;
+  discordId: string | null;
+
+  @Column('text', {
+    select: false,
+    nullable: true,
+  })
+  password: string | null;
 
   @Column('text')
   first_name: string;
 
   @Column('text', { nullable: true })
-  last_name: string;
+  last_name: string | null;
 
   @Column('text', { nullable: true })
   address: string;

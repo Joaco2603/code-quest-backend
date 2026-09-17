@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
 } from '@nestjs/common';
@@ -162,6 +163,7 @@ export class UserService {
         role: true,
         client: { id: true },
         mustChangePassword: true,
+        discordId: true,
       },
     });
 
@@ -171,6 +173,83 @@ export class UserService {
 
     return user;
   });
+
+  async findOneByEmailOptional(email: string): Promise<User | null> {
+    return this.userRepository.findOne({
+      where: { email: email.toLowerCase() },
+      relations: { client: true },
+    });
+  }
+
+  async findOneByDiscordId(discordId: string): Promise<User | null> {
+    return this.userRepository.findOne({
+      where: { discordId },
+      relations: { client: true },
+    });
+  }
+
+  async createFromDiscord(data: {
+    email: string;
+    discordId: string;
+    first_name: string;
+    last_name: string | null;
+  }): Promise<User> {
+    const existingUser = await this.userRepository.findOne({
+      where: { email: data.email },
+    });
+
+    if (existingUser) {
+      throw new BadRequestException(
+        `User with email ${data.email} already exists`,
+      );
+    }
+
+    const user = this.userRepository.create({
+      email: data.email,
+      discordId: data.discordId,
+      first_name: data.first_name,
+      last_name: data.last_name,
+      password: null,
+      role: ValidRoles.user,
+      mustChangePassword: false,
+      is_two_factor_enabled: false,
+      isActive: true,
+    });
+
+    await this.userRepository.save(user);
+    await this.auditLogService.recordDomainEvent({
+      statusCode: 201,
+      outcome: 'success',
+      eventType: 'user.created',
+      userId: user.id,
+      userRole: user.role,
+      message: 'User created from Discord',
+      metadata: {
+        email: user.email,
+        provider: 'discord',
+        discordId: data.discordId,
+      },
+    });
+
+    return user;
+  }
+
+  async linkDiscordAccount(userId: string, discordId: string) {
+    const existing = await this.findOneByDiscordId(discordId);
+    if (existing && existing.id !== userId) {
+      throw new ConflictException('Discord account is already linked');
+    }
+
+    await this.userRepository.update(userId, { discordId });
+    await this.auditLogService.recordDomainEvent({
+      statusCode: 200,
+      outcome: 'success',
+      eventType: 'auth.discord.linked',
+      userId,
+      message: 'Discord account linked',
+      metadata: { discordId },
+    });
+  }
 
   update = asyncHandler(
     async (id: string, updateUserDto: UpdateUserDto, actor: AuthUser) => {

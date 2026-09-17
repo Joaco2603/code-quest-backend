@@ -25,6 +25,12 @@ describe('AuthController', () => {
     loginUser: vi.fn(),
     checkAuthStatus: vi.fn(),
     verify2FA: vi.fn(),
+    beginDiscordLogin: vi.fn(),
+    beginDiscordLink: vi.fn(),
+    completeDiscordLogin: vi.fn(),
+    exchangeDiscordTicket: vi.fn(),
+    buildDiscordFrontendRedirect: vi.fn(),
+    getDiscordStateCookieOptions: vi.fn(),
   };
 
   beforeEach(async () => {
@@ -200,6 +206,135 @@ describe('AuthController', () => {
         'user-uuid-123',
         '123456',
       );
+    });
+  });
+
+  describe('discordLogin (GET /auth/discord)', () => {
+    it('should set the signed OAuth cookie and redirect to Discord', () => {
+      mockAuthService.beginDiscordLogin.mockReturnValue({
+        url: 'https://discord.com/oauth2/authorize?client_id=abc',
+        cookieValue: 'signed-oauth-session',
+      });
+      mockAuthService.getDiscordStateCookieOptions.mockReturnValue({
+        httpOnly: true,
+        path: '/api/auth',
+      });
+      const res = {
+        cookie: vi.fn(),
+        redirect: vi.fn(),
+      };
+
+      controller.discordLogin(res as never);
+
+      expect(res.cookie).toHaveBeenCalledWith(
+        'discord_oauth_state',
+        'signed-oauth-session',
+        expect.objectContaining({ httpOnly: true }),
+      );
+      expect(res.redirect).toHaveBeenCalledWith(
+        'https://discord.com/oauth2/authorize?client_id=abc',
+      );
+    });
+  });
+
+  describe('discordCallback (GET /auth/discord/callback)', () => {
+    const req = {
+      headers: { cookie: 'discord_oauth_state=signed-oauth-session' },
+    };
+
+    it('should complete Discord login and redirect with a one-time code', async () => {
+      mockAuthService.completeDiscordLogin.mockResolvedValue({
+        code: 'discord-ticket',
+      });
+      mockAuthService.buildDiscordFrontendRedirect.mockReturnValue(
+        'http://localhost:8080/auth/discord?code=discord-ticket',
+      );
+      const res = {
+        json: vi.fn(),
+        redirect: vi.fn(),
+        clearCookie: vi.fn(),
+      };
+
+      await controller.discordCallback(
+        'code',
+        'oauth-state',
+        undefined,
+        undefined,
+        req as never,
+        res as never,
+      );
+
+      expect(authService.completeDiscordLogin).toHaveBeenCalledWith(
+        'code',
+        'oauth-state',
+        'signed-oauth-session',
+      );
+      expect(res.redirect).toHaveBeenCalledWith(
+        'http://localhost:8080/auth/discord?code=discord-ticket',
+      );
+    });
+
+    it('should return the ticket as JSON when format=json', async () => {
+      mockAuthService.completeDiscordLogin.mockResolvedValue({
+        code: 'discord-ticket',
+      });
+      const res = {
+        json: vi.fn(),
+        redirect: vi.fn(),
+        clearCookie: vi.fn(),
+      };
+
+      await controller.discordCallback(
+        'code',
+        'oauth-state',
+        undefined,
+        'json',
+        req as never,
+        res as never,
+      );
+
+      expect(res.json).toHaveBeenCalledWith({ code: 'discord-ticket' });
+      expect(res.redirect).not.toHaveBeenCalled();
+    });
+
+    it('should redirect Discord denials with a sanitized error code', async () => {
+      mockAuthService.buildDiscordFrontendRedirect.mockReturnValue(
+        'http://localhost:8080/auth/discord?error=access_denied',
+      );
+      const res = {
+        json: vi.fn(),
+        redirect: vi.fn(),
+        clearCookie: vi.fn(),
+      };
+
+      await controller.discordCallback(
+        undefined,
+        undefined,
+        'access_denied',
+        undefined,
+        req as never,
+        res as never,
+      );
+
+      expect(authService.completeDiscordLogin).not.toHaveBeenCalled();
+      expect(authService.buildDiscordFrontendRedirect).toHaveBeenCalledWith({
+        error: 'access_denied',
+      });
+      expect(res.redirect).toHaveBeenCalledWith(
+        'http://localhost:8080/auth/discord?error=access_denied',
+      );
+    });
+  });
+
+  describe('exchangeDiscord (POST /auth/discord/exchange)', () => {
+    it('should exchange the one-time ticket', async () => {
+      const payload = { access_token: 'access-token', user: mockUser };
+      mockAuthService.exchangeDiscordTicket.mockResolvedValue(payload);
+
+      const result = await controller.exchangeDiscord({ code: 'ticket' });
+
+      expect(authService.exchangeDiscordTicket).toHaveBeenCalledWith('ticket');
+      expect(result).toEqual(payload);
     });
   });
 });

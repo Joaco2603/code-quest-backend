@@ -1,10 +1,21 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Query,
+  Req,
+  Res,
+  UnauthorizedException,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthService } from '../services/auth.service.js';
 import {
   CreateUserDto,
   LoginUserDto,
   Verify2FADto,
   ChangePasswordDto,
+  ExchangeDiscordDto,
 } from '../dtos/index.js';
 import { AuthGuard } from '@nestjs/passport';
 import { GetUser } from '../decorators/get-user.decorators.js';
@@ -15,13 +26,23 @@ import { Auth } from '../decorators/index.js';
 import { RateLimit } from '../../common/decorators/rate-limit.decorator.js';
 import { PendingTwoFactorGuard } from '../guards/pending-two-factor.guard.js';
 import { ChangePasswordGuard } from '../guards/change-password.guard.js';
+import { TwoFactorGuard } from '../guards/two-factor.guard.js';
+import { DiscordOAuthException } from '../errors/discord-oauth.exception.js';
+import {
+  DISCORD_OAUTH_STATE_COOKIE,
+  readCookie,
+  sanitizeDiscordError,
+} from '../helpers/oauth-state.js';
+import type { Request, Response } from 'express';
 import {
   ApiBearerAuth,
   ApiBadRequestResponse,
   ApiBody,
   ApiCreatedResponse,
+  ApiFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiQuery,
   ApiUnauthorizedResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -134,6 +155,146 @@ export class AuthController {
   @RateLimit(5, 60_000)
   loginUser(@Body() loginUserDto: LoginUserDto) {
     return this.authService.loginUser(loginUserDto);
+  }
+
+  @Get('discord')
+  @ApiOperation({
+    summary: 'Login with Discord',
+    description:
+      'Redirects the browser to Discord OAuth. After consent, Discord returns to /auth/discord/callback with a one-time ticket, not an access token.',
+  })
+  @ApiFoundResponse({
+    description: 'Redirects to the Discord authorization screen.',
+  })
+  @RateLimit(10, 60_000)
+  discordLogin(@Res() res: Response) {
+    const started = this.authService.beginDiscordLogin();
+    this.setDiscordOAuthCookie(res, started.cookieValue);
+    return res.redirect(started.url);
+  }
+
+  @Post('discord/link')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({
+    summary: 'Link Discord to the current account',
+    description:
+      'Starts Discord OAuth to attach a Discord identity to the already authenticated user. Requires a fully validated session. Does not link by email match.',
+  })
+  @ApiOkResponse({
+    description: 'Discord authorization URL for the authenticated user.',
+    schema: {
+      example: {
+        url: 'https://discord.com/oauth2/authorize?client_id=abc',
+      },
+    },
+  })
+  @UseGuards(JwtAuthGuard, TwoFactorGuard)
+  @RateLimit(10, 60_000)
+  linkDiscord(@GetUser() user: AuthUser, @Res() res: Response) {
+    const started = this.authService.beginDiscordLink(user);
+    this.setDiscordOAuthCookie(res, started.cookieValue);
+    return res.json({ url: started.url });
+  }
+
+  @Get('discord/callback')
+  @ApiOperation({
+    summary: 'Discord OAuth callback',
+    description:
+      'Validates the Discord authorization code and PKCE verifier, then redirects to the frontend with a one-time `code` ticket. The frontend must POST that ticket to /auth/discord/exchange.',
+  })
+  @ApiQuery({ name: 'code', required: false })
+  @ApiQuery({ name: 'state', required: false })
+  @ApiQuery({ name: 'error', required: false })
+  @ApiQuery({
+    name: 'format',
+    required: false,
+    description:
+      'Use json to receive the one-time ticket instead of a redirect.',
+  })
+  @ApiOkResponse({
+    description: 'One-time Discord login ticket.',
+    schema: {
+      example: {
+        code: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+      },
+    },
+  })
+  @ApiFoundResponse({
+    description: 'Redirects to the frontend with a one-time code or error.',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Discord denied access or the OAuth state is invalid.',
+  })
+  @RateLimit(10, 60_000)
+  async discordCallback(
+    @Query('code') code: string | undefined,
+    @Query('state') state: string | undefined,
+    @Query('error') error: string | undefined,
+    @Query('format') format: string | undefined,
+    @Req() req: Request,
+    @Res() res: Response,
+  ) {
+    if (error) {
+      this.clearDiscordStateCookie(res);
+      return this.respondDiscordLogin(
+        res,
+        { error: sanitizeDiscordError(error) },
+        format,
+      );
+    }
+
+    const cookieValue = readCookie(
+      req.headers.cookie,
+      DISCORD_OAUTH_STATE_COOKIE,
+    );
+
+    try {
+      const result = await this.authService.completeDiscordLogin(
+        code,
+        state,
+        cookieValue,
+      );
+      this.clearDiscordStateCookie(res);
+      return this.respondDiscordLogin(res, result, format);
+    } catch (caught) {
+      this.clearDiscordStateCookie(res);
+      if (format !== 'json' && caught instanceof DiscordOAuthException) {
+        const redirectUrl = this.authService.buildDiscordFrontendRedirect({
+          error: caught.errorCode,
+        });
+        if (redirectUrl) {
+          return res.redirect(redirectUrl);
+        }
+      }
+      throw caught;
+    }
+  }
+
+  @Post('discord/exchange')
+  @ApiOperation({
+    summary: 'Exchange Discord login ticket',
+    description:
+      'Consumes the one-time ticket from /auth/discord/callback and returns a session, or the same 2FA/password-change challenge used by password login.',
+  })
+  @ApiCreatedResponse({
+    description: 'Discord login completed or pending a follow-up challenge.',
+    schema: {
+      example: {
+        access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+        user: {
+          id: '43566ec8-22af-41d3-933a-918b536fe99f',
+          email: 'student@example.com',
+          role: 'user',
+        },
+      },
+    },
+  })
+  @ApiUnauthorizedResponse({
+    description: 'Invalid, expired, or reused Discord login ticket.',
+  })
+  @RateLimit(10, 60_000)
+  exchangeDiscord(@Body() dto: ExchangeDiscordDto) {
+    return this.authService.exchangeDiscordTicket(dto.code);
   }
 
   @Get('renovated')
@@ -251,5 +412,37 @@ export class AuthController {
   @RateLimit(5, 60_000)
   forgotPassword2FA(@Body() body: { email: string; code: string }) {
     return this.authService.verify2FAForRecovery(body.email, body.code);
+  }
+
+  private respondDiscordLogin(
+    res: Response,
+    payload: { code?: string; error?: string },
+    format?: string,
+  ) {
+    const redirectUrl = this.authService.buildDiscordFrontendRedirect(payload);
+
+    if (format === 'json' || !redirectUrl) {
+      if (payload.error) {
+        throw new UnauthorizedException(payload.error);
+      }
+      return res.json({ code: payload.code });
+    }
+
+    return res.redirect(redirectUrl);
+  }
+
+  private setDiscordOAuthCookie(res: Response, value: string) {
+    res.cookie(
+      DISCORD_OAUTH_STATE_COOKIE,
+      value,
+      this.authService.getDiscordStateCookieOptions(),
+    );
+  }
+
+  private clearDiscordStateCookie(res: Response) {
+    res.clearCookie(
+      DISCORD_OAUTH_STATE_COOKIE,
+      this.authService.getDiscordStateCookieOptions(),
+    );
   }
 }

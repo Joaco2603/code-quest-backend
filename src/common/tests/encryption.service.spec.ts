@@ -1,5 +1,5 @@
 import { ConfigService } from '@nestjs/config';
-import { EncryptionService } from './encryption.service.js';
+import { EncryptionService } from '../encryption/encryption.service.js';
 
 describe('EncryptionService', () => {
   const key = Buffer.alloc(32, 7).toString('hex');

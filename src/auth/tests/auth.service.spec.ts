@@ -6,6 +6,9 @@ import { ConfigService } from '@nestjs/config';
 import { BcryptAdapter } from '../adapters/bcrypt.adapter.js';
 import { TwoFactorService } from '../services/two-factor.service.js';
 import { AuditLogService } from '../../common/services/audit-log.service.js';
+import { DiscordAdapter } from '../adapters/discord.adapter.js';
+import { DiscordOAuthException } from '../errors/discord-oauth.exception.js';
+import { serializeOAuthSession } from '../helpers/oauth-state.js';
 import { UnauthorizedException } from '@nestjs/common';
 import { User } from '../../user/entities/user.entity.js';
 import { AuthUser } from '../interfaces/auth-user.type.js';
@@ -33,10 +36,15 @@ describe('AuthService', () => {
     findOneById: vi.fn(),
     updatePassword: vi.fn(),
     clearMustChangePassword: vi.fn(),
+    findOneByDiscordId: vi.fn(),
+    findOneByEmailOptional: vi.fn(),
+    createFromDiscord: vi.fn(),
+    linkDiscordAccount: vi.fn(),
   };
 
   const mockJwtService = {
     sign: vi.fn(),
+    verify: vi.fn(),
   };
 
   const mockTwoFactorService = {
@@ -53,6 +61,12 @@ describe('AuthService', () => {
 
   const mockConfigService = {
     get: vi.fn().mockReturnValue(false),
+  };
+
+  const mockDiscordAdapter = {
+    createState: vi.fn(),
+    buildAuthorizeUrl: vi.fn(),
+    authenticate: vi.fn(),
   };
 
   beforeEach(async () => {
@@ -83,6 +97,10 @@ describe('AuthService', () => {
           provide: AuditLogService,
           useValue: mockAuditLogService,
         },
+        {
+          provide: DiscordAdapter,
+          useValue: mockDiscordAdapter,
+        },
       ],
     }).compile();
 
@@ -90,7 +108,13 @@ describe('AuthService', () => {
 
     // Reset all mocks
     vi.clearAllMocks();
-    mockConfigService.get.mockReturnValue(false);
+    mockConfigService.get.mockReset();
+    mockConfigService.get.mockImplementation((key: string) => {
+      if (key === 'JWT_SECRET') {
+        return 'test-secret';
+      }
+      return false;
+    });
     mockAuditLogService.recordDomainEvent.mockResolvedValue(undefined);
   });
 
@@ -388,6 +412,311 @@ describe('AuthService', () => {
           is_two_factor_validated: true,
         }),
       );
+    });
+  });
+
+  describe('loginUser with Discord accounts', () => {
+    const loginUserDto = {
+      email: 'test@example.com',
+      password: 'Password123!',
+    };
+
+    it('should reject password login when the account has no password', async () => {
+      mockUserService.findOneByEmail.mockResolvedValue({
+        ...mockUser,
+        password: null,
+      });
+
+      await expect(service.loginUser(loginUserDto)).rejects.toThrow(
+        'This account uses Discord login',
+      );
+    });
+  });
+
+  describe('completeDiscordLogin', () => {
+    const profile = {
+      id: 'discord-123',
+      username: 'Student Dev',
+      global_name: 'Student Dev',
+      email: 'student@example.com',
+      avatar: null,
+      verified: true,
+    };
+
+    const discordUser = {
+      ...mockUser,
+      email: 'student@example.com',
+      discordId: 'discord-123',
+      password: null,
+      mustChangePassword: false,
+    };
+
+    const loginCookie = serializeOAuthSession(
+      {
+        state: 'state',
+        verifier: 'verifier',
+        intent: 'login',
+      },
+      'test-secret',
+    );
+
+    it('should reject mismatched OAuth state', async () => {
+      await expect(
+        service.completeDiscordLogin('code', 'state-a', loginCookie),
+      ).rejects.toThrow(DiscordOAuthException);
+    });
+
+    it('should reject a missing authorization code', async () => {
+      await expect(
+        service.completeDiscordLogin(undefined, 'state', loginCookie),
+      ).rejects.toThrow(DiscordOAuthException);
+    });
+
+    it('should reject unverified Discord emails', async () => {
+      mockDiscordAdapter.authenticate.mockResolvedValue({
+        ...profile,
+        verified: false,
+      });
+
+      await expect(
+        service.completeDiscordLogin('code', 'state', loginCookie),
+      ).rejects.toMatchObject({ errorCode: 'unverified_email' });
+    });
+
+    it('should issue a one-time ticket for an existing Discord user', async () => {
+      mockDiscordAdapter.authenticate.mockResolvedValue(profile);
+      mockUserService.findOneByDiscordId.mockResolvedValue(discordUser);
+      mockJwtService.sign.mockReturnValue('discord-ticket');
+
+      const result = await service.completeDiscordLogin(
+        'code',
+        'state',
+        loginCookie,
+      );
+
+      expect(mockDiscordAdapter.authenticate).toHaveBeenCalledWith(
+        'code',
+        'verifier',
+      );
+      expect(mockUserService.createFromDiscord).not.toHaveBeenCalled();
+      expect(mockUserService.linkDiscordAccount).not.toHaveBeenCalled();
+      expect(result).toEqual({ code: 'discord-ticket' });
+      expect(mockJwtService.sign).toHaveBeenCalledWith(
+        expect.objectContaining({
+          purpose: 'discord_login',
+          sub: discordUser.id,
+        }),
+        expect.objectContaining({ expiresIn: '60s' }),
+      );
+    });
+
+    it('should not auto-link Discord to an existing email account', async () => {
+      mockDiscordAdapter.authenticate.mockResolvedValue(profile);
+      mockUserService.findOneByDiscordId.mockResolvedValue(null);
+      mockUserService.findOneByEmailOptional.mockResolvedValue({
+        ...mockUser,
+        discordId: null,
+        role: ValidRoles.admin,
+      });
+
+      await expect(
+        service.completeDiscordLogin('code', 'state', loginCookie),
+      ).rejects.toMatchObject({ errorCode: 'login_failed' });
+      expect(mockUserService.linkDiscordAccount).not.toHaveBeenCalled();
+    });
+
+    it('should create a user when Discord is new', async () => {
+      mockDiscordAdapter.authenticate.mockResolvedValue(profile);
+      mockUserService.findOneByDiscordId.mockResolvedValue(null);
+      mockUserService.findOneByEmailOptional.mockResolvedValue(null);
+      mockUserService.createFromDiscord.mockResolvedValue(discordUser);
+      mockJwtService.sign.mockReturnValue('created-ticket');
+
+      const result = await service.completeDiscordLogin(
+        'code',
+        'state',
+        loginCookie,
+      );
+
+      expect(mockUserService.createFromDiscord).toHaveBeenCalledWith(
+        expect.objectContaining({
+          email: 'student@example.com',
+          discordId: 'discord-123',
+          first_name: 'student',
+          last_name: 'dev',
+        }),
+      );
+      expect(result).toEqual({ code: 'created-ticket' });
+    });
+
+    it('should reject inactive Discord users', async () => {
+      mockDiscordAdapter.authenticate.mockResolvedValue(profile);
+      mockUserService.findOneByDiscordId.mockResolvedValue({
+        ...discordUser,
+        isActive: false,
+      });
+
+      await expect(
+        service.completeDiscordLogin('code', 'state', loginCookie),
+      ).rejects.toMatchObject({ errorCode: 'inactive' });
+    });
+
+    it('should link Discord only for an authenticated link intent', async () => {
+      const linkCookie = serializeOAuthSession(
+        {
+          state: 'state',
+          verifier: 'verifier',
+          intent: 'link',
+          userId: mockUser.id,
+        },
+        'test-secret',
+      );
+      mockDiscordAdapter.authenticate.mockResolvedValue(profile);
+      mockUserService.findOneById.mockResolvedValue({
+        ...mockUser,
+        discordId: null,
+      });
+      mockJwtService.sign.mockReturnValue('link-ticket');
+
+      const result = await service.completeDiscordLogin(
+        'code',
+        'state',
+        linkCookie,
+      );
+
+      expect(mockUserService.linkDiscordAccount).toHaveBeenCalledWith(
+        mockUser.id,
+        profile.id,
+      );
+      expect(result).toEqual({ code: 'link-ticket' });
+    });
+  });
+
+  describe('exchangeDiscordTicket', () => {
+    const discordUser = {
+      ...mockUser,
+      email: 'student@example.com',
+      discordId: 'discord-123',
+      password: null,
+      mustChangePassword: false,
+    };
+
+    it('should issue a full token for Discord-only student accounts', async () => {
+      mockJwtService.verify.mockReturnValue({
+        purpose: 'discord_login',
+        sub: discordUser.id,
+        jti: 'ticket-1',
+      });
+      mockUserService.findOneById.mockResolvedValue(discordUser);
+      mockJwtService.sign.mockReturnValue('access-token');
+
+      const result = await service.exchangeDiscordTicket('ticket');
+
+      expect(result).toEqual(
+        expect.objectContaining({ access_token: 'access-token' }),
+      );
+    });
+
+    it('should reject a reused ticket', async () => {
+      mockJwtService.verify.mockReturnValue({
+        purpose: 'discord_login',
+        sub: discordUser.id,
+        jti: 'ticket-reuse',
+      });
+      mockUserService.findOneById.mockResolvedValue(discordUser);
+      mockJwtService.sign.mockReturnValue('access-token');
+
+      await service.exchangeDiscordTicket('ticket');
+
+      await expect(service.exchangeDiscordTicket('ticket')).rejects.toThrow(
+        UnauthorizedException,
+      );
+    });
+
+    it('should require 2FA when the Discord-linked account already has it', async () => {
+      mockJwtService.verify.mockReturnValue({
+        purpose: 'discord_login',
+        sub: mockUser.id,
+        jti: 'ticket-2fa',
+      });
+      mockUserService.findOneById.mockResolvedValue({
+        ...mockUser,
+        password: 'hashed',
+        is_two_factor_enabled: true,
+        mustChangePassword: false,
+      });
+      mockJwtService.sign.mockReturnValue('temp-token');
+
+      const result = await service.exchangeDiscordTicket('ticket');
+
+      expect(result).toEqual(
+        expect.objectContaining({
+          requires2FA: true,
+          tempToken: 'temp-token',
+        }),
+      );
+    });
+
+    it('should require a password change when the flag is set', async () => {
+      mockJwtService.verify.mockReturnValue({
+        purpose: 'discord_login',
+        sub: mockUser.id,
+        jti: 'ticket-password',
+      });
+      mockUserService.findOneById.mockResolvedValue({
+        ...mockUser,
+        password: 'hashed',
+        mustChangePassword: true,
+      });
+      mockJwtService.sign.mockReturnValue('temp-token');
+
+      const result = await service.exchangeDiscordTicket('ticket');
+
+      expect(result).toEqual(
+        expect.objectContaining({
+          requiresPasswordChange: true,
+          tempToken: 'temp-token',
+        }),
+      );
+    });
+  });
+
+  describe('buildDiscordFrontendRedirect', () => {
+    it('should build the frontend redirect with a one-time code', () => {
+      mockConfigService.get.mockImplementation((key: string) => {
+        if (key === 'JWT_SECRET') {
+          return 'test-secret';
+        }
+        if (key === 'app.auth.discord.frontendUrl') {
+          return 'http://localhost:8080';
+        }
+        if (key === 'app.auth.discord.frontendRedirectPath') {
+          return '/auth/discord';
+        }
+        return false;
+      });
+
+      expect(service.buildDiscordFrontendRedirect({ code: 'ticket' })).toBe(
+        'http://localhost:8080/auth/discord?code=ticket',
+      );
+    });
+
+    it('should only allow known error codes in the redirect', () => {
+      mockConfigService.get.mockImplementation((key: string) => {
+        if (key === 'app.auth.discord.frontendUrl') {
+          return 'http://localhost:8080';
+        }
+        if (key === 'app.auth.discord.frontendRedirectPath') {
+          return '/auth/discord';
+        }
+        return false;
+      });
+
+      expect(
+        service.buildDiscordFrontendRedirect({
+          error: 'User with email admin@example.com already exists',
+        }),
+      ).toBe('http://localhost:8080/auth/discord?error=login_failed');
     });
   });
 });

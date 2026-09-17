@@ -1,9 +1,9 @@
 import { ForbiddenException } from '@nestjs/common';
-import { UserService } from './user.service.js';
-import { User } from './entities/user.entity.js';
-import { AuditLogService } from '../common/services/audit-log.service.js';
-import { BcryptAdapter } from '../auth/adapters/bcrypt.adapter.js';
-import { ValidRoles } from '../auth/interfaces/index.js';
+import { UserService } from '../user.service.js';
+import { User } from '../entities/user.entity.js';
+import { AuditLogService } from '../../common/services/audit-log.service.js';
+import { BcryptAdapter } from '../../auth/adapters/bcrypt.adapter.js';
+import { ValidRoles } from '../../auth/interfaces/index.js';
 import { vi } from 'vitest';
 
 describe('UserService', () => {
@@ -138,5 +138,45 @@ describe('UserService', () => {
     expect(bcryptAdapter.compareHash('NewPassword1!', target.password)).toBe(
       true,
     );
+  });
+
+  it('creates Discord users without a password', async () => {
+    userRepository.findOne.mockResolvedValue(null);
+    userRepository.create.mockImplementation((data: Partial<User>) => ({
+      id: 'discord-user',
+      role: ValidRoles.user,
+      ...data,
+    }));
+    userRepository.save.mockImplementation(async (user: User) => user);
+
+    const created = await service.createFromDiscord({
+      email: 'student@example.com',
+      discordId: 'discord-123',
+      first_name: 'student',
+      last_name: 'dev',
+    });
+
+    expect(created.password).toBeNull();
+    expect(created.mustChangePassword).toBe(false);
+    expect(created.discordId).toBe('discord-123');
+    expect(userRepository.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        password: null,
+        role: ValidRoles.user,
+        mustChangePassword: false,
+      }),
+    );
+  });
+
+  it('rejects linking a Discord account that already belongs to someone else', async () => {
+    userRepository.findOne.mockResolvedValue({
+      id: 'other-user',
+      discordId: 'discord-123',
+    });
+
+    await expect(
+      service.linkDiscordAccount('user-1', 'discord-123'),
+    ).rejects.toThrow('Discord account is already linked');
+    expect(userRepository.update).not.toHaveBeenCalled();
   });
 });
