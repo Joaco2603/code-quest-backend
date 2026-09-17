@@ -6,7 +6,6 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { WsException } from '@nestjs/websockets';
 import { requestContext } from '../request-context/request-context.js';
 import { StructuredLoggerService } from '../logger/structured-logger.service.js';
 import { AuditLogService } from '../services/audit-log.service.js';
@@ -19,14 +18,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
   ) {}
 
   async catch(exception: unknown, host: ArgumentsHost) {
-    const contextType = host.getType<'http' | 'ws' | 'rpc'>();
-
-    if (contextType === 'ws') {
-      this.handleWsException(exception, host);
-      return;
-    }
-
-    if (contextType === 'http') {
+    if (host.getType() === 'http') {
       await this.handleHttpException(exception, host);
       return;
     }
@@ -109,18 +101,6 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     });
   }
 
-  private handleWsException(exception: unknown, host: ArgumentsHost) {
-    const ws = host.switchToWs();
-    const client = ws.getClient<{
-      emit: (event: string, payload: Record<string, unknown>) => void;
-    }>();
-    const stack = exception instanceof Error ? exception.stack : undefined;
-    const payload = this.normalizeWsResponse(exception);
-
-    this.logger.error(payload, stack, GlobalExceptionFilter.name);
-    client.emit('error', payload);
-  }
-
   private normalizeHttpResponse(status: number, exception: unknown) {
     if (exception instanceof HttpException) {
       const exceptionResponse = exception.getResponse();
@@ -144,26 +124,6 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     return {
       statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
       message: 'Internal server error',
-    };
-  }
-
-  private normalizeWsResponse(exception: unknown) {
-    if (exception instanceof WsException) {
-      const error = exception.getError();
-      const message =
-        typeof error === 'string'
-          ? error
-          : (this.extractMessage(error) ?? 'WebSocket error');
-
-      return this.compact({
-        message,
-        requestId: requestContext.get()?.requestId,
-      });
-    }
-
-    return {
-      message: 'Internal server error',
-      requestId: requestContext.get()?.requestId,
     };
   }
 
