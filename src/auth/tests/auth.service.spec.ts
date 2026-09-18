@@ -387,15 +387,15 @@ describe('AuthService', () => {
       expect(mockTwoFactorService.enable).not.toHaveBeenCalled();
     });
 
-    it('should return access_token on successful verification', async () => {
+    it('should return accessToken on successful verification', async () => {
       mockUserService.findOneById.mockResolvedValue(mockUser);
       mockTwoFactorService.verifyCode.mockResolvedValue(true);
       mockJwtService.sign.mockReturnValue('valid-access-token');
 
       const result = await service.verify2FA(userId, code);
 
-      expect(result).toHaveProperty('access_token');
-      expect(result.access_token).toBe('valid-access-token');
+      expect(result).toHaveProperty('accessToken');
+      expect(result.accessToken).toBe('valid-access-token');
     });
 
     it('should generate token with correct payload', async () => {
@@ -613,7 +613,7 @@ describe('AuthService', () => {
       const result = await service.exchangeDiscordTicket('ticket');
 
       expect(result).toEqual(
-        expect.objectContaining({ access_token: 'access-token' }),
+        expect.objectContaining({ accessToken: 'access-token' }),
       );
     });
 

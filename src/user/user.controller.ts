@@ -15,7 +15,19 @@ import {
   CreateUserDto,
   ListUsersByClientDto,
   UpdateUserDto,
+  UserCollectionDataResponseDto,
+  UserDetailDataResponseDto,
+  UserListPaginatedResponseDto,
 } from './dtos/index.js';
+import {
+  serializeUserDetail,
+  serializeUserDetails,
+  serializeUserListItems,
+} from './serializers/user.serializer.js';
+import {
+  toDataResponse,
+  toPaginatedResponse,
+} from '../common/dto/api-response.dto.js';
 import { Auth, GetUser } from '../auth/decorators/index.js';
 import { ValidRoles } from '../auth/interfaces/index.js';
 import type { AuthUser } from '../auth/interfaces/auth-user.type.js';
@@ -48,29 +60,24 @@ export class UserController {
   })
   @ApiCreatedResponse({
     description: 'User created successfully.',
-    schema: {
-      example: {
-        id: '43566ec8-22af-41d3-933a-918b536fe99f',
-        email: 'user@example.com',
-        first_name: 'user',
-        last_name: 'quest',
-        role: 'user',
-        isActive: true,
-      },
-    },
+    type: UserDetailDataResponseDto,
   })
   @UseGuards(AuthGuard())
   @Auth(ValidRoles.admin, ValidRoles.client)
-  createAdmin(@GetUser() user: AuthUser, @Body() createUserDto: CreateUserDto) {
-    if (user.role !== ValidRoles.admin) {
-      return this.userService.create({
-        ...createUserDto,
-        role: ValidRoles.user,
-        client_id: user.id,
-      });
-    }
+  async createAdmin(
+    @GetUser() user: AuthUser,
+    @Body() createUserDto: CreateUserDto,
+  ) {
+    const created =
+      user.role !== ValidRoles.admin
+        ? await this.userService.create({
+            ...createUserDto,
+            role: ValidRoles.user,
+            client_id: user.id,
+          })
+        : await this.userService.create(createUserDto);
 
-    return this.userService.create(createUserDto);
+    return toDataResponse(serializeUserDetail(created));
   }
 
   @Get()
@@ -81,25 +88,23 @@ export class UserController {
   })
   @ApiOkResponse({
     description: 'User list.',
-    schema: {
-      example: [
-        {
-          id: '43566ec8-22af-41d3-933a-918b536fe99f',
-          email: 'user@example.com',
-          first_name: 'user',
-          last_name: 'quest',
-          role: 'user',
-          is_two_factor_enabled: true,
-        },
-      ],
-    },
+    type: UserListPaginatedResponseDto,
   })
   @Auth(ValidRoles.admin, ValidRoles.client)
-  findAll(
+  async findAll(
     @GetUser() actor: AuthUser,
     @Query() paginationDto: PaginationDto,
   ) {
-    return this.userService.findAll(paginationDto, actor);
+    const { items, total, limit, offset } = await this.userService.findAll(
+      paginationDto,
+      actor,
+    );
+
+    return toPaginatedResponse(serializeUserListItems(items), {
+      total,
+      limit,
+      offset,
+    });
   }
 
   @Get(':id')
@@ -109,23 +114,17 @@ export class UserController {
   })
   @ApiOkResponse({
     description: 'User detail.',
-    schema: {
-      example: {
-        id: '43566ec8-22af-41d3-933a-918b536fe99f',
-        email: 'user@example.com',
-        first_name: 'user',
-        last_name: 'quest',
-        role: 'user',
-      },
-    },
+    type: UserDetailDataResponseDto,
   })
   @ApiNotFoundResponse({ description: 'User was not found.' })
   @Auth(ValidRoles.admin, ValidRoles.client)
-  findOneById(
+  async findOneById(
     @GetUser() actor: AuthUser,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return this.userService.findOneById(id, actor);
+    const user = await this.userService.findOneById(id, actor);
+
+    return toDataResponse(serializeUserDetail(user));
   }
 
   @Post('search')
@@ -135,15 +134,13 @@ export class UserController {
   })
   @ApiOkResponse({
     description: 'Users matching the search criteria.',
-    schema: {
-      example: [
-        { id: '43566ec8-22af-41d3-933a-918b536fe99f', email: 'user@example.com' },
-      ],
-    },
+    type: UserCollectionDataResponseDto,
   })
   @Auth(ValidRoles.admin, ValidRoles.client)
-  search(@GetUser() actor: AuthUser, @Body() search: { key: string }) {
-    return this.userService.search(search, actor);
+  async search(@GetUser() actor: AuthUser, @Body() search: { key: string }) {
+    const users = await this.userService.search(search, actor);
+
+    return toDataResponse(serializeUserDetails(users));
   }
 
   @Post('byClient')
@@ -153,20 +150,16 @@ export class UserController {
   })
   @ApiOkResponse({
     description: 'Users linked to the client.',
-    schema: {
-      example: [
-        {
-          id: '43566ec8-22af-41d3-933a-918b536fe99f',
-          email: 'operator@example.com',
-          first_name: 'operator',
-          role: 'user',
-        },
-      ],
-    },
+    type: UserCollectionDataResponseDto,
   })
   @Auth(ValidRoles.client)
-  byClient(@GetUser() actor: AuthUser, @Body() data: ListUsersByClientDto) {
-    return this.userService.byClient(data, actor);
+  async byClient(
+    @GetUser() actor: AuthUser,
+    @Body() data: ListUsersByClientDto,
+  ) {
+    const users = await this.userService.byClient(data, actor);
+
+    return toDataResponse(serializeUserDetails(users));
   }
 
   @Patch(':id')
@@ -176,22 +169,18 @@ export class UserController {
   })
   @ApiOkResponse({
     description: 'Updated user.',
-    schema: {
-      example: {
-        id: '43566ec8-22af-41d3-933a-918b536fe99f',
-        email: 'operator@example.com',
-        isActive: true,
-      },
-    },
+    type: UserDetailDataResponseDto,
   })
   @ApiNotFoundResponse({ description: 'User was not found.' })
   @Auth(ValidRoles.admin, ValidRoles.client)
-  update(
+  async update(
     @GetUser() actor: AuthUser,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateUserDto: UpdateUserDto,
   ) {
-    return this.userService.update(id, updateUserDto, actor);
+    const updated = await this.userService.update(id, updateUserDto, actor);
+
+    return toDataResponse(serializeUserDetail(updated));
   }
 
   @Delete(':id')
@@ -201,7 +190,12 @@ export class UserController {
   })
   @ApiOkResponse({
     description: 'User deleted successfully.',
-    schema: { example: { message: 'User removed successfully' } },
+    schema: {
+      example: {
+        message:
+          'User with id 43566ec8-22af-41d3-933a-918b536fe99f has been deleted',
+      },
+    },
   })
   @Auth(ValidRoles.admin)
   remove(@Param('id', ParseUUIDPipe) id: string) {

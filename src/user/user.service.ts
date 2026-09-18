@@ -67,13 +67,19 @@ export class UserService {
       },
     });
 
-    return this.toPublicUser(user);
+    // Return the entity without secrets. Auth callers spread this result,
+    // so it must never carry password or two_factor_secret. The HTTP
+    // controller serializes it explicitly with serializeUserDetail.
+    this.stripSensitive(user);
+    await this.attachFullClient(user, client_id ?? null);
+    return user;
   });
 
   findAll = asyncHandler(
     async (paginationDto: PaginationDto, actor: AuthUser) => {
-      const { limit = 1000, offset = 0, isActive = true } = paginationDto;
+      const { isActive = true } = paginationDto;
       const all = paginationDto.all;
+      const { limit, offset } = this.resolvePagination(paginationDto);
 
       const query = this.userRepository
         .createQueryBuilder('user')
@@ -86,7 +92,14 @@ export class UserService {
 
       this.applyActorScope(query, actor);
 
-      return await query.skip(offset).take(limit).getMany();
+      // getManyAndCount keeps the total aligned with the same filters and
+      // actor scope as the items; it ignores skip/take for the count.
+      const [items, total] = await query
+        .skip(offset)
+        .take(limit)
+        .getManyAndCount();
+
+      return { items, total, limit, offset };
     },
   );
 
@@ -327,7 +340,11 @@ export class UserService {
           updatedFields: Object.keys(updateUserDto),
         },
       });
-      return this.toPublicUser(user);
+      this.stripSensitive(user);
+      if (client_id !== undefined) {
+        await this.attachFullClient(user, client_id ?? null);
+      }
+      return user;
     },
   );
 
@@ -390,10 +407,60 @@ export class UserService {
     return this.bcryptAdapter.hashing(password, 10);
   }
 
-  private toPublicUser(user: User) {
-    const { password: _password, two_factor_secret: _secret, ...publicUser } =
-      user;
-    return publicUser;
+  /**
+   * Remove secrets from an entity kept in memory (create/update build the
+   * password in memory even though the columns are `select: false`).
+   * Serializers also exclude them by construction; this protects internal
+   * spreaders such as AuthService (`{ ...user, token }`).
+   */
+  private stripSensitive(user: User): User {
+    delete (user as Partial<User>).password;
+    delete (user as Partial<User>).two_factor_secret;
+    return user;
+  }
+
+  /**
+   * Replace a `{ id }` client stub with the real row so the serializer can
+   * build a full one-level summary. Only runs when ownership was just set.
+   */
+  private async attachFullClient(
+    user: User,
+    clientId: string | null | undefined,
+  ): Promise<void> {
+    if (!clientId) {
+      return;
+    }
+    const client = await this.userRepository.findOneBy({ id: clientId });
+    if (client) {
+      user.client = client;
+    }
+  }
+
+  /**
+   * Keep offset/limit behavior and accept page/pageSize as compat input:
+   * when the caller paginates by page (page > 1) without an explicit
+   * offset, derive `offset = (page - 1) * pageSize`.
+   */
+  private resolvePagination(paginationDto: PaginationDto): {
+    limit: number;
+    offset: number;
+  } {
+    const page = paginationDto.page;
+    const pageSize = paginationDto.pageSize ?? paginationDto.limit;
+    let limit = paginationDto.limit ?? pageSize ?? 1000;
+    let offset = paginationDto.offset ?? 0;
+
+    if (
+      (paginationDto.offset === undefined || paginationDto.offset === 0) &&
+      page !== undefined &&
+      page > 1 &&
+      pageSize !== undefined
+    ) {
+      limit = pageSize;
+      offset = (page - 1) * pageSize;
+    }
+
+    return { limit, offset };
   }
 
   private assertCanAccessUser(actor: AuthUser, target: User) {
