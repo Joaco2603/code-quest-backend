@@ -24,10 +24,21 @@ import { TwoFactorGuard } from '../../auth/guards/two-factor.guard.js';
 import { ValidRoles } from '../../auth/interfaces/index.js';
 import { PaginationDto } from '../../common/dto/pagination.dto.js';
 import {
+  toDataResponse,
+  toPaginatedResponse,
+} from '../../common/dto/api-response.dto.js';
+import {
   CreateQuestionDto,
   CreateQuestionnaireDto,
   UpdateQuestionnaireDto,
 } from '../dtos/index.js';
+import {
+  QuestionDataResponseDto,
+  QuestionnaireCollectionDataResponseDto,
+  QuestionnaireDataResponseDto,
+  QuestionnaireDeactivationDataResponseDto,
+  QuestionnairePaginatedResponseDto,
+} from '../dtos/questionnaire-response.dto.js';
 import { QuestionsService } from '../questions.service.js';
 
 @Auth()
@@ -41,52 +52,82 @@ export class QuestionnairesController {
   @Post()
   @Auth(ValidRoles.admin)
   @ApiOperation({ summary: 'Create a questionnaire' })
-  @ApiCreatedResponse({ description: 'Questionnaire created.' })
-  create(@Body() dto: CreateQuestionnaireDto) {
-    return this.questionsService.createQuestionnaire(dto);
+  @ApiCreatedResponse({
+    description: 'Questionnaire created.',
+    type: QuestionnaireDataResponseDto,
+  })
+  async create(@Body() dto: CreateQuestionnaireDto) {
+    return toDataResponse(
+      await this.questionsService.createQuestionnaire(dto),
+    );
   }
 
   @Get()
   @Auth(ValidRoles.admin)
   @ApiOperation({ summary: 'List questionnaires (admin)' })
-  @ApiOkResponse({ description: 'Paginated questionnaires.' })
-  findAll(@Query() paginationDto: PaginationDto) {
-    return this.questionsService.listQuestionnaires(paginationDto);
+  @ApiOkResponse({
+    description: 'Paginated questionnaires.',
+    type: QuestionnairePaginatedResponseDto,
+  })
+  async findAll(@Query() paginationDto: PaginationDto) {
+    const { items, total, limit, offset } =
+      await this.questionsService.listQuestionnaires(paginationDto);
+    return toPaginatedResponse(items, { total, limit, offset });
   }
 
   @Get('active')
   @ApiOperation({ summary: 'List active questionnaires' })
-  @ApiOkResponse({ description: 'Active questionnaires only.' })
-  findActive() {
-    return this.questionsService.listActiveQuestionnaires();
+  @ApiOkResponse({
+    description: 'Active questionnaires only.',
+    type: QuestionnaireCollectionDataResponseDto,
+  })
+  async findActive() {
+    return toDataResponse(
+      await this.questionsService.listActiveQuestionnaires(),
+    );
   }
 
   @Get('active/:id')
   @ApiOperation({ summary: 'Get an active questionnaire with active questions' })
-  @ApiOkResponse({ description: 'Active questionnaire snapshot.' })
+  @ApiOkResponse({
+    description: 'Active questionnaire snapshot.',
+    type: QuestionnaireDataResponseDto,
+  })
   @ApiNotFoundResponse({ description: 'Questionnaire missing or inactive.' })
-  findActiveById(@Param('id', ParseIntPipe) id: number) {
-    return this.questionsService.getActiveQuestionnaire(id);
+  async findActiveById(@Param('id', ParseIntPipe) id: number) {
+    return toDataResponse(
+      await this.questionsService.getActiveQuestionnaire(id),
+    );
   }
 
   @Get(':id')
   @Auth(ValidRoles.admin)
   @ApiOperation({ summary: 'Get questionnaire for admin (includes inactive)' })
-  @ApiOkResponse({ description: 'Questionnaire detail.' })
+  @ApiOkResponse({
+    description: 'Questionnaire detail.',
+    type: QuestionnaireDataResponseDto,
+  })
   @ApiNotFoundResponse({ description: 'Questionnaire was not found.' })
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.questionsService.getQuestionnaireForAdmin(id);
+  async findOne(@Param('id', ParseIntPipe) id: number) {
+    return toDataResponse(
+      await this.questionsService.getQuestionnaireForAdmin(id),
+    );
   }
 
   @Patch(':id')
   @Auth(ValidRoles.admin)
   @ApiOperation({ summary: 'Update a questionnaire' })
-  @ApiOkResponse({ description: 'Updated questionnaire.' })
-  update(
+  @ApiOkResponse({
+    description: 'Updated questionnaire.',
+    type: QuestionnaireDataResponseDto,
+  })
+  async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateQuestionnaireDto,
   ) {
-    return this.questionsService.updateQuestionnaire(id, dto);
+    return toDataResponse(
+      await this.questionsService.updateQuestionnaire(id, dto),
+    );
   }
 
   @Delete(':id')
@@ -96,19 +137,27 @@ export class QuestionnairesController {
     description:
       'Soft-deletes by setting is_active=false so later responses stay referencable.',
   })
-  @ApiOkResponse({ description: 'Questionnaire deactivated.' })
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.questionsService.deactivateQuestionnaire(id);
+  @ApiOkResponse({
+    description: 'Questionnaire deactivated.',
+    type: QuestionnaireDeactivationDataResponseDto,
+  })
+  async remove(@Param('id', ParseIntPipe) id: number) {
+    return toDataResponse(
+      await this.questionsService.deactivateQuestionnaire(id),
+    );
   }
 
   @Post(':id/questions')
   @Auth(ValidRoles.admin)
   @ApiOperation({ summary: 'Add a question to a questionnaire' })
-  @ApiCreatedResponse({ description: 'Question created.' })
-  addQuestion(
+  @ApiCreatedResponse({
+    description: 'Question created.',
+    type: QuestionDataResponseDto,
+  })
+  async addQuestion(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: CreateQuestionDto,
   ) {
-    return this.questionsService.createQuestion(id, dto);
+    return toDataResponse(await this.questionsService.createQuestion(id, dto));
   }
 }

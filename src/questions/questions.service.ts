@@ -23,10 +23,19 @@ import {
   isChoiceQuestionType,
   QuestionType,
 } from './enums/question-type.enum.js';
+import {
+  serializeAnswerOption,
+  serializeQuestion,
+  serializeQuestionnaire,
+} from './serializers/questions.serializer.js';
 import type {
-  QuestionDetail,
-  QuestionnaireDetail,
-} from './interfaces/index.js';
+  AnswerOptionDeleteResponseDto,
+  AnswerOptionResponseDto,
+  QuestionDeactivationResponseDto,
+  QuestionResponseDto,
+  QuestionnaireDeactivationResponseDto,
+  QuestionnaireResponseDto,
+} from './dtos/questionnaire-response.dto.js';
 
 @Injectable()
 export class QuestionsService {
@@ -40,7 +49,7 @@ export class QuestionsService {
   ) {}
 
   createQuestionnaire = asyncHandler(
-    async (dto: CreateQuestionnaireDto): Promise<QuestionnaireDetail> => {
+    async (dto: CreateQuestionnaireDto): Promise<QuestionnaireResponseDto> => {
       const questionnaire = this.questionnaireRepository.create({
         title: dto.title,
         description: dto.description ?? null,
@@ -48,7 +57,7 @@ export class QuestionsService {
       });
       const saved = await this.questionnaireRepository.save(questionnaire);
       saved.questions = [];
-      return this.toQuestionnaireDetail(saved, false);
+      return serializeQuestionnaire(saved, false);
     },
   );
 
@@ -65,7 +74,7 @@ export class QuestionsService {
     });
 
     return {
-      items: items.map((item) => this.toQuestionnaireDetail(item, false)),
+      items: items.map((item) => serializeQuestionnaire(item, false)),
       total,
       offset,
       limit,
@@ -78,25 +87,25 @@ export class QuestionsService {
       order: { createdAt: 'DESC', id: 'DESC' },
     });
 
-    return items.map((item) => this.toQuestionnaireDetail(item, false));
+    return items.map((item) => serializeQuestionnaire(item, false));
   });
 
   getActiveQuestionnaire = asyncHandler(
-    async (id: number): Promise<QuestionnaireDetail> => {
+    async (id: number): Promise<QuestionnaireResponseDto> => {
       const questionnaire = await this.loadQuestionnaire(id);
       if (!questionnaire.isActive) {
         throw new NotFoundException(`Questionnaire ${id} was not found`);
       }
-      const detail = this.toQuestionnaireDetail(questionnaire, true);
+      const detail = serializeQuestionnaire(questionnaire, true);
       this.assertChoiceQuestionsHaveOptions(detail);
       return detail;
     },
   );
 
   getQuestionnaireForAdmin = asyncHandler(
-    async (id: number): Promise<QuestionnaireDetail> => {
+    async (id: number): Promise<QuestionnaireResponseDto> => {
       const questionnaire = await this.loadQuestionnaire(id);
-      return this.toQuestionnaireDetail(questionnaire, false);
+      return serializeQuestionnaire(questionnaire, false);
     },
   );
 
@@ -104,7 +113,7 @@ export class QuestionsService {
     async (
       id: number,
       dto: UpdateQuestionnaireDto,
-    ): Promise<QuestionnaireDetail> => {
+    ): Promise<QuestionnaireResponseDto> => {
       const questionnaire = await this.loadQuestionnaire(id);
       if (dto.title !== undefined) questionnaire.title = dto.title;
       if (dto.description !== undefined) {
@@ -112,22 +121,24 @@ export class QuestionsService {
       }
       if (dto.isActive !== undefined) questionnaire.isActive = dto.isActive;
       await this.questionnaireRepository.save(questionnaire);
-      return this.toQuestionnaireDetail(questionnaire, false);
+      return serializeQuestionnaire(questionnaire, false);
     },
   );
 
-  deactivateQuestionnaire = asyncHandler(async (id: number) => {
-    const questionnaire = await this.loadQuestionnaire(id);
-    questionnaire.isActive = false;
-    await this.questionnaireRepository.save(questionnaire);
-    return { message: 'Questionnaire deactivated', id };
-  });
+  deactivateQuestionnaire = asyncHandler(
+    async (id: number): Promise<QuestionnaireDeactivationResponseDto> => {
+      const questionnaire = await this.loadQuestionnaire(id);
+      questionnaire.isActive = false;
+      await this.questionnaireRepository.save(questionnaire);
+      return { message: 'Questionnaire deactivated', id };
+    },
+  );
 
   createQuestion = asyncHandler(
     async (
       questionnaireId: number,
       dto: CreateQuestionDto,
-    ): Promise<QuestionDetail> => {
+    ): Promise<QuestionResponseDto> => {
       await this.loadQuestionnaire(questionnaireId);
       this.assertOptionsAllowed(dto.type, dto.options?.length ?? 0);
 
@@ -154,12 +165,12 @@ export class QuestionsService {
         saved.options = [];
       }
 
-      return this.toQuestionDetail(saved);
+      return serializeQuestion(saved);
     },
   );
 
   updateQuestion = asyncHandler(
-    async (id: number, dto: UpdateQuestionDto): Promise<QuestionDetail> => {
+    async (id: number, dto: UpdateQuestionDto): Promise<QuestionResponseDto> => {
       const question = await this.loadQuestion(id);
       const nextType = dto.type ?? question.type;
 
@@ -180,22 +191,24 @@ export class QuestionsService {
       if (dto.sortOrder !== undefined) question.sortOrder = dto.sortOrder;
 
       await this.questionRepository.save(question);
-      return this.toQuestionDetail(question);
+      return serializeQuestion(question);
     },
   );
 
-  deactivateQuestion = asyncHandler(async (id: number) => {
-    const question = await this.loadQuestion(id);
-    question.isActive = false;
-    await this.questionRepository.save(question);
-    return { message: 'Question deactivated', id };
-  });
+  deactivateQuestion = asyncHandler(
+    async (id: number): Promise<QuestionDeactivationResponseDto> => {
+      const question = await this.loadQuestion(id);
+      question.isActive = false;
+      await this.questionRepository.save(question);
+      return { message: 'Question deactivated', id };
+    },
+  );
 
   createOption = asyncHandler(
     async (
       questionId: number,
       dto: CreateAnswerOptionDto,
-    ): Promise<QuestionDetail> => {
+    ): Promise<QuestionResponseDto> => {
       const question = await this.loadQuestion(questionId);
       this.assertOptionsAllowed(question.type, 1);
 
@@ -207,42 +220,44 @@ export class QuestionsService {
       });
       const saved = await this.optionRepository.save(option);
       question.options = [...(question.options ?? []), saved];
-      return this.toQuestionDetail(question);
+      return serializeQuestion(question);
     },
   );
 
-  updateOption = asyncHandler(async (id: number, dto: UpdateAnswerOptionDto) => {
-    const option = await this.loadOption(id);
-    if (dto.label !== undefined) option.label = dto.label;
-    if (dto.value !== undefined) option.value = dto.value;
-    if (dto.sortOrder !== undefined) option.sortOrder = dto.sortOrder;
-    await this.optionRepository.save(option);
-    return {
-      id: option.id,
-      label: option.label,
-      value: option.value,
-      sortOrder: option.sortOrder,
-    };
-  });
+  updateOption = asyncHandler(
+    async (
+      id: number,
+      dto: UpdateAnswerOptionDto,
+    ): Promise<AnswerOptionResponseDto> => {
+      const option = await this.loadOption(id);
+      if (dto.label !== undefined) option.label = dto.label;
+      if (dto.value !== undefined) option.value = dto.value;
+      if (dto.sortOrder !== undefined) option.sortOrder = dto.sortOrder;
+      await this.optionRepository.save(option);
+      return serializeAnswerOption(option);
+    },
+  );
 
-  deleteOption = asyncHandler(async (id: number) => {
-    const option = await this.loadOption(id);
-    await this.optionRepository.remove(option);
-    return { message: 'Answer option deleted', id };
-  });
+  deleteOption = asyncHandler(
+    async (id: number): Promise<AnswerOptionDeleteResponseDto> => {
+      const option = await this.loadOption(id);
+      await this.optionRepository.remove(option);
+      return { message: 'Answer option deleted', id };
+    },
+  );
 
   assertQuestionInQuestionnaire = asyncHandler(
     async (
       questionnaireId: number,
       questionId: number,
-    ): Promise<QuestionDetail> => {
+    ): Promise<QuestionResponseDto> => {
       const question = await this.loadQuestion(questionId);
       if (question.questionnaire?.id !== questionnaireId) {
         throw new NotFoundException(
           `Question ${questionId} was not found in questionnaire ${questionnaireId}`,
         );
       }
-      return this.toQuestionDetail(question);
+      return serializeQuestion(question);
     },
   );
 
@@ -287,7 +302,7 @@ export class QuestionsService {
     }
   }
 
-  private assertChoiceQuestionsHaveOptions(detail: QuestionnaireDetail) {
+  private assertChoiceQuestionsHaveOptions(detail: QuestionnaireResponseDto) {
     const incomplete = detail.questions.find(
       (question) =>
         isChoiceQuestionType(question.type) && question.options.length === 0,
@@ -299,47 +314,16 @@ export class QuestionsService {
     }
   }
 
+  // Selection logic lives in the serializers; these thin wrappers keep the
+  // previous private API for internal callers that still reference it.
   private toQuestionnaireDetail(
     questionnaire: Questionnaire,
     activeQuestionsOnly: boolean,
-  ): QuestionnaireDetail {
-    const questions = (questionnaire.questions ?? [])
-      .filter((question) => !activeQuestionsOnly || question.isActive)
-      .sort(this.bySortThenId)
-      .map((question) => this.toQuestionDetail(question));
-
-    return {
-      id: questionnaire.id,
-      title: questionnaire.title,
-      description: questionnaire.description ?? null,
-      isActive: questionnaire.isActive,
-      createdAt: questionnaire.createdAt,
-      questions,
-    };
+  ): QuestionnaireResponseDto {
+    return serializeQuestionnaire(questionnaire, activeQuestionsOnly);
   }
 
-  private toQuestionDetail(question: Question): QuestionDetail {
-    const options = [...(question.options ?? [])]
-      .sort(this.bySortThenId)
-      .map((option) => ({
-        id: option.id,
-        label: option.label,
-        value: option.value ?? null,
-        sortOrder: option.sortOrder,
-      }));
-
-    return {
-      id: question.id,
-      question: question.question,
-      type: question.type,
-      isActive: question.isActive,
-      sortOrder: question.sortOrder,
-      options,
-    };
+  private toQuestionDetail(question: Question): QuestionResponseDto {
+    return serializeQuestion(question);
   }
-
-  private bySortThenId = (
-    a: { sortOrder: number; id: number },
-    b: { sortOrder: number; id: number },
-  ) => a.sortOrder - b.sortOrder || a.id - b.id;
 }

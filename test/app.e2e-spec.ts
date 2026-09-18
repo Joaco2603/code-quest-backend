@@ -43,7 +43,8 @@ const complete = (extra: object = {}) => ({
   ...extra,
 });
 async function create(body: object) {
-  return (await api().post('/api/admin/courses').send(body).expect(201)).body;
+  return (await api().post('/api/admin/courses').send(body).expect(201)).body
+    .data;
 }
 async function publish(id: number) {
   return api().post(`/api/admin/courses/${id}/publish`).expect(200);
@@ -90,13 +91,13 @@ beforeEach(async () => {
   );
   categoryId = (
     await api().post('/api/categories').send({ name: 'Backend' }).expect(201)
-  ).body.id;
+  ).body.data.id;
   technologyId = (
     await api()
       .post('/api/technologies')
       .send({ name: 'TypeScript' })
       .expect(201)
-  ).body.id;
+  ).body.data.id;
 });
 afterAll(async () => {
   await app?.close();
@@ -111,7 +112,9 @@ it('serves docs, fixed levels, CORS and security headers under /api', async () =
     .get('/api/levels')
     .set('Origin', 'http://localhost:3000')
     .expect(200);
-  expect(response.body).toEqual(['beginner', 'intermediate', 'advanced']);
+  expect(response.body).toEqual({
+    data: ['beginner', 'intermediate', 'advanced'],
+  });
   expect(response.headers['access-control-allow-origin']).toBe(
     'http://localhost:3000',
   );
@@ -199,7 +202,8 @@ it('supports taxonomy CRUD and rejects case-insensitive duplicate names', async 
     .send({ name: ' Backend APIs ' })
     .expect(200);
   expect(
-    (await api().get(`/api/categories/${categoryId}`).expect(200)).body.name,
+    (await api().get(`/api/categories/${categoryId}`).expect(200)).body.data
+      .name,
   ).toBe('Backend APIs');
   await api().delete(`/api/categories/${categoryId}`).expect(204);
   await api().get(`/api/categories/${categoryId}`).expect(404);
@@ -207,7 +211,10 @@ it('supports taxonomy CRUD and rejects case-insensitive duplicate names', async 
 it('keeps drafts private and requires complete data for publication', async () => {
   const course = await create({ title: 'Draft' });
   await api().get(`/api/courses/${course.id}`).expect(404);
-  expect((await api().get('/api/courses').expect(200)).body.total).toBe(0);
+  expect((await api().get('/api/courses').expect(200)).body.meta.total).toBe(
+    0,
+  );
+  expect((await api().get('/api/courses').expect(200)).body.data).toEqual([]);
   await api().post(`/api/admin/courses/${course.id}/publish`).expect(400);
   await api()
     .patch(`/api/admin/courses/${course.id}`)
@@ -220,13 +227,14 @@ it('keeps drafts private and requires complete data for publication', async () =
     .send({ description: null })
     .expect(400);
   expect(
-    (await api().get(`/api/courses/${course.id}`).expect(200)).body.description,
+    (await api().get(`/api/courses/${course.id}`).expect(200)).body.data
+      .description,
   ).toBe(complete().description);
 });
 it('supports many categories/technologies and paginated filters without losing relations', async () => {
   const other = (
     await api().post('/api/categories').send({ name: 'Frontend' }).expect(201)
-  ).body.id;
+  ).body.data.id;
   const course = await create(
     complete({ title: '100% TypeScript', categoryIds: [categoryId, other] }),
   );
@@ -242,12 +250,16 @@ it('supports many categories/technologies and paginated filters without losing r
       )
       .expect(200)
   ).body;
-  expect(result.total).toBe(1);
-  expect(result.items[0].categories).toHaveLength(2);
+  expect(result.meta.total).toBe(1);
+  expect(result.meta.limit).toBe(1);
+  expect(result.meta.offset).toBe(0);
+  expect(result.data[0].categories).toHaveLength(2);
   const page = (await api().get('/api/courses?limit=1&page=2').expect(200))
     .body;
-  expect(page.total).toBe(2);
-  expect(page.items[0].id).toBe(second.id);
+  expect(page.meta.total).toBe(2);
+  expect(page.meta.limit).toBe(1);
+  expect(page.meta.offset).toBe(1);
+  expect(page.data[0].id).toBe(second.id);
   await api().get('/api/courses?status=draft').expect(400);
   await api().get('/api/courses?limit=101').expect(400);
 });
@@ -308,8 +320,12 @@ it('archives without deleting, allows restoration to draft and supports admin st
     .expect(409);
   expect(
     (await api().get('/api/admin/courses?status=archived').expect(200)).body
-      .total,
+      .meta.total,
   ).toBe(1);
+  expect(
+    (await api().get('/api/admin/courses?status=archived').expect(200)).body
+      .data,
+  ).toHaveLength(1);
   await api().post(`/api/admin/courses/${course.id}/draft`).expect(200);
   await api()
     .patch(`/api/admin/courses/${course.id}`)
@@ -339,4 +355,44 @@ it('validates LLM IDs, uniqueness, prerequisite order and trusted completed cour
   expect((await service.validateRoadmapSelection([b.id], [a.id]))[0].id).toBe(
     b.id,
   );
+});
+it('exposes the unified {data,meta} catalog contract without nested wrapping', async () => {
+  const course = await create(complete());
+  await publish(course.id);
+  const list = (await api().get('/api/courses?limit=20&page=1').expect(200))
+    .body;
+  expect(Object.keys(list).sort()).toEqual(['data', 'meta']);
+  expect(Object.keys(list.meta).sort()).toEqual(['limit', 'offset', 'total']);
+  expect(list.meta).toMatchObject({ total: 1, limit: 20, offset: 0 });
+  expect(list.data).toHaveLength(1);
+  expect(Object.keys(list.data[0]).sort()).toEqual(
+    [
+      'id',
+      'title',
+      'description',
+      'url',
+      'imageUrl',
+      'durationMinutes',
+      'instructor',
+      'level',
+      'status',
+      'createdAt',
+      'updatedAt',
+      'categories',
+      'technologies',
+      'prerequisiteIds',
+    ].sort(),
+  );
+  expect(list.data[0]).not.toHaveProperty('data');
+  const single = (await api().get(`/api/courses/${course.id}`).expect(200))
+    .body;
+  expect(Object.keys(single)).toEqual(['data']);
+  expect(single.data.id).toBe(course.id);
+  const categories = (await api().get('/api/categories').expect(200)).body;
+  expect(Object.keys(categories)).toEqual(['data']);
+  expect(categories.data[0]).toEqual({ id: categoryId, name: 'Backend' });
+  const empty = (await api().get('/api/courses?limit=20&page=99').expect(200))
+    .body;
+  expect(empty.data).toEqual([]);
+  expect(empty.meta.total).toBe(1);
 });
