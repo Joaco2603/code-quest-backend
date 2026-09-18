@@ -8,6 +8,7 @@ import {
   CreateUserDto,
   ListUsersByClientDto,
   UpdateUserDto,
+  UserDeleteResponseDto,
 } from './dtos/index.js';
 import { User } from './entities/user.entity.js';
 import { Brackets, Repository } from 'typeorm';
@@ -352,25 +353,27 @@ export class UserService {
     await this.userRepository.update(id, state);
   }
 
-  remove = asyncHandler(async (id: string) => {
-    const user = await this.userRepository.findOneBy({ id });
-    if (!user) {
-      throw new BadRequestException(`User with id ${id} not found`);
-    }
-    await this.userRepository.update(user.id, { isActive: false });
-    await this.auditLogService.recordDomainEvent({
-      statusCode: 200,
-      outcome: 'warning',
-      eventType: 'user.deactivated',
-      userId: user.id,
-      userRole: user.role,
-      message: 'User deactivated successfully',
-      metadata: {
-        email: user.email,
-      },
-    });
-    return { message: `User with id ${id} has been deleted` };
-  });
+  remove = asyncHandler(
+    async (id: string): Promise<UserDeleteResponseDto> => {
+      const user = await this.userRepository.findOneBy({ id });
+      if (!user) {
+        throw new BadRequestException(`User with id ${id} not found`);
+      }
+      await this.userRepository.update(user.id, { isActive: false });
+      await this.auditLogService.recordDomainEvent({
+        statusCode: 200,
+        outcome: 'warning',
+        eventType: 'user.deactivated',
+        userId: user.id,
+        userRole: user.role,
+        message: 'User deactivated successfully',
+        metadata: {
+          email: user.email,
+        },
+      });
+      return { message: `User with id ${id} has been deleted`, id };
+    },
+  );
 
   findOneWithSecret = asyncHandler(async (id: string) => {
     return this.userRepository.findOne({
@@ -437,30 +440,27 @@ export class UserService {
   }
 
   /**
-   * Keep offset/limit behavior and accept page/pageSize as compat input:
-   * when the caller paginates by page (page > 1) without an explicit
-   * offset, derive `offset = (page - 1) * pageSize`.
+   * Single precedence for pagination inputs: an explicit `limit` always
+   * wins over `pageSize`; `pageSize` alone acts as the limit. The offset
+   * is derived as `(page - 1) * limit` only when paginating by page;
+   * otherwise the direct `offset` is used. An explicit non-zero offset
+   * always wins over a derived one, so page=1 and page=2 share the same
+   * limit and no records are skipped between pages.
    */
   private resolvePagination(paginationDto: PaginationDto): {
     limit: number;
     offset: number;
   } {
+    const limit = paginationDto.limit ?? paginationDto.pageSize ?? 1000;
     const page = paginationDto.page;
-    const pageSize = paginationDto.pageSize ?? paginationDto.limit;
-    let limit = paginationDto.limit ?? pageSize ?? 1000;
-    let offset = paginationDto.offset ?? 0;
+    const hasExplicitOffset =
+      paginationDto.offset !== undefined && paginationDto.offset !== 0;
 
-    if (
-      (paginationDto.offset === undefined || paginationDto.offset === 0) &&
-      page !== undefined &&
-      page > 1 &&
-      pageSize !== undefined
-    ) {
-      limit = pageSize;
-      offset = (page - 1) * pageSize;
+    if (!hasExplicitOffset && page !== undefined && page > 1) {
+      return { limit, offset: (page - 1) * limit };
     }
 
-    return { limit, offset };
+    return { limit, offset: paginationDto.offset ?? 0 };
   }
 
   private assertCanAccessUser(actor: AuthUser, target: User) {

@@ -14,6 +14,7 @@ describe('UserService', () => {
 
   const userRepository = {
     findOne: vi.fn(),
+    findOneBy: vi.fn(),
     find: vi.fn(),
     create: vi.fn(),
     save: vi.fn(),
@@ -234,9 +235,100 @@ describe('UserService', () => {
       adminActor,
     );
 
-    expect(builder.skip).toHaveBeenCalledWith(20);
-    expect(builder.take).toHaveBeenCalledWith(10);
-    expect(result).toEqual({ items: [], total: 50, limit: 10, offset: 20 });
+    // Explicit limit always wins over pageSize, on every page.
+    expect(builder.skip).toHaveBeenCalledWith(2);
+    expect(builder.take).toHaveBeenCalledWith(1);
+    expect(result).toEqual({ items: [], total: 50, limit: 1, offset: 2 });
+  });
+
+  it('keeps one limit precedence on page 1 and page 2 when both params are present', async () => {
+    const buildBuilder = () => ({
+      leftJoinAndSelect: vi.fn().mockReturnThis(),
+      loadRelationCountAndMap: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      andWhere: vi.fn().mockReturnThis(),
+      skip: vi.fn().mockReturnThis(),
+      take: vi.fn().mockReturnThis(),
+      getManyAndCount: vi.fn().mockResolvedValue([[], 11]),
+    });
+    const first = buildBuilder();
+    const second = buildBuilder();
+    userRepository.createQueryBuilder = vi
+      .fn()
+      .mockReturnValueOnce(first)
+      .mockReturnValueOnce(second);
+
+    const page1 = await service.findAll(
+      { page: 1, pageSize: 10, limit: 1, offset: 0 },
+      adminActor,
+    );
+    const page2 = await service.findAll(
+      { page: 2, pageSize: 10, limit: 1, offset: 0 },
+      adminActor,
+    );
+
+    expect(first.take).toHaveBeenCalledWith(1);
+    expect(first.skip).toHaveBeenCalledWith(0);
+    expect(second.take).toHaveBeenCalledWith(1);
+    expect(second.skip).toHaveBeenCalledWith(1);
+    expect(page1).toEqual({ items: [], total: 11, limit: 1, offset: 0 });
+    expect(page2).toEqual({ items: [], total: 11, limit: 1, offset: 1 });
+  });
+
+  it('uses pageSize as the limit when no explicit limit is given', async () => {
+    const buildBuilder = () => ({
+      leftJoinAndSelect: vi.fn().mockReturnThis(),
+      loadRelationCountAndMap: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      andWhere: vi.fn().mockReturnThis(),
+      skip: vi.fn().mockReturnThis(),
+      take: vi.fn().mockReturnThis(),
+      getManyAndCount: vi.fn().mockResolvedValue([[], 25]),
+    });
+    const first = buildBuilder();
+    const second = buildBuilder();
+    userRepository.createQueryBuilder = vi
+      .fn()
+      .mockReturnValueOnce(first)
+      .mockReturnValueOnce(second);
+
+    const page1 = await service.findAll(
+      { page: 1, pageSize: 10 },
+      adminActor,
+    );
+    const page2 = await service.findAll(
+      { page: 2, pageSize: 10 },
+      adminActor,
+    );
+
+    expect(first.take).toHaveBeenCalledWith(10);
+    expect(first.skip).toHaveBeenCalledWith(0);
+    expect(second.take).toHaveBeenCalledWith(10);
+    expect(second.skip).toHaveBeenCalledWith(10);
+    expect(page1).toEqual({ items: [], total: 25, limit: 10, offset: 0 });
+    expect(page2).toEqual({ items: [], total: 25, limit: 10, offset: 10 });
+  });
+
+  it('prefers an explicit offset over a page-derived one', async () => {
+    const builder = {
+      leftJoinAndSelect: vi.fn().mockReturnThis(),
+      loadRelationCountAndMap: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      andWhere: vi.fn().mockReturnThis(),
+      skip: vi.fn().mockReturnThis(),
+      take: vi.fn().mockReturnThis(),
+      getManyAndCount: vi.fn().mockResolvedValue([[], 50]),
+    };
+    userRepository.createQueryBuilder = vi.fn().mockReturnValue(builder);
+
+    const result = await service.findAll(
+      { page: 2, limit: 5, offset: 30 },
+      adminActor,
+    );
+
+    expect(builder.skip).toHaveBeenCalledWith(30);
+    expect(builder.take).toHaveBeenCalledWith(5);
+    expect(result).toEqual({ items: [], total: 50, limit: 5, offset: 30 });
   });
 
   it('scopes client listing to owned users only', async () => {
@@ -305,5 +397,26 @@ describe('UserService', () => {
       where: { client: { id: 'some-client' } },
       relations: ['client'],
     });
+  });
+
+  it('soft-deactivates users and returns the raw result without a data envelope', async () => {
+    const target = {
+      id: 'user-9',
+      email: 'gone@example.com',
+      role: ValidRoles.user,
+    };
+    userRepository.findOneBy.mockResolvedValue(target);
+    userRepository.update.mockResolvedValue(undefined);
+
+    const result = await service.remove('user-9');
+
+    expect(userRepository.update).toHaveBeenCalledWith('user-9', {
+      isActive: false,
+    });
+    expect(result).toEqual({
+      message: 'User with id user-9 has been deleted',
+      id: 'user-9',
+    });
+    expect(result).not.toHaveProperty('data');
   });
 });

@@ -130,3 +130,26 @@ export class UserListPaginatedResponseDto {
   @ApiProperty({ type: () => PaginationMetaDto })
   meta: PaginationMetaDto;
 }
+
+/**
+ * Result of DELETE /user/:id. The account is soft-deactivated
+ * (`isActive=false`), so the message plus the id stay useful to the
+ * client — same shape as the questionnaire deactivation results.
+ */
+export class UserDeleteResponseDto {
+  @ApiProperty({
+    example: 'User with id 43566ec8-22af-41d3-933a-918b536fe99f has been deleted',
+  })
+  message: string;
+
+  @ApiProperty({
+    description: 'Deactivated user id.',
+    example: '43566ec8-22af-41d3-933a-918b536fe99f',
+  })
+  id: string;
+}
+
+export class UserDeleteDataResponseDto {
+  @ApiProperty({ type: () => UserDeleteResponseDto })
+  data: UserDeleteResponseDto;
+}

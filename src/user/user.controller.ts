@@ -16,6 +16,7 @@ import {
   ListUsersByClientDto,
   UpdateUserDto,
   UserCollectionDataResponseDto,
+  UserDeleteDataResponseDto,
   UserDetailDataResponseDto,
   UserListPaginatedResponseDto,
 } from './dtos/index.js';
@@ -186,19 +187,16 @@ export class UserController {
   @Delete(':id')
   @ApiOperation({
     summary: 'Delete user',
-    description: 'Deletes a user account. Admin role is required.',
+    description:
+      'Soft-deactivates a user account (isActive=false). Admin role is required.',
   })
   @ApiOkResponse({
-    description: 'User deleted successfully.',
-    schema: {
-      example: {
-        message:
-          'User with id 43566ec8-22af-41d3-933a-918b536fe99f has been deleted',
-      },
-    },
+    description: 'User deactivated successfully.',
+    type: UserDeleteDataResponseDto,
   })
+  @ApiNotFoundResponse({ description: 'User was not found.' })
   @Auth(ValidRoles.admin)
-  remove(@Param('id', ParseUUIDPipe) id: string) {
-    return this.userService.remove(id);
+  async remove(@Param('id', ParseUUIDPipe) id: string) {
+    return toDataResponse(await this.userService.remove(id));
   }
 }

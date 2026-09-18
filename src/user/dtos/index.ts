@@ -8,4 +8,6 @@ export {
   UserDetailDataResponseDto,
   UserCollectionDataResponseDto,
   UserListPaginatedResponseDto,
+  UserDeleteResponseDto,
+  UserDeleteDataResponseDto,
 } from './user-response.dto.js';

@@ -37,6 +37,7 @@ describe('UserController response contracts', () => {
     search: vi.fn(),
     byClient: vi.fn(),
     update: vi.fn(),
+    remove: vi.fn(),
   };
   const controller = new UserController(userService as unknown as UserService);
 
@@ -135,5 +136,23 @@ describe('UserController response contracts', () => {
     expect(Array.isArray(byClient.data)).toBe(true);
     expect(search.data[0]).not.toHaveProperty('quantityUsers');
     expect(byClient.data[0]).not.toHaveProperty('quantityUsers');
+  });
+
+  it('wraps deactivation in a single data envelope with message and id', async () => {
+    const id = buildUser().id;
+    userService.remove.mockResolvedValue({
+      message: `User with id ${id} has been deleted`,
+      id,
+    });
+
+    const response = await controller.remove(id);
+
+    expect(userService.remove).toHaveBeenCalledWith(id);
+    expect(Object.keys(response)).toEqual(['data']);
+    expect(response.data).toEqual({
+      message: `User with id ${id} has been deleted`,
+      id,
+    });
+    expect(response).not.toHaveProperty('data.data');
   });
 });
