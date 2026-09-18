@@ -43,6 +43,6 @@ import { RequestContextMiddleware } from './middleware/request-context.middlewar
 })
 export class CommonModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(RequestContextMiddleware).forRoutes('*');
+    consumer.apply(RequestContextMiddleware).forRoutes('{*path}');
   }
 }

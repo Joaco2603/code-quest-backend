@@ -34,22 +34,35 @@ describe('QuestionnairesController', () => {
     vi.clearAllMocks();
   });
 
-  it('creates a questionnaire', async () => {
+  it('creates a questionnaire wrapped once in data', async () => {
     mockQuestionsService.createQuestionnaire.mockResolvedValue({ id: 1 });
-    await controller.create({ title: 'Skills' });
+    const result = await controller.create({ title: 'Skills' });
     expect(questionsService.createQuestionnaire).toHaveBeenCalledWith({
       title: 'Skills',
     });
+    expect(result).toEqual({ data: { id: 1 } });
   });
 
   it('lists admin questionnaires then active student routes', async () => {
-    mockQuestionsService.listQuestionnaires.mockResolvedValue({ items: [] });
-    mockQuestionsService.listActiveQuestionnaires.mockResolvedValue([]);
+    mockQuestionsService.listQuestionnaires.mockResolvedValue({
+      items: [{ id: 1 }],
+      total: 1,
+      limit: 10,
+      offset: 0,
+    });
+    mockQuestionsService.listActiveQuestionnaires.mockResolvedValue([
+      { id: 1 },
+    ]);
     mockQuestionsService.getActiveQuestionnaire.mockResolvedValue({ id: 1 });
     mockQuestionsService.getQuestionnaireForAdmin.mockResolvedValue({ id: 1 });
 
-    await controller.findAll({ offset: 0, limit: 10 });
-    await controller.findActive();
+    const paginated = await controller.findAll({ offset: 0, limit: 10 });
+    expect(paginated).toEqual({
+      data: [{ id: 1 }],
+      meta: { total: 1, limit: 10, offset: 0 },
+    });
+    const active = await controller.findActive();
+    expect(active).toEqual({ data: [{ id: 1 }] });
     await controller.findActiveById(1);
     await controller.findOne(1);
 
@@ -59,9 +72,9 @@ describe('QuestionnairesController', () => {
     expect(questionsService.getQuestionnaireForAdmin).toHaveBeenCalledWith(1);
   });
 
-  it('adds a question to a questionnaire', async () => {
+  it('adds a question to a questionnaire wrapped once in data', async () => {
     mockQuestionsService.createQuestion.mockResolvedValue({ id: 10 });
-    await controller.addQuestion(1, {
+    const result = await controller.addQuestion(1, {
       question: 'Pick one',
       type: QuestionType.SINGLE_CHOICE,
       sortOrder: 0,
@@ -71,5 +84,6 @@ describe('QuestionnairesController', () => {
       type: QuestionType.SINGLE_CHOICE,
       sortOrder: 0,
     });
+    expect(result).toEqual({ data: { id: 10 } });
   });
 });

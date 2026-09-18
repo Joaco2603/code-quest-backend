@@ -8,7 +8,12 @@ import {
 import { TwoFactorService } from '../services/two-factor.service.js';
 import { JwtAuthGuard } from '../guards/jwt.guard.js';
 import { TwoFactorGuard } from '../guards/two-factor.guard.js';
-import { Verify2FADto } from '../dtos/index.js';
+import {
+  Verify2FADto,
+  TwoFactorSetupDataResponseDto,
+  TwoFactorEnableDataResponseDto,
+  TwoFactorDisableDataResponseDto,
+} from '../dtos/index.js';
 import {
   ApiBearerAuth,
   ApiCreatedResponse,
@@ -16,6 +21,12 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { AuthUser } from '../interfaces/auth-user.type.js';
+import { toDataResponse } from '../../common/dto/api-response.dto.js';
+import {
+  serializeTwoFactorDisable,
+  serializeTwoFactorEnable,
+  serializeTwoFactorSetup,
+} from '../serializers/auth.serializer.js';
 
 @ApiTags('Two-factor authentication')
 @ApiBearerAuth('access-token')
@@ -28,20 +39,18 @@ export class TwoFactorController {
   @ApiOperation({
     summary: 'Generate 2FA secret',
     description:
-      'Creates or returns the authenticator secret for first-time enrollment. Existing 2FA cannot be replaced from this endpoint.',
+      'Creates or returns the authenticator secret for first-time enrollment. Existing 2FA cannot be replaced from this endpoint. This is the only general response that carries provisioning material.',
   })
   @ApiCreatedResponse({
     description: '2FA secret and QR data.',
-    schema: {
-      example: {
-        secret: 'JBSWY3DPEHPK3PXP',
-        otpauthUrl: 'otpauth://totp/CodeQuest:operator@example.com?...',
-        qrCodeDataUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...',
-      },
-    },
+    type: TwoFactorSetupDataResponseDto,
   })
   async generate(@Req() req: { user: AuthUser }) {
-    return this.twoFactorService.generateSecretIfNotExists(req.user.id);
+    const provisioning = await this.twoFactorService.generateSecretIfNotExists(
+      req.user.id,
+    );
+
+    return toDataResponse(serializeTwoFactorSetup(provisioning));
   }
 
   @Post('enable')
@@ -52,18 +61,18 @@ export class TwoFactorController {
   })
   @ApiCreatedResponse({
     description: '2FA enabled.',
-    schema: {
-      example: {
-        enabled: true,
-        message: 'Two-factor authentication enabled',
-      },
-    },
+    type: TwoFactorEnableDataResponseDto,
   })
   async enable(
     @Req() req: { user: AuthUser },
     @Body() dto: Verify2FADto,
   ) {
-    return this.twoFactorService.confirmEnable(req.user.id, dto.code);
+    const result = await this.twoFactorService.confirmEnable(
+      req.user.id,
+      dto.code,
+    );
+
+    return toDataResponse(serializeTwoFactorEnable(result));
   }
 
   @Post('disable')
@@ -75,14 +84,11 @@ export class TwoFactorController {
   })
   @ApiCreatedResponse({
     description: '2FA disabled.',
-    schema: {
-      example: {
-        enabled: false,
-        message: 'Two-factor authentication disabled',
-      },
-    },
+    type: TwoFactorDisableDataResponseDto,
   })
   async disable(@Req() req: { user: AuthUser }) {
-    return this.twoFactorService.disable(req.user.id);
+    const result = await this.twoFactorService.disable(req.user.id);
+
+    return toDataResponse(serializeTwoFactorDisable(result));
   }
 }

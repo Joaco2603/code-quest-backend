@@ -77,17 +77,19 @@ export class AuthService {
       password,
     });
 
-    return {
-      ...user,
-      token: this.getJwtToken({
-        sub: user.id,
-        email: user.email,
-        rol: user.role || ValidRoles.user,
-        purpose: JwtPurpose.access,
-        is_two_factor_enabled: user.is_two_factor_enabled,
-        is_two_factor_validated: false,
-      }),
-    };
+    // Raw result: the entity (already stripped of secrets by UserService)
+    // plus the protocol token. The controller serializes the user and wraps
+    // the payload once with `toDataResponse`.
+    const token = this.getJwtToken({
+      sub: user.id,
+      email: user.email,
+      rol: user.role || ValidRoles.user,
+      purpose: JwtPurpose.access,
+      is_two_factor_enabled: user.is_two_factor_enabled,
+      is_two_factor_validated: false,
+    });
+
+    return { user, token };
   });
 
   createAdmin = asyncHandler(async (createUserDto: CreateUserDto) => {
@@ -99,17 +101,16 @@ export class AuthService {
       password,
     });
 
-    return {
-      ...user,
-      token: this.getJwtToken({
-        sub: user.id,
-        email: user.email,
-        rol: user.role,
-        purpose: JwtPurpose.access,
-        is_two_factor_enabled: user.is_two_factor_enabled,
-        is_two_factor_validated: false,
-      }),
-    };
+    const token = this.getJwtToken({
+      sub: user.id,
+      email: user.email,
+      rol: user.role,
+      purpose: JwtPurpose.access,
+      is_two_factor_enabled: user.is_two_factor_enabled,
+      is_two_factor_validated: false,
+    });
+
+    return { user, token };
   });
 
   loginUser = asyncHandler(async (loginUserDto: LoginUserDto) => {
@@ -220,19 +221,20 @@ export class AuthService {
   );
 
   checkAuthStatus = asyncHandler(async (user: AuthUser) => {
-    return {
-      ...user,
-      token: this.getJwtToken({
-        sub: user.id,
-        email: user.email,
-        rol: user.role,
-        purpose: JwtPurpose.access,
-        is_two_factor_enabled: user.is_two_factor_enabled,
-        is_two_factor_validated: user.is_two_factor_validated,
-        client: user.client_id ?? null,
-        mustChangePassword: user.mustChangePassword,
-      }),
-    };
+    // Raw result: the session projection plus a refreshed protocol token.
+    // The controller maps the projection to camelCase and wraps it once.
+    const token = this.getJwtToken({
+      sub: user.id,
+      email: user.email,
+      rol: user.role,
+      purpose: JwtPurpose.access,
+      is_two_factor_enabled: user.is_two_factor_enabled,
+      is_two_factor_validated: user.is_two_factor_validated,
+      client: user.client_id ?? null,
+      mustChangePassword: user.mustChangePassword,
+    });
+
+    return { user, token };
   });
 
   beginDiscordLogin(link?: { userId: string }) {
@@ -457,10 +459,12 @@ export class AuthService {
       mustChangePassword: user.mustChangePassword,
     };
 
-    const { password: _password, ...userWithoutPassword } = user;
+    // Raw result: the entity plus the protocol token in camelCase. The
+    // controller serializes the user explicitly, so secrets never leak even
+    // though the entity may still hold them in memory.
     return {
-      access_token: this.jwtService.sign(payload),
-      user: userWithoutPassword,
+      accessToken: this.jwtService.sign(payload),
+      user,
     };
   }
 

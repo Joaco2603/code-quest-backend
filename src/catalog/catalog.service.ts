@@ -12,6 +12,18 @@ import type {
   CreateCourseDto,
   UpdateCourseDto,
 } from './dto.js';
+import {
+  serializeCategories,
+  serializeCategory,
+  serializeCourse,
+  serializeTechnologies,
+  serializeTechnology,
+} from './serializers/catalog.serializer.js';
+import type {
+  CategoryResponseDto,
+  CourseResponseDto,
+  TechnologyResponseDto,
+} from './dto/catalog-response.dto.js';
 
 const relations = { categories: true, technologies: true, prerequisites: true };
 
@@ -49,22 +61,34 @@ export class CatalogService {
     }
   }
 
-  listTaxonomy(kind: Taxonomy) {
-    return this.db
+  async listTaxonomy(kind: Taxonomy) {
+    const items = await this.db
       .getRepository(taxonomyEntities[kind])
       .find({ order: { name: 'ASC', id: 'ASC' } });
+    return kind === 'categories'
+      ? serializeCategories(items as Category[])
+      : serializeTechnologies(items as Technology[]);
   }
 
-  async getTaxonomy(kind: Taxonomy, id: number) {
+  async getTaxonomy(
+    kind: Taxonomy,
+    id: number,
+  ): Promise<CategoryResponseDto | TechnologyResponseDto> {
     const item = await this.db
       .getRepository(taxonomyEntities[kind])
       .findOneBy({ id });
     if (!item) throw new NotFoundException('Catalog entry not found');
-    return item;
+    return kind === 'categories'
+      ? serializeCategory(item as Category)
+      : serializeTechnology(item as Technology);
   }
 
-  saveTaxonomy(kind: Taxonomy, name: string, id?: number) {
-    return this.write(async (manager) => {
+  async saveTaxonomy(
+    kind: Taxonomy,
+    name: string,
+    id?: number,
+  ): Promise<CategoryResponseDto | TechnologyResponseDto> {
+    const saved = await this.write(async (manager) => {
       const repository = manager.getRepository(taxonomyEntities[kind]);
       if (id !== undefined && !(await repository.existsBy({ id })))
         throw new NotFoundException('Catalog entry not found');
@@ -75,6 +99,9 @@ export class CatalogService {
         }),
       );
     });
+    return kind === 'categories'
+      ? serializeCategory(saved as Category)
+      : serializeTechnology(saved as Technology);
   }
 
   deleteTaxonomy(kind: Taxonomy, id: number) {
@@ -124,11 +151,14 @@ export class CatalogService {
       .skip((page - 1) * limit)
       .take(limit)
       .getManyAndCount();
+    // Unified pagination: inputs keep page/limit, output exposes
+    // { items, total, limit, offset } with offset=(page-1)*limit.
+    // Controllers wrap this once into { data, meta }.
     return {
-      items: courses.map((course) => this.present(course)),
+      items: courses.map((course) => serializeCourse(course)),
       total,
-      page,
       limit,
+      offset: (page - 1) * limit,
     };
   }
 
@@ -138,21 +168,11 @@ export class CatalogService {
     return course;
   }
 
-  private present(course: Course) {
-    const { prerequisites, ...data } = course;
-    return {
-      ...data,
-      prerequisiteIds: (prerequisites ?? [])
-        .map((item) => item.id)
-        .sort((a, b) => a - b),
-    };
-  }
-
-  async getCourse(id: number, admin = false) {
+  async getCourse(id: number, admin = false): Promise<CourseResponseDto> {
     const course = await this.load(this.db.manager, id);
     if (!admin && course.status !== CourseStatus.Published)
       throw new NotFoundException('Course not found');
-    return this.present(course);
+    return serializeCourse(course);
   }
 
   private async assign(
@@ -224,7 +244,7 @@ export class CatalogService {
       throw new ConflictException('Publish all prerequisites first');
   }
 
-  createCourse(dto: CreateCourseDto) {
+  createCourse(dto: CreateCourseDto): Promise<CourseResponseDto> {
     return this.write(async (manager) => {
       const course = manager.create(Course, {
         status: CourseStatus.Draft,
@@ -234,11 +254,11 @@ export class CatalogService {
       });
       await this.assign(manager, course, dto);
       await manager.save(course);
-      return this.present(await this.load(manager, course.id));
+      return serializeCourse(await this.load(manager, course.id));
     });
   }
 
-  updateCourse(id: number, dto: UpdateCourseDto) {
+  updateCourse(id: number, dto: UpdateCourseDto): Promise<CourseResponseDto> {
     return this.write(async (manager) => {
       const course = await this.load(manager, id);
       if (course.status === CourseStatus.Archived)
@@ -249,11 +269,11 @@ export class CatalogService {
       if (course.status === CourseStatus.Published)
         this.validatePublication(course);
       await manager.save(course);
-      return this.present(await this.load(manager, id));
+      return serializeCourse(await this.load(manager, id));
     });
   }
 
-  changeStatus(id: number, status: CourseStatus) {
+  changeStatus(id: number, status: CourseStatus): Promise<CourseResponseDto> {
     return this.write(async (manager) => {
       const course = await this.load(manager, id);
       if (status === CourseStatus.Published) this.validatePublication(course);
@@ -271,13 +291,16 @@ export class CatalogService {
       }
       course.status = status;
       await manager.save(course);
-      return this.present(course);
+      return serializeCourse(course);
     });
   }
 
   // Internal contract for the roadmap module. Archived courses remain resolvable
   // for existing roadmaps; drafts must never be exposed to students.
-  async getCoursesForExistingRoadmap(ids: number[]) {
+  // Returns unwrapped course DTOs for internal consumption; HTTP routes wrap.
+  async getCoursesForExistingRoadmap(
+    ids: number[],
+  ): Promise<CourseResponseDto[]> {
     if (!ids.length) return [];
     const courses = await this.db.manager.find(Course, {
       where: {
@@ -287,24 +310,27 @@ export class CatalogService {
       relations,
     });
     const byId = new Map(
-      courses.map((course) => [course.id, this.present(course)]),
+      courses.map((course) => [course.id, serializeCourse(course)]),
     );
     if (ids.some((id) => !byId.has(id)))
       throw new NotFoundException('A roadmap course is unavailable');
     return ids.map((id) => byId.get(id)!);
   }
 
-  async getPublishedCatalog() {
+  async getPublishedCatalog(): Promise<CourseResponseDto[]> {
     const courses = await this.db.manager.find(Course, {
       where: { status: CourseStatus.Published },
       relations,
       order: { id: 'ASC' },
     });
-    return courses.map((course) => this.present(course));
+    return courses.map((course) => serializeCourse(course));
   }
 
   // completedIds must come from trusted persisted progress, never LLM output.
-  async validateRoadmapSelection(ids: number[], completedIds: number[] = []) {
+  async validateRoadmapSelection(
+    ids: number[],
+    completedIds: number[] = [],
+  ): Promise<CourseResponseDto[]> {
     if (
       !ids.length ||
       ids.some((id) => !Number.isInteger(id) || id < 1) ||
