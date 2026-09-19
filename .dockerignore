@@ -9,3 +9,11 @@ coverage
 test
 docs
 COURSES.json
+.npmrc
+**/.env
+**/.env.*
+**/*.pem
+**/*.key
+**/*.dump
+**/*.sql
+**/*.tar.gz

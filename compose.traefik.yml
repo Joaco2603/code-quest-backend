@@ -29,6 +29,11 @@ services:
     build: .
     restart: unless-stopped
     init: true
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs:
+      - /tmp:size=32m,mode=1777,noexec,nosuid
     env_file: ${CODEQUEST_ENV_FILE:-.env}
     environment:
       NODE_ENV: production

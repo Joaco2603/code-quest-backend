@@ -26,6 +26,21 @@ Desde la carpeta de la nueva versión:
 ```bash
 docker compose --env-file /srv/apps/codequest/.env -f compose.traefik.yml build api
 docker compose --env-file /srv/apps/codequest/.env -f compose.traefik.yml up -d --wait postgres
+```
+
+Antes de ejecutar migraciones sobre una base con datos, guardar un backup nuevo
+y comprobar que `pg_dump` terminó correctamente. Si falla, detener el despliegue:
+
+```bash
+umask 077
+backup="/srv/apps/codequest/backup-$(date +%Y%m%d-%H%M%S).dump"
+docker compose --env-file /srv/apps/codequest/.env -f compose.traefik.yml exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc' > "$backup" || exit 1
+test -s "$backup" || exit 1
+```
+
+Después del backup:
+
+```bash
 docker compose --env-file /srv/apps/codequest/.env -f compose.traefik.yml run --rm --no-deps api node node_modules/typeorm/cli.js migration:run -d dist/config/typeorm.js
 docker compose --env-file /srv/apps/codequest/.env -f compose.traefik.yml up -d --wait api
 curl --fail https://api.nicorodriguez.com.ar/api/health
@@ -33,13 +48,6 @@ curl --fail https://api.nicorodriguez.com.ar/api/health
 
 Las migraciones se ejecutan antes de iniciar la API, con `synchronize=false`.
 Actualizar `current` hacia la nueva carpeta únicamente después de verificar el servicio.
-
-Antes de una actualización con datos, guardar un backup:
-
-```bash
-umask 077
-docker compose --env-file /srv/apps/codequest/.env -f compose.traefik.yml exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc' > /srv/apps/codequest/backup.dump
-```
 
 Para recuperar una versión anterior, entrar en su carpeta, seleccionar su
 `RELEASE_TAG` y ejecutar `up -d --no-build api`. Confirmar antes que sus entidades
@@ -62,3 +70,28 @@ Compilar, ejecutar `pnpm typecheck` y `pnpm exec vitest run`. En el servidor,
 verificar migraciones, salud de ambos contenedores y respuestas HTTPS de
 `/api/health`, `/api/courses`, `/api/reference` y `/api/docs-json`.
 El rollback de los archivos de despliegue y del flag Discord no requiere borrar datos.
+
+## Alcance de la revisión de seguridad del despliegue
+
+Se revisaron el diff de despliegue, exclusión de secretos, redes de Compose,
+permisos de la imagen, configuración de producción y desactivación de Discord.
+La API corre sin root, con filesystem de solo lectura, sin capabilities y sin
+escalamiento de privilegios; únicamente `/tmp` permite escrituras efímeras.
+La imagen copia explícitamente los archivos necesarios para compilar.
+
+Compilación, tipos, controles focalizados y configuración de Compose se
+verificaron en un sandbox sin red externa ni credenciales. La consulta
+`pnpm audit --prod --json` no reportó avisos para las 274 dependencias contabilizadas.
+Esto no garantiza ausencia de vulnerabilidades nuevas o no publicadas.
+
+La suite completa de Vitest no pudo repetirse dentro del límite de memoria
+virtual del sandbox. El nuevo contenedor endurecido requiere un smoke test en
+un entorno de despliegue antes de promoverlo. No se hicieron pruebas de ataque
+ni se modificó producción durante esta revisión.
+
+No se auditaron Cloudflare, el Traefik compartido, el host ni toda la autenticación.
+En particular, verificar en un entorno controlado la identificación de clientes
+y los límites de peticiones detrás de ambos proxies: no habilitar `trust proxy`
+globalmente sin definir qué proxies son confiables. La cuenta inicial PostgreSQL
+tiene privilegios de administración; separar el rol de migraciones del rol de la
+API es una mejora pendiente. No reutilizar esa cuenta en otras bases o servicios.
