@@ -122,6 +122,25 @@ describe('AuthService', () => {
     expect(service).toBeDefined();
   });
 
+  it('registers only standard active accounts with a full session', async () => {
+    mockUserService.create.mockResolvedValue({ ...mockUser, mustChangePassword: false });
+    mockJwtService.sign.mockReturnValue('access-token');
+    const result = await service.register({ email: ' NEW@example.com ', password: 'Password123!', first_name: 'New', last_name: 'User', role: 'admin', client_id: 'injected' } as any);
+    expect(mockUserService.create).toHaveBeenCalledWith({ email: 'new@example.com', password: 'Password123!', first_name: 'New', last_name: 'User', address: '', role: ValidRoles.user, isActive: true }, { selfRegistered: true });
+    expect(result.accessToken).toBe('access-token');
+    expect(mockJwtService.sign).toHaveBeenCalledWith(expect.objectContaining({ purpose: 'access', is_two_factor_validated: true }));
+  });
+
+  it('logs in a standard password account without enrolling 2FA', async () => {
+    const password = 'Password123!';
+    mockUserService.findOneByEmailOptional.mockResolvedValue({ ...mockUser, password: await new BcryptAdapter().hashing(password, 4), mustChangePassword: false });
+    mockJwtService.sign.mockReturnValue('access-token');
+    const result = await service.loginUser({ email: ' TEST@example.com ', password });
+    expect(result.accessToken).toBe('access-token');
+    expect(mockTwoFactorService.generateSecretIfNotExists).not.toHaveBeenCalled();
+    expect(mockUserService.findOneByEmailOptional).toHaveBeenCalledWith('test@example.com', { withPassword: true });
+  });
+
   describe('create', () => {
     const createUserDto = {
       email: 'test@example.com',
@@ -272,13 +291,14 @@ describe('AuthService', () => {
       );
     });
 
-    it('should return requiresSetup if 2FA is not enabled', async () => {
+    it('should require setup for privileged accounts without 2FA', async () => {
       // Create a proper bcrypt hash for the test password
       const bcrypt = new BcryptAdapter();
       const hashedPassword = await bcrypt.hashing('Password123!', 15);
 
       const userWithout2FA = {
         ...mockUser,
+        role: ValidRoles.admin,
         password: hashedPassword,
         is_two_factor_enabled: false,
       };

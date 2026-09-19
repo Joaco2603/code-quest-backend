@@ -1,3 +1,4 @@
+import { RegisterUserDto } from '../dtos/register-user.dto.js';
 import {
   ConflictException,
   ForbiddenException,
@@ -63,6 +64,30 @@ export class AuthService {
     private readonly discordAdapter: DiscordAdapter,
   ) {}
 
+  async register(dto: RegisterUserDto) {
+    const user = await this.userService.create(
+      {
+        email: dto.email.trim().toLowerCase(),
+        password: dto.password,
+        first_name: dto.first_name,
+        last_name: dto.last_name,
+        address: '',
+        role: ValidRoles.user,
+        isActive: true,
+      },
+      { selfRegistered: true },
+    );
+    return this.generateToken(user);
+  }
+
+  private requiresTwoFactor(user: User): boolean {
+    return (
+      user.role === ValidRoles.admin ||
+      user.role === ValidRoles.client ||
+      user.is_two_factor_enabled
+    );
+  }
+
   create = asyncHandler(async (createUserDto: CreateUserDto) => {
     const { password, role, ...userData } = createUserDto;
     const assignedRole = (role as ValidRoles) || ValidRoles.user;
@@ -117,7 +142,7 @@ export class AuthService {
     const { email, password } = loginUserDto;
 
     const user: User | null = await this.userService.findOneByEmailOptional(
-      email,
+      email.trim().toLowerCase(),
       { withPassword: true },
     );
 
@@ -158,6 +183,18 @@ export class AuthService {
         userId: user.id,
         tempToken,
       };
+    }
+
+    if (!this.requiresTwoFactor(user)) {
+      await this.auditLogService.recordDomainEvent({
+        statusCode: 200,
+        outcome: 'success',
+        eventType: 'auth.login.password.success',
+        userId: user.id,
+        userRole: user.role,
+        message: 'Password login completed',
+      });
+      return this.generateToken(user);
     }
 
     if (!user.is_two_factor_enabled) {
@@ -371,11 +408,15 @@ export class AuthService {
     try {
       payload = this.jwtService.verify<DiscordLoginTicketPayload>(ticket);
     } catch {
-      throw new UnauthorizedException('Invalid or expired Discord login ticket');
+      throw new UnauthorizedException(
+        'Invalid or expired Discord login ticket',
+      );
     }
 
     if (payload.purpose !== 'discord_login' || !payload.sub) {
-      throw new UnauthorizedException('Invalid or expired Discord login ticket');
+      throw new UnauthorizedException(
+        'Invalid or expired Discord login ticket',
+      );
     }
 
     const ticketId = payload.jti ?? ticket;
@@ -555,10 +596,7 @@ export class AuthService {
       };
     }
 
-    const privileged =
-      user.role === ValidRoles.admin || user.role === ValidRoles.client;
-    const mustCompleteTwoFactor =
-      privileged || Boolean(user.password) || user.is_two_factor_enabled;
+    const mustCompleteTwoFactor = this.requiresTwoFactor(user);
 
     if (mustCompleteTwoFactor && !user.is_two_factor_enabled) {
       const data = await this.twoFA.generateSecretIfNotExists(user.id);
@@ -618,7 +656,9 @@ export class AuthService {
   private consumeDiscordTicket(ticketId: string) {
     this.purgeConsumedDiscordTickets();
     if (this.consumedDiscordTickets.has(ticketId)) {
-      throw new UnauthorizedException('Invalid or expired Discord login ticket');
+      throw new UnauthorizedException(
+        'Invalid or expired Discord login ticket',
+      );
     }
     this.consumedDiscordTickets.set(ticketId, Date.now() + 60_000);
   }

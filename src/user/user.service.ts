@@ -34,47 +34,53 @@ export class UserService {
     private readonly bcryptAdapter: BcryptAdapter,
   ) {}
 
-  create = asyncHandler(async (createUserDto: CreateUserDto) => {
-    const { client_id, password, ...userData } = createUserDto;
+  create = asyncHandler(
+    async (
+      createUserDto: CreateUserDto,
+      options?: { selfRegistered: boolean },
+    ) => {
+      const { client_id, password, ...userData } = createUserDto;
 
-    const existingUser = await this.userRepository.findOne({
-      where: { email: userData.email },
-    });
+      const existingUser = await this.userRepository.findOne({
+        where: { email: userData.email },
+      });
 
-    if (existingUser) {
-      throw new BadRequestException(
-        `User with email ${userData.email} already exists`,
-      );
-    }
+      if (existingUser) {
+        throw new BadRequestException(
+          `User with email ${userData.email} already exists`,
+        );
+      }
 
-    const user = this.userRepository.create({
-      ...userData,
-      password: await this.hashPassword(password),
-      role: (userData.role as ValidRoles) || ValidRoles.user,
-      client: client_id ? ({ id: client_id } as User) : null,
-    });
+      const user = this.userRepository.create({
+        ...userData,
+        mustChangePassword: options?.selfRegistered ? false : true,
+        password: await this.hashPassword(password),
+        role: (userData.role as ValidRoles) || ValidRoles.user,
+        client: client_id ? ({ id: client_id } as User) : null,
+      });
 
-    await this.userRepository.save(user);
-    await this.auditLogService.recordDomainEvent({
-      statusCode: 201,
-      outcome: 'success',
-      eventType: 'user.created',
-      userId: user.id,
-      userRole: user.role,
-      message: 'User created successfully',
-      metadata: {
-        email: user.email,
-        clientId: client_id ?? null,
-      },
-    });
+      await this.userRepository.save(user);
+      await this.auditLogService.recordDomainEvent({
+        statusCode: 201,
+        outcome: 'success',
+        eventType: 'user.created',
+        userId: user.id,
+        userRole: user.role,
+        message: 'User created successfully',
+        metadata: {
+          email: user.email,
+          clientId: client_id ?? null,
+        },
+      });
 
-    // Return the entity without secrets. Auth callers spread this result,
-    // so it must never carry password or two_factor_secret. The HTTP
-    // controller serializes it explicitly with serializeUserDetail.
-    this.stripSensitive(user);
-    await this.attachFullClient(user, client_id ?? null);
-    return user;
-  });
+      // Return the entity without secrets. Auth callers spread this result,
+      // so it must never carry password or two_factor_secret. The HTTP
+      // controller serializes it explicitly with serializeUserDetail.
+      this.stripSensitive(user);
+      await this.attachFullClient(user, client_id ?? null);
+      return user;
+    },
+  );
 
   findAll = asyncHandler(
     async (paginationDto: PaginationDto, actor: AuthUser) => {
@@ -84,8 +90,7 @@ export class UserService {
 
       const query = this.userRepository
         .createQueryBuilder('user')
-        .leftJoinAndSelect('user.client', 'client')
-        .loadRelationCountAndMap('user.quantity_users', 'user.users');
+        .leftJoinAndSelect('user.client', 'client');
 
       if (!all) {
         query.where('user.isActive = :isActive', { isActive });
@@ -99,6 +104,26 @@ export class UserService {
         .skip(offset)
         .take(limit)
         .getManyAndCount();
+
+      if (items.length > 0) {
+        const counts = await this.userRepository
+          .createQueryBuilder('child')
+          .select('child.client_id', 'clientId')
+          .addSelect('COUNT(*)', 'count')
+          .where('child.client_id IN (:...ids)', {
+            ids: items.map((user) => user.id),
+          })
+          .groupBy('child.client_id')
+          .getRawMany<{ clientId: string; count: string }>();
+        const countsByClient = new Map(
+          counts.map((row) => [row.clientId, Number(row.count)]),
+        );
+        for (const user of items) {
+          Object.assign(user, {
+            quantity_users: countsByClient.get(user.id) ?? 0,
+          });
+        }
+      }
 
       return { items, total, limit, offset };
     },
@@ -136,7 +161,7 @@ export class UserService {
         where: {
           client: { id: clientId },
         },
-        relations: ['client'],
+        relations: { client: true },
       });
     },
   );
@@ -353,39 +378,37 @@ export class UserService {
     await this.userRepository.update(id, state);
   }
 
-  remove = asyncHandler(
-    async (id: string): Promise<UserDeleteResponseDto> => {
-      const user = await this.userRepository.findOneBy({ id });
-      if (!user) {
-        throw new BadRequestException(`User with id ${id} not found`);
-      }
-      await this.userRepository.update(user.id, { isActive: false });
-      await this.auditLogService.recordDomainEvent({
-        statusCode: 200,
-        outcome: 'warning',
-        eventType: 'user.deactivated',
-        userId: user.id,
-        userRole: user.role,
-        message: 'User deactivated successfully',
-        metadata: {
-          email: user.email,
-        },
-      });
-      return { message: `User with id ${id} has been deleted`, id };
-    },
-  );
+  remove = asyncHandler(async (id: string): Promise<UserDeleteResponseDto> => {
+    const user = await this.userRepository.findOneBy({ id });
+    if (!user) {
+      throw new BadRequestException(`User with id ${id} not found`);
+    }
+    await this.userRepository.update(user.id, { isActive: false });
+    await this.auditLogService.recordDomainEvent({
+      statusCode: 200,
+      outcome: 'warning',
+      eventType: 'user.deactivated',
+      userId: user.id,
+      userRole: user.role,
+      message: 'User deactivated successfully',
+      metadata: {
+        email: user.email,
+      },
+    });
+    return { message: `User with id ${id} has been deleted`, id };
+  });
 
   findOneWithSecret = asyncHandler(async (id: string) => {
     return this.userRepository.findOne({
       where: { id },
-      select: [
-        'id',
-        'email',
-        'role',
-        'two_factor_secret',
-        'is_two_factor_enabled',
-        'is_two_factor_pending',
-      ],
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        two_factor_secret: true,
+        is_two_factor_enabled: true,
+        is_two_factor_pending: true,
+      },
     });
   });
 
