@@ -440,7 +440,7 @@ export function setupSwagger(
       },
       'access-token',
     )
-    .addServer(localServer, 'Local API')
+    .addServer(hostApi ?? localServer, hostApi ? 'Public API' : 'Local API')
     .addTag('Courses', 'Published learning resources.')
     .addTag('Catalog', 'Categories, technologies and fixed levels.')
     .addTag(
@@ -461,9 +461,6 @@ export function setupSwagger(
     .addTag('Health', 'API and database health checks.')
     .addTag('System', 'Seed, version, and operational utility endpoints.');
 
-  if (hostApi) {
-    config.addServer(hostApi, 'Configured API host');
-  }
 
   const document = SwaggerModule.createDocument(app, config.build(), {
     operationIdFactory: (controllerKey: string, methodKey: string) =>

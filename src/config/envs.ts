@@ -96,18 +96,23 @@ const readAuthEnvironment = () => {
   );
   const mfaBypassForTests =
     nodeEnv === 'test' && getEnv('MFA_BYPASS_FOR_TESTS', 'false') === 'true';
+  const discordEnabledRaw = getEnv('DISCORD_ENABLED', 'true');
+  if (!['true', 'false'].includes(discordEnabledRaw!)) {
+    throw new Error('DISCORD_ENABLED must be true or false');
+  }
+  const discordEnabled = discordEnabledRaw === 'true';
   const discordClientId = getEnv('DISCORD_CLIENT_ID', undefined, {
-    requiredInProd: true,
+    requiredInProd: discordEnabled,
   });
   const discordClientSecret = getEnv('DISCORD_CLIENT_SECRET', undefined, {
-    requiredInProd: true,
+    requiredInProd: discordEnabled,
   });
   const discordCallbackUrl = getEnv(
     'DISCORD_CALLBACK_URL',
     nodeEnv === 'production'
       ? undefined
       : `http://localhost:${portRaw}/api/auth/discord/callback`,
-    { requiredInProd: true },
+    { requiredInProd: discordEnabled },
   );
   const frontendUrl = getEnv(
     'FRONTEND_URL',
@@ -182,6 +187,7 @@ const readAuthEnvironment = () => {
         mfaBypassForTests,
         jwtSecret,
         discord: {
+          enabled: discordEnabled,
           clientId: discordClientId,
           clientSecret: discordClientSecret,
           callbackUrl: discordCallbackUrl,

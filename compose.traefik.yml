@@ -1,0 +1,82 @@
+name: codequest
+
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: '10m'
+    max-file: '3'
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:?Define DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME:?Define DB_NAME}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks: [database]
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    logging: *logging
+
+  api:
+    image: codequest-api:${RELEASE_TAG:-local}
+    build: .
+    restart: unless-stopped
+    init: true
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    tmpfs:
+      - /tmp:size=32m,mode=1777,noexec,nosuid
+    env_file: ${CODEQUEST_ENV_FILE:-.env}
+    environment:
+      NODE_ENV: production
+      PORT: '3000'
+      DB_HOST: postgres
+      DB_PORT: '5432'
+      DB_SSL: 'false'
+      DB_SYNCHRONIZE: 'false'
+      DB_MIGRATIONS_RUN: 'false'
+    networks: [database, web]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    labels:
+      traefik.enable: 'true'
+      traefik.docker.network: web
+      traefik.http.routers.codequest-http.rule: Host(`${API_DOMAIN:?Define API_DOMAIN}`)
+      traefik.http.routers.codequest-http.entrypoints: web
+      traefik.http.routers.codequest-http.middlewares: codequest-https
+      traefik.http.middlewares.codequest-https.redirectscheme.scheme: https
+      traefik.http.routers.codequest.rule: Host(`${API_DOMAIN:?Define API_DOMAIN}`)
+      traefik.http.routers.codequest.entrypoints: websecure
+      traefik.http.routers.codequest.tls.certresolver: le
+      traefik.http.services.codequest.loadbalancer.server.port: '3000'
+    logging: *logging
+
+networks:
+  database:
+    internal: true
+  web:
+    external: true
+
+volumes:
+  postgres-data:
