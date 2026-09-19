@@ -101,8 +101,7 @@ export class UserDetailResponseDto {
 /**
  * List item for GET /user.
  * Same fields as the detail plus `quantityUsers`, which is only promised
- * by the paginated list where the real count comes from
- * `loadRelationCountAndMap('user.quantity_users', 'user.users')`.
+ * by the paginated list using a grouped count of child users.
  * Detail, search and byClient responses omit `quantityUsers` entirely.
  */
 export class UserListItemResponseDto extends UserDetailResponseDto {
@@ -138,7 +137,8 @@ export class UserListPaginatedResponseDto {
  */
 export class UserDeleteResponseDto {
   @ApiProperty({
-    example: 'User with id 43566ec8-22af-41d3-933a-918b536fe99f has been deleted',
+    example:
+      'User with id 43566ec8-22af-41d3-933a-918b536fe99f has been deleted',
   })
   message: string;
 

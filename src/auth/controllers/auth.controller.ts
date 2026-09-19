@@ -1,3 +1,4 @@
+import { RegisterUserDto } from '../dtos/register-user.dto.js';
 import {
   Body,
   Controller,
@@ -64,14 +65,12 @@ import {
   serializeDiscordExchangeResult,
   serializeDiscordLink,
   serializeDiscordTicket,
-  serializeLoginChallenge,
   serializePasswordChangeResult,
   serializeRecoveryVerifiedResult,
   serializeRegisteredSession,
   serializeSessionStatus,
   serializeVerifiedSession,
   type DiscordExchangeResult,
-  type LoginChallenge,
   type VerifiedSessionResult,
 } from '../serializers/auth.serializer.js';
 
@@ -81,6 +80,19 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
+  @ApiOperation({
+    summary: 'Create a public account',
+    description:
+      'Creates an active standard user and returns a full session. Privileged fields are rejected.',
+  })
+  @ApiCreatedResponse({ type: VerifiedSessionDataResponseDto })
+  @RateLimit(5, 60_000)
+  async register(@Body() dto: RegisterUserDto) {
+    const { user, accessToken } = await this.authService.register(dto);
+    return toDataResponse(serializeVerifiedSession(user, accessToken));
+  }
+
+  @Post('register/managed')
   @ApiBearerAuth('access-token')
   @ApiOperation({
     summary: 'Register a user',
@@ -145,9 +157,10 @@ export class AuthController {
   @ApiOperation({
     summary: 'Authenticate user',
     description:
-      'Validates email and password. The response is always wrapped in `data` and is one of three variants: mandatory password change, 2FA enrollment with provisioning material, or pending 2FA verification.',
+      'Validates email and password. Returns a full session for standard users without 2FA, or a password-change / 2FA challenge when required.',
   })
   @ApiExtraModels(
+    VerifiedSessionDataResponseDto,
     LoginPasswordChangeDataResponseDto,
     LoginSetupDataResponseDto,
     LoginTwoFactorDataResponseDto,
@@ -157,6 +170,7 @@ export class AuthController {
       'Login accepted. Inspect the `data` variant to continue the flow.',
     schema: {
       oneOf: [
+        { $ref: getSchemaPath(VerifiedSessionDataResponseDto) },
         { $ref: getSchemaPath(LoginPasswordChangeDataResponseDto) },
         { $ref: getSchemaPath(LoginSetupDataResponseDto) },
         { $ref: getSchemaPath(LoginTwoFactorDataResponseDto) },
@@ -171,9 +185,9 @@ export class AuthController {
   async loginUser(@Body() loginUserDto: LoginUserDto) {
     const result = (await this.authService.loginUser(
       loginUserDto,
-    )) as LoginChallenge;
+    )) as DiscordExchangeResult;
 
-    return toDataResponse(serializeLoginChallenge(result));
+    return toDataResponse(serializeDiscordExchangeResult(result));
   }
 
   @Get('discord')
@@ -320,7 +334,8 @@ export class AuthController {
   @ApiBearerAuth('access-token')
   @ApiOperation({
     summary: 'Refresh authenticated session',
-    description: 'Returns the current authenticated user and refreshed auth data.',
+    description:
+      'Returns the current authenticated user and refreshed auth data.',
   })
   @ApiOkResponse({
     description: 'Authenticated session data.',
@@ -328,9 +343,11 @@ export class AuthController {
   })
   @UseGuards(AuthGuard(), TwoFactorGuard)
   async checkAuthStatus(@GetUser() user: AuthUser) {
-    const { user: sessionUser, token } = (await this.authService.checkAuthStatus(
-      user,
-    )) as { user: AuthUser; token: string };
+    const { user: sessionUser, token } =
+      (await this.authService.checkAuthStatus(user)) as {
+        user: AuthUser;
+        token: string;
+      };
 
     return toDataResponse(serializeSessionStatus(sessionUser, token));
   }
@@ -351,10 +368,7 @@ export class AuthController {
     description: 'Invalid or expired temporary token/code.',
   })
   @RateLimit(5, 60_000)
-  async verify(
-    @Req() req: { user: AuthUser },
-    @Body() dto: Verify2FADto,
-  ) {
+  async verify(@Req() req: { user: AuthUser }, @Body() dto: Verify2FADto) {
     const { accessToken, user } = (await this.authService.verify2FA(
       req.user.id,
       dto.code,
