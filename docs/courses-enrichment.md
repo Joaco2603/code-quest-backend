@@ -61,8 +61,8 @@ Repo `/home/nr/proyectos/code-quest-backend`, rama `feat/evaluacion-y-catalogo`.
 - `durationMinutes` e `imageUrl` scrapeados: verificar una muestra antes de confiar ciegamente (lecciones ya ancladas al bloque Acerca).
 
 ## Next step
-- Commit work-unit de `COURSES.enriched.json` + doc; entregar handoff al usuario.
+- Curaduría manual de niveles (42 unknown) y tecnologías (31 sin vocabulario); luego completar metadatos y publicar vía API admin. Commits solo con aprobación previa del usuario.
 
 ## Locator
-- File: `odd/tasks/courses-enrichment.md`
+- File: `docs/courses-enrichment.md`
 - Mirror: Engram topic `odd/courses-enrichment/tasks` (pending — último `mem_save` falló por sesiones múltiples; reintentar cuando runtime lo permita)
