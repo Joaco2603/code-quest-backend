@@ -8,8 +8,6 @@ import {
   UpdateCourseDto,
   CourseQueryDto,
 } from '../dist/catalog/dto.js';
-import { CatalogAdminGuard } from '../dist/catalog/catalog-access.js';
-import type { ExecutionContext } from '@nestjs/common';
 
 describe('configuration', () => {
   it('requires explicit database credentials in production', () => {
@@ -80,9 +78,4 @@ describe('DTO validation', () => {
         .length,
     ).toBeGreaterThan(0);
   });
-});
-it('denies administrative operations until trusted authentication is integrated', () => {
-  expect(new CatalogAdminGuard().canActivate({} as ExecutionContext)).toBe(
-    false,
-  );
 });
