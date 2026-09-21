@@ -23,10 +23,10 @@ Fuente revisada el 21 de septiembre de 2026: **82 registros, 74 con enlace de De
 
 | Contenido | Comportamiento |
 | --- | --- |
-| Cursos | Título, descripción, instructor, enlace y categoría suministrados; estado `draft` |
+| Cursos | Título, descripción, instructor, enlace y categoría suministrados; estado `draft`. Si el registro trae el bloque `enrichment` curado (verificado en `COURSES.enriched.json`), también se aplican `imageUrl`, `durationMinutes`, `level` y tecnologías |
 | Categorías | Se reutilizan nombres existentes sin distinguir mayúsculas ni espacios exteriores |
-| Tecnologías | Vocabulario inicial para el cuestionario: JavaScript, TypeScript, React, Angular, Vue, NestJS, Node.js, Flutter, Docker, SQL y Python |
-| Cuestionario | Áreas de interés y objetivo obligatorios; tecnologías de interés y nivel declarado opcionales |
+| Tecnologías | Vocabulario inicial para el cuestionario: JavaScript, TypeScript, React, Angular, Vue, NestJS, Node.js, Flutter, Docker, SQL, Python, más las curadas Java, IA, CSS, Astro, React Native, .NET, Herramientas, PHP y Go. Los nombres no listados se crean al importar |
+| Cuestionario | Áreas de interés y objetivo obligatorios; tecnologías de interés y nivel declarado opcionales (una pregunta de nivel por cada tecnología del vocabulario) |
 | Reglas | Mapeos a IDs reales de la instalación y opciones de nivel desconocido |
 
 Las tecnologías iniciales son una selección editorial para la autoevaluación; no se asignan automáticamente a cursos ni se infieren sus niveles. Las preguntas requieren intereses y objetivo; las once preguntas de nivel permiten responder `No sé / prefiero no responder`.
@@ -36,6 +36,7 @@ Las tecnologías iniciales son una selección editorial para la autoevaluación;
 La URL normalizada de DevTalles identifica cada curso en `content_imports`. El cuestionario utiliza la clave estable `codequest:self-assessment:v1`. La operación completa utiliza una transacción y el lock de escritura del catálogo.
 
 - Volver a ejecutar omite cursos ya importados y conserva el cuestionario existente.
+- Los cursos ya importados conservan su estado administrativo: el enriquecido solo se aplica al crearlos, nunca sobrescribe ediciones posteriores.
 - Los cambios administrativos posteriores no se sobrescriben, incluso si se modificó la URL de un curso importado.
 - Si un curso ya existía con esa URL antes de la primera importación, se vincula su procedencia sin modificarlo. Varias coincidencias abortan la importación para que el administrador resuelva la ambigüedad.
 - Nuevas categorías en el archivo se crean, pero no se agregan silenciosamente al cuestionario ya editado. Actualizar sus opciones y reglas mediante los endpoints administrativos.

@@ -31,6 +31,17 @@ const initialTechnologies = [
   'Docker',
   'SQL',
   'Python',
+  // Added with the curated COURSES.enriched.json so published courses and
+  // the self-assessment share one vocabulary.
+  'Java',
+  'IA',
+  'CSS',
+  'Astro',
+  'React Native',
+  '.NET',
+  'Herramientas',
+  'PHP',
+  'Go',
 ];
 const questionnaireKey = 'codequest:self-assessment:v1';
 
@@ -76,6 +87,11 @@ export async function importInitialContent(
         throw new ConflictException(
           `Multiple existing courses for ${source.url}`,
         );
+      // Curated enrichment applies only to newly created courses. Already
+      // imported courses keep their administrative state untouched.
+      const courseTechnologies: Technology[] = [];
+      for (const name of source.enrichment?.technologyNames ?? [])
+        courseTechnologies.push(await taxonomy(manager, Technology, name));
       const course =
         existing[0] ??
         (await manager.save(
@@ -86,11 +102,11 @@ export async function importInitialContent(
             instructor: source.instructor,
             url: source.url,
             status: CourseStatus.Draft,
-            imageUrl: null,
-            durationMinutes: null,
-            level: null,
+            imageUrl: source.enrichment?.imageUrl ?? null,
+            durationMinutes: source.enrichment?.durationMinutes ?? null,
+            level: source.enrichment?.level ?? null,
             categories: [categories.get(source.category)!],
-            technologies: [],
+            technologies: courseTechnologies,
             prerequisites: [],
           }),
         ));
