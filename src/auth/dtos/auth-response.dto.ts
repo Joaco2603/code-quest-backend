@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { ValidRoles } from '../interfaces/valid-roles.type.js';
 import { UserDetailResponseDto } from '../../user/dtos/user-response.dto.js';
 
@@ -65,7 +65,8 @@ export class TwoFactorProvisioningDto {
 
   @ApiProperty({
     description: 'Authenticator enrollment URL for the pending secret.',
-    example: 'otpauth://totp/CodeQuest:operator@example.com?secret=JBSWY3DPEHPK3PXP',
+    example:
+      'otpauth://totp/CodeQuest:operator@example.com?secret=JBSWY3DPEHPK3PXP',
   })
   otpauthUrl: string;
 
@@ -253,6 +254,12 @@ export class TwoFactorEnableResponseDto {
     example: '2FA enabled',
   })
   message: string;
+
+  @ApiProperty({
+    description:
+      'Replacement access token. The previous token no longer matches the account.',
+  })
+  accessToken: string;
 }
 
 export class TwoFactorEnableDataResponseDto {
@@ -266,6 +273,12 @@ export class TwoFactorDisableResponseDto {
     example: '2FA disabled',
   })
   message: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Replacement access token for accounts that no longer require 2FA. Privileged accounts sign in again.',
+  })
+  accessToken?: string;
 }
 
 export class TwoFactorDisableDataResponseDto {

@@ -164,6 +164,35 @@ Documentación disponible al iniciar:
 - Documentación: `http://localhost:3000/api/docs`
 - Referencia Scalar: `http://localhost:3000/api/reference`
 
+### Registro público y login
+
+`POST /api/auth/register` no requiere sesión. Crea una cuenta activa con rol
+`user`, sin cambio obligatorio de contraseña ni inscripción obligatoria en 2FA.
+
+```bash
+curl -X POST http://localhost:3000/api/auth/register \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"estudiante@example.com","password":"Password123!","first_name":"Ana","last_name":"Perez"}'
+
+curl -X POST http://localhost:3000/api/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"email":"estudiante@example.com","password":"Password123!"}'
+```
+
+Ambos devuelven `{ "data": { "accessToken": "...", "user": { ... } } }`.
+Usa el token como `Authorization: Bearer <accessToken>`; puedes comprobar la
+sesión con `GET /api/auth/renovated`. El registro rechaza campos administrativos
+como `role`, `client_id` e `isActive`. La contraseña requiere 8–20 caracteres,
+mayúscula, minúscula y un número o carácter especial.
+
+Usuarios con 2FA activado y cuentas `admin`/`client` conservan los desafíos de
+2FA. Las cuentas con cambio de contraseña pendiente deben completarlo. Esta
+política también se aplica al login con Discord.
+
+La creación administrativa que antes usaba `POST /api/auth/register` pasa a
+`POST /api/auth/register/managed`, con los mismos permisos. Actualiza sus clientes.
+`POST /api/auth/register/user` sigue siendo exclusivo de administradores.
+
 ### Scripts
 
 | Script | Descripción |

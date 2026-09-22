@@ -1,4 +1,9 @@
-import { ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
+import { QueryFailedError } from 'typeorm';
 import { UserService } from '../user.service.js';
 import { User } from '../entities/user.entity.js';
 import { AuditLogService } from '../../common/services/audit-log.service.js';
@@ -48,31 +53,75 @@ describe('UserService', () => {
     auditLogService.recordDomainEvent.mockResolvedValue(undefined);
   });
 
-  it('hashes passwords on create', async () => {
+  it.each([false, true])(
+    'hashes passwords and sets password-change policy (selfRegistered=%s)',
+    async (selfRegistered) => {
+      userRepository.findOne.mockResolvedValue(null);
+      userRepository.create.mockImplementation((data: Partial<User>) => ({
+        id: 'user-1',
+        role: ValidRoles.user,
+        ...data,
+      }));
+      userRepository.save.mockImplementation(async (user: User) => user);
+
+      const created = await service.create(
+        {
+          email: 'new@example.com',
+          password: 'Password1!',
+          first_name: 'New',
+          last_name: 'User',
+          address: 'Street 123',
+        },
+        { selfRegistered },
+      );
+
+      expect(created).not.toHaveProperty('password', 'Password1!');
+      expect(userRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          password: expect.not.stringContaining('Password1!'),
+          mustChangePassword: !selfRegistered,
+        }),
+      );
+      const hashed = userRepository.create.mock.calls[0][0].password as string;
+      expect(await bcryptAdapter.compareHash('Password1!', hashed)).toBe(true);
+    },
+  );
+
+  it('rejects a duplicate email without revealing the address', async () => {
+    userRepository.findOne.mockResolvedValue({ id: 'existing' });
+
+    await expect(
+      service.create({
+        email: 'taken@example.com',
+        password: 'Password1!',
+        first_name: 'New',
+        last_name: 'User',
+        address: 'Street 123',
+      }),
+    ).rejects.toThrow(new BadRequestException('Unable to create the account'));
+    expect(userRepository.save).not.toHaveBeenCalled();
+  });
+
+  it('maps a unique email violation to the same conflict', async () => {
     userRepository.findOne.mockResolvedValue(null);
     userRepository.create.mockImplementation((data: Partial<User>) => ({
       id: 'user-1',
       role: ValidRoles.user,
       ...data,
     }));
-    userRepository.save.mockImplementation(async (user: User) => user);
-
-    const created = await service.create({
-      email: 'new@example.com',
-      password: 'Password1!',
-      first_name: 'New',
-      last_name: 'User',
-      address: 'Street 123',
-    });
-
-    expect(created).not.toHaveProperty('password', 'Password1!');
-    expect(userRepository.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        password: expect.not.stringContaining('Password1!'),
-      }),
+    userRepository.save.mockRejectedValue(
+      new QueryFailedError('INSERT', [], { code: '23505' } as never),
     );
-    const hashed = userRepository.create.mock.calls[0][0].password as string;
-    expect(await bcryptAdapter.compareHash('Password1!', hashed)).toBe(true);
+
+    await expect(
+      service.create({
+        email: 'taken@example.com',
+        password: 'Password1!',
+        first_name: 'New',
+        last_name: 'User',
+        address: 'Street 123',
+      }),
+    ).rejects.toThrow(new BadRequestException('Unable to create the account'));
   });
 
   it('rejects role changes from client users', async () => {
@@ -84,11 +133,7 @@ describe('UserService', () => {
     });
 
     await expect(
-      service.update(
-        'client-1',
-        { role: ValidRoles.admin },
-        clientActor,
-      ),
+      service.update('client-1', { role: ValidRoles.admin }, clientActor),
     ).rejects.toThrow(ForbiddenException);
     expect(userRepository.save).not.toHaveBeenCalled();
   });
@@ -146,9 +191,9 @@ describe('UserService', () => {
       adminActor,
     );
 
-    expect(await bcryptAdapter.compareHash('NewPassword1!', savedHash as string)).toBe(
-      true,
-    );
+    expect(
+      await bcryptAdapter.compareHash('NewPassword1!', savedHash as string),
+    ).toBe(true);
     expect(updated).not.toHaveProperty('password');
     expect(updated).not.toHaveProperty('two_factor_secret');
   });
@@ -193,35 +238,59 @@ describe('UserService', () => {
     expect(userRepository.update).not.toHaveBeenCalled();
   });
 
-  it('returns paginated items with the real total, not the page size', async () => {
-    const row = {
-      id: 'user-1',
-      email: 'user@example.com',
-      role: ValidRoles.user,
-    };
-    const builder = {
-      leftJoinAndSelect: vi.fn().mockReturnThis(),
-      loadRelationCountAndMap: vi.fn().mockReturnThis(),
-      where: vi.fn().mockReturnThis(),
-      andWhere: vi.fn().mockReturnThis(),
-      skip: vi.fn().mockReturnThis(),
-      take: vi.fn().mockReturnThis(),
-      getManyAndCount: vi.fn().mockResolvedValue([[row], 42]),
-    };
-    userRepository.createQueryBuilder = vi.fn().mockReturnValue(builder);
+  it.each([3, 0])(
+    'preserves pagination and maps child count %i',
+    async (childCount) => {
+      const row = {
+        id: 'user-1',
+        email: 'user@example.com',
+        role: ValidRoles.user,
+      };
+      const builder = {
+        leftJoinAndSelect: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        andWhere: vi.fn().mockReturnThis(),
+        skip: vi.fn().mockReturnThis(),
+        take: vi.fn().mockReturnThis(),
+        getManyAndCount: vi.fn().mockResolvedValue([[row], 42]),
+      };
+      const counts = {
+        select: vi.fn().mockReturnThis(),
+        addSelect: vi.fn().mockReturnThis(),
+        where: vi.fn().mockReturnThis(),
+        groupBy: vi.fn().mockReturnThis(),
+        getRawMany: vi
+          .fn()
+          .mockResolvedValue(
+            childCount
+              ? [{ clientId: 'user-1', count: String(childCount) }]
+              : [],
+          ),
+      };
+      userRepository.createQueryBuilder = vi
+        .fn()
+        .mockReturnValueOnce(builder)
+        .mockReturnValueOnce(counts);
 
-    const result = await service.findAll({ limit: 1, offset: 0 }, adminActor);
+      const result = await service.findAll({ limit: 1, offset: 0 }, adminActor);
+      expect(result.items[0].quantity_users).toBe(childCount);
+      expect(counts.where).toHaveBeenCalledWith(
+        'child.client_id IN (:...ids)',
+        {
+          ids: ['user-1'],
+        },
+      );
 
-    expect(userRepository.createQueryBuilder).toHaveBeenCalledWith('user');
-    expect(builder.skip).toHaveBeenCalledWith(0);
-    expect(builder.take).toHaveBeenCalledWith(1);
-    expect(result).toEqual({ items: [row], total: 42, limit: 1, offset: 0 });
-  });
+      expect(userRepository.createQueryBuilder).toHaveBeenCalledWith('user');
+      expect(builder.skip).toHaveBeenCalledWith(0);
+      expect(builder.take).toHaveBeenCalledWith(1);
+      expect(result).toEqual({ items: [row], total: 42, limit: 1, offset: 0 });
+    },
+  );
 
   it('derives offset from page and pageSize when paginating by page', async () => {
     const builder = {
       leftJoinAndSelect: vi.fn().mockReturnThis(),
-      loadRelationCountAndMap: vi.fn().mockReturnThis(),
       where: vi.fn().mockReturnThis(),
       andWhere: vi.fn().mockReturnThis(),
       skip: vi.fn().mockReturnThis(),
@@ -244,7 +313,6 @@ describe('UserService', () => {
   it('keeps one limit precedence on page 1 and page 2 when both params are present', async () => {
     const buildBuilder = () => ({
       leftJoinAndSelect: vi.fn().mockReturnThis(),
-      loadRelationCountAndMap: vi.fn().mockReturnThis(),
       where: vi.fn().mockReturnThis(),
       andWhere: vi.fn().mockReturnThis(),
       skip: vi.fn().mockReturnThis(),
@@ -278,7 +346,6 @@ describe('UserService', () => {
   it('uses pageSize as the limit when no explicit limit is given', async () => {
     const buildBuilder = () => ({
       leftJoinAndSelect: vi.fn().mockReturnThis(),
-      loadRelationCountAndMap: vi.fn().mockReturnThis(),
       where: vi.fn().mockReturnThis(),
       andWhere: vi.fn().mockReturnThis(),
       skip: vi.fn().mockReturnThis(),
@@ -292,14 +359,8 @@ describe('UserService', () => {
       .mockReturnValueOnce(first)
       .mockReturnValueOnce(second);
 
-    const page1 = await service.findAll(
-      { page: 1, pageSize: 10 },
-      adminActor,
-    );
-    const page2 = await service.findAll(
-      { page: 2, pageSize: 10 },
-      adminActor,
-    );
+    const page1 = await service.findAll({ page: 1, pageSize: 10 }, adminActor);
+    const page2 = await service.findAll({ page: 2, pageSize: 10 }, adminActor);
 
     expect(first.take).toHaveBeenCalledWith(10);
     expect(first.skip).toHaveBeenCalledWith(0);
@@ -312,7 +373,6 @@ describe('UserService', () => {
   it('prefers an explicit offset over a page-derived one', async () => {
     const builder = {
       leftJoinAndSelect: vi.fn().mockReturnThis(),
-      loadRelationCountAndMap: vi.fn().mockReturnThis(),
       where: vi.fn().mockReturnThis(),
       andWhere: vi.fn().mockReturnThis(),
       skip: vi.fn().mockReturnThis(),
@@ -349,7 +409,6 @@ describe('UserService', () => {
   it('scopes client listing to owned users only', async () => {
     const builder = {
       leftJoinAndSelect: vi.fn().mockReturnThis(),
-      loadRelationCountAndMap: vi.fn().mockReturnThis(),
       where: vi.fn().mockReturnThis(),
       andWhere: vi.fn().mockReturnThis(),
       skip: vi.fn().mockReturnThis(),
@@ -392,7 +451,7 @@ describe('UserService', () => {
 
     expect(userRepository.find).toHaveBeenCalledWith({
       where: { client: { id: 'client-1' } },
-      relations: ['client'],
+      relations: { client: true },
     });
   });
 
@@ -410,7 +469,7 @@ describe('UserService', () => {
 
     expect(userRepository.find).toHaveBeenCalledWith({
       where: { client: { id: 'some-client' } },
-      relations: ['client'],
+      relations: { client: true },
     });
   });
 

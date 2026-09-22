@@ -122,6 +122,110 @@ describe('AuthService', () => {
     expect(service).toBeDefined();
   });
 
+  it('registers only standard active accounts with a full session', async () => {
+    mockUserService.create.mockResolvedValue({
+      ...mockUser,
+      mustChangePassword: false,
+    });
+    mockJwtService.sign.mockReturnValue('access-token');
+    const result = await service.register({
+      email: ' NEW@example.com ',
+      password: 'Password123!',
+      first_name: 'New',
+      last_name: 'User',
+      role: 'admin',
+      client_id: 'injected',
+    } as any);
+    expect(mockUserService.create).toHaveBeenCalledWith(
+      {
+        email: 'new@example.com',
+        password: 'Password123!',
+        first_name: 'New',
+        last_name: 'User',
+        address: null,
+        role: ValidRoles.user,
+        isActive: true,
+      },
+      { selfRegistered: true },
+    );
+    expect(result.accessToken).toBe('access-token');
+    expect(mockJwtService.sign).toHaveBeenCalledWith(
+      expect.objectContaining({
+        purpose: 'access',
+        is_two_factor_validated: true,
+      }),
+    );
+  });
+
+  it('logs in a standard password account without enrolling 2FA', async () => {
+    const password = 'Password123!';
+    const fullUser = {
+      ...mockUser,
+      address: '123 Test Street',
+      mustChangePassword: false,
+      client: {
+        id: 'client-1',
+        email: 'client@example.com',
+        first_name: 'Client',
+        last_name: 'Owner',
+        role: ValidRoles.client,
+        isActive: true,
+      },
+    };
+    mockUserService.findOneByEmailOptional.mockResolvedValue({
+      id: mockUser.id,
+      email: mockUser.email,
+      password: await new BcryptAdapter().hashing(password, 4),
+      role: ValidRoles.user,
+      isActive: true,
+      is_two_factor_enabled: false,
+      mustChangePassword: false,
+    });
+    mockUserService.findOneById.mockResolvedValue(fullUser);
+    mockJwtService.sign.mockReturnValue('access-token');
+    const result = await service.loginUser({
+      email: ' TEST@example.com ',
+      password,
+    });
+    expect(result.accessToken).toBe('access-token');
+    expect(result.user).toBe(fullUser);
+    expect(mockUserService.findOneById).toHaveBeenCalledWith(mockUser.id);
+    expect(
+      mockTwoFactorService.generateSecretIfNotExists,
+    ).not.toHaveBeenCalled();
+    expect(mockUserService.findOneByEmailOptional).toHaveBeenCalledWith(
+      'test@example.com',
+      { withPassword: true },
+    );
+  });
+
+  it('does not mint a verified session if 2FA is enabled before the session is built', async () => {
+    const password = 'Password123!';
+    mockUserService.findOneByEmailOptional.mockResolvedValue({
+      id: mockUser.id,
+      email: mockUser.email,
+      password: await new BcryptAdapter().hashing(password, 4),
+      role: ValidRoles.user,
+      isActive: true,
+      is_two_factor_enabled: false,
+      mustChangePassword: false,
+    });
+    mockUserService.findOneById.mockResolvedValue({
+      ...mockUser,
+      is_two_factor_enabled: true,
+      mustChangePassword: false,
+    });
+    mockJwtService.sign.mockReturnValue('temp-token');
+
+    const result = await service.loginUser({
+      email: 'test@example.com',
+      password,
+    });
+
+    expect(result.requires2FA).toBe(true);
+    expect(result).not.toHaveProperty('accessToken');
+  });
+
   describe('create', () => {
     const createUserDto = {
       email: 'test@example.com',
@@ -272,13 +376,14 @@ describe('AuthService', () => {
       );
     });
 
-    it('should return requiresSetup if 2FA is not enabled', async () => {
+    it('should require setup for privileged accounts without 2FA', async () => {
       // Create a proper bcrypt hash for the test password
       const bcrypt = new BcryptAdapter();
       const hashedPassword = await bcrypt.hashing('Password123!', 15);
 
       const userWithout2FA = {
         ...mockUser,
+        role: ValidRoles.admin,
         password: hashedPassword,
         is_two_factor_enabled: false,
       };
@@ -325,6 +430,7 @@ describe('AuthService', () => {
   describe('checkAuthStatus', () => {
     it('should return user with new token', async () => {
       const token = 'new-jwt-token';
+      mockUserService.findOneById.mockResolvedValue(mockUser);
       mockJwtService.sign.mockReturnValue(token);
 
       const result = await service.checkAuthStatus(mockUser as AuthUser);
@@ -336,6 +442,7 @@ describe('AuthService', () => {
     });
 
     it('should generate token with user uuid', async () => {
+      mockUserService.findOneById.mockResolvedValue(mockUser);
       mockJwtService.sign.mockReturnValue('token');
 
       await service.checkAuthStatus(mockUser as AuthUser);
@@ -343,6 +450,42 @@ describe('AuthService', () => {
       expect(mockJwtService.sign).toHaveBeenCalledWith(
         expect.objectContaining({ sub: 'user-uuid-123' }),
       );
+    });
+
+    it('returns the account password-change flag with the refreshed token', async () => {
+      mockUserService.findOneById.mockResolvedValue({
+        ...mockUser,
+        mustChangePassword: true,
+      });
+      mockJwtService.sign.mockReturnValue('token');
+
+      const result = await service.checkAuthStatus({
+        ...(mockUser as AuthUser),
+        mustChangePassword: false,
+        is_two_factor_enabled: false,
+        is_two_factor_validated: true,
+      });
+
+      expect(result.user.mustChangePassword).toBe(true);
+      expect(mockJwtService.sign).toHaveBeenCalledWith(
+        expect.objectContaining({ mustChangePassword: true }),
+      );
+    });
+
+    it('refuses to refresh a token after the account becomes privileged', async () => {
+      mockUserService.findOneById.mockResolvedValue({
+        ...mockUser,
+        role: ValidRoles.admin,
+        is_two_factor_enabled: false,
+      });
+
+      await expect(
+        service.checkAuthStatus({
+          ...(mockUser as AuthUser),
+          is_two_factor_enabled: false,
+          is_two_factor_validated: true,
+        }),
+      ).rejects.toThrow('Session is no longer valid');
     });
   });
 
