@@ -3,6 +3,7 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import {
   CreateUserDto,
@@ -112,7 +113,7 @@ export class UserService {
     });
 
     if (!user) {
-      throw new BadRequestException(`User with id ${id} not found`);
+      throw new NotFoundException(`User with id ${id} not found`);
     }
 
     if (actor) {
@@ -303,7 +304,7 @@ export class UserService {
       });
 
       if (!user) {
-        throw new BadRequestException(`User with id ${id} not found`);
+        throw new NotFoundException(`User with id ${id} not found`);
       }
 
       this.assertCanAccessUser(actor, user);
@@ -358,7 +359,7 @@ export class UserService {
     async (id: string): Promise<UserDeleteResponseDto> => {
       const user = await this.userRepository.findOneBy({ id });
       if (!user) {
-        throw new BadRequestException(`User with id ${id} not found`);
+        throw new NotFoundException(`User with id ${id} not found`);
       }
       await this.userRepository.update(user.id, { isActive: false });
       await this.auditLogService.recordDomainEvent({
