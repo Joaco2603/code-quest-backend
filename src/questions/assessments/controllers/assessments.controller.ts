@@ -17,13 +17,13 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import { Auth, GetUser } from '../../auth/decorators/index.js';
-import { JwtAuthGuard } from '../../auth/guards/jwt.guard.js';
-import { TwoFactorGuard } from '../../auth/guards/two-factor.guard.js';
-import { ValidRoles } from '../../auth/interfaces/index.js';
-import type { AuthUser } from '../../auth/interfaces/auth-user.type.js';
+import { Auth, GetUser } from '../../../auth/decorators/index.js';
+import { JwtAuthGuard } from '../../../auth/guards/jwt.guard.js';
+import { TwoFactorGuard } from '../../../auth/guards/two-factor.guard.js';
+import { ValidRoles } from '../../../auth/interfaces/index.js';
+import type { AuthUser } from '../../../auth/interfaces/auth-user.type.js';
 import { AssessmentsService } from '../assessments.service.js';
-import { CreateAssessmentDto, UpsertResponseDto } from '../dtos/index.js';
+import { CreateAssessmentDto, UpsertAnswerDto } from '../dtos/index.js';
 
 @Auth()
 @UseGuards(JwtAuthGuard, TwoFactorGuard)
@@ -91,10 +91,10 @@ export class AssessmentsController {
   @Auth(ValidRoles.user)
   @ApiOperation({
     summary: 'Get my assessment',
-    description: 'Returns one owned assessment including stored responses.',
+    description: 'Returns one owned assessment including stored answers.',
   })
   @ApiOkResponse({
-    description: 'Assessment with responses.',
+    description: 'Assessment with answers.',
     schema: {
       example: {
         id: 1,
@@ -102,7 +102,7 @@ export class AssessmentsController {
         questionnaireId: 4,
         createdAt: '2026-09-17T08:00:00.000Z',
         completedAt: null,
-        responses: [
+        answers: [
           {
             id: 10,
             questionId: 3,
@@ -118,22 +118,22 @@ export class AssessmentsController {
     return this.assessmentsService.findMine(user, id);
   }
 
-  @Put(':id/responses')
+  @Put(':id/answers')
   @Auth(ValidRoles.user)
   @ApiOperation({
-    summary: 'Upsert question response',
+    summary: 'Upsert question answer',
     description:
       'Upsert (update + insert): creates the answer for a question, or replaces it if one already exists. Multiple-choice stores one row per selected option.',
   })
-  @ApiOkResponse({ description: 'Assessment with updated responses.' })
+  @ApiOkResponse({ description: 'Assessment with updated answers.' })
   @ApiNotFoundResponse({ description: 'Assessment was not found.' })
   @ApiConflictResponse({ description: 'Assessment is already completed.' })
-  upsertResponse(
+  upsertAnswer(
     @GetUser() user: AuthUser,
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpsertResponseDto,
+    @Body() dto: UpsertAnswerDto,
   ) {
-    return this.assessmentsService.upsertResponse(user, id, dto);
+    return this.assessmentsService.upsertAnswer(user, id, dto);
   }
 
   @Post(':id/complete')
@@ -141,7 +141,7 @@ export class AssessmentsController {
   @ApiOperation({
     summary: 'Complete assessment',
     description:
-      'Marks the attempt complete when every active question has a valid response.',
+      'Marks the attempt complete when every active question has a valid answer.',
   })
   @ApiOkResponse({ description: 'Assessment completed.' })
   @ApiNotFoundResponse({ description: 'Assessment was not found.' })

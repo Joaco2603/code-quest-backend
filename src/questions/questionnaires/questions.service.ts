@@ -6,8 +6,8 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { PaginationDto } from '../common/dto/pagination.dto.js';
-import { asyncHandler } from '../common/helpers/async-handler.js';
+import { PaginationDto } from '../../common/dto/pagination.dto.js';
+import { asyncHandler } from '../../common/helpers/async-handler.js';
 import {
   CreateAnswerOptionDto,
   CreateQuestionDto,

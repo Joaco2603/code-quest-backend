@@ -4,5 +4,3 @@ export { CreateQuestionDto } from './create-question.dto.js';
 export { UpdateQuestionDto } from './update-question.dto.js';
 export { CreateAnswerOptionDto } from './create-answer-option.dto.js';
 export { UpdateAnswerOptionDto } from './update-answer-option.dto.js';
-export { CreateAssessmentDto } from './create-assessment.dto.js';
-export { UpsertResponseDto } from './upsert-response.dto.js';

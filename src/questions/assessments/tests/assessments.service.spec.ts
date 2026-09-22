@@ -6,12 +6,12 @@ import {
 import { IsNull } from 'typeorm';
 import { vi } from 'vitest';
 import { AssessmentsService } from '../assessments.service.js';
-import { ValidRoles } from '../../auth/interfaces/index.js';
-import type { AuthUser } from '../../auth/interfaces/auth-user.type.js';
-import { QuestionType } from '../enums/question-type.enum.js';
-import type { QuestionnaireDetail } from '../interfaces/index.js';
+import { ValidRoles } from '../../../auth/interfaces/index.js';
+import type { AuthUser } from '../../../auth/interfaces/auth-user.type.js';
+import { QuestionType } from '../../questionnaires/enums/question-type.enum.js';
+import type { QuestionnaireDetail } from '../../questionnaires/interfaces/index.js';
 import type { Assessment } from '../entities/assessment.entity.js';
-import type { UserResponse } from '../entities/user-response.entity.js';
+import type { UserAnswer } from '../entities/user-answer.entity.js';
 
 const student: AuthUser = {
   id: 'user-uuid-1',
@@ -105,7 +105,7 @@ function openAssessment(overrides?: Partial<Assessment>): Assessment {
     createdAt: new Date('2026-09-17T08:00:00.000Z'),
     completedAt: null,
     user: undefined as never,
-    responses: undefined as never,
+    answers: undefined as never,
     ...overrides,
   };
 }
@@ -122,7 +122,7 @@ describe('AssessmentsService', () => {
     save: vi.fn(),
   };
 
-  const responses = {
+  const answers = {
     find: vi.fn(),
     delete: vi.fn(),
     create: vi.fn(),
@@ -131,7 +131,7 @@ describe('AssessmentsService', () => {
 
   const service = new AssessmentsService(
     assessments as never,
-    responses as never,
+    answers as never,
     questionsService as never,
   );
 
@@ -141,9 +141,9 @@ describe('AssessmentsService', () => {
       buildQuestionnaire(),
     );
     assessments.create.mockImplementation((data: Partial<Assessment>) => data);
-    responses.create.mockImplementation((data: unknown) => data);
-    responses.delete.mockResolvedValue({ affected: 1 });
-    responses.save.mockImplementation(async (rows: UserResponse[]) =>
+    answers.create.mockImplementation((data: unknown) => data);
+    answers.delete.mockResolvedValue({ affected: 1 });
+    answers.save.mockImplementation(async (rows: UserAnswer[]) =>
       (Array.isArray(rows) ? rows : [rows]).map((row, index) => ({
         id: index + 1,
         assessmentId: row.assessmentId,
@@ -152,7 +152,7 @@ describe('AssessmentsService', () => {
         value: row.value,
       })),
     );
-    responses.find.mockResolvedValue([]);
+    answers.find.mockResolvedValue([]);
   });
 
   describe('start', () => {
@@ -209,24 +209,24 @@ describe('AssessmentsService', () => {
     });
   });
 
-  describe('upsertResponse', () => {
+  describe('upsertAnswer', () => {
     beforeEach(() => {
       assessments.findOne.mockResolvedValue(openAssessment());
       assessments.find.mockResolvedValue([openAssessment()]);
-      responses.find.mockResolvedValue([]);
+      answers.find.mockResolvedValue([]);
     });
 
     it('stores a single_choice row from answerOptionId', async () => {
-      await service.upsertResponse(student, 1, {
+      await service.upsertAnswer(student, 1, {
         questionId: 10,
         answerOptionId: 101,
       });
 
-      expect(responses.delete).toHaveBeenCalledWith({
+      expect(answers.delete).toHaveBeenCalledWith({
         assessmentId: 1,
         questionId: 10,
       });
-      expect(responses.save).toHaveBeenCalledWith([
+      expect(answers.save).toHaveBeenCalledWith([
         {
           assessmentId: 1,
           questionId: 10,
@@ -237,19 +237,19 @@ describe('AssessmentsService', () => {
     });
 
     it('stores a single_choice row from a one-element answerOptionIds', async () => {
-      await service.upsertResponse(student, 1, {
+      await service.upsertAnswer(student, 1, {
         questionId: 10,
         answerOptionIds: [102],
       });
 
-      expect(responses.save).toHaveBeenCalledWith([
+      expect(answers.save).toHaveBeenCalledWith([
         expect.objectContaining({ answerOptionId: 102, value: null }),
       ]);
     });
 
     it('rejects single_choice with the wrong shape', async () => {
       await expect(
-        service.upsertResponse(student, 1, {
+        service.upsertAnswer(student, 1, {
           questionId: 10,
           answerOptionIds: [101, 102],
         }),
@@ -258,7 +258,7 @@ describe('AssessmentsService', () => {
 
     it('rejects a single_choice option that does not belong to the question', async () => {
       await expect(
-        service.upsertResponse(student, 1, {
+        service.upsertAnswer(student, 1, {
           questionId: 10,
           answerOptionId: 201,
         }),
@@ -266,46 +266,46 @@ describe('AssessmentsService', () => {
     });
 
     it('stores one multiple_choice row per selected option', async () => {
-      await service.upsertResponse(student, 1, {
+      await service.upsertAnswer(student, 1, {
         questionId: 11,
         answerOptionIds: [201, 203],
       });
 
-      expect(responses.save).toHaveBeenCalledWith([
+      expect(answers.save).toHaveBeenCalledWith([
         expect.objectContaining({ answerOptionId: 201, value: null }),
         expect.objectContaining({ answerOptionId: 203, value: null }),
       ]);
     });
 
     it('replaces previous multiple_choice rows on upsert', async () => {
-      await service.upsertResponse(student, 1, {
+      await service.upsertAnswer(student, 1, {
         questionId: 11,
         answerOptionIds: [201, 202],
       });
-      await service.upsertResponse(student, 1, {
+      await service.upsertAnswer(student, 1, {
         questionId: 11,
         answerOptionIds: [203],
       });
 
-      expect(responses.delete).toHaveBeenCalledTimes(2);
-      expect(responses.save).toHaveBeenLastCalledWith([
+      expect(answers.delete).toHaveBeenCalledTimes(2);
+      expect(answers.save).toHaveBeenLastCalledWith([
         expect.objectContaining({ answerOptionId: 203 }),
       ]);
     });
 
     it('rejects empty multiple_choice selections', async () => {
       await expect(
-        service.upsertResponse(student, 1, { questionId: 11 }),
+        service.upsertAnswer(student, 1, { questionId: 11 }),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('stores trimmed text', async () => {
-      await service.upsertResponse(student, 1, {
+      await service.upsertAnswer(student, 1, {
         questionId: 12,
         value: '  hello  ',
       });
 
-      expect(responses.save).toHaveBeenCalledWith([
+      expect(answers.save).toHaveBeenCalledWith([
         expect.objectContaining({
           answerOptionId: null,
           value: 'hello',
@@ -315,54 +315,54 @@ describe('AssessmentsService', () => {
 
     it('rejects blank text', async () => {
       await expect(
-        service.upsertResponse(student, 1, { questionId: 12, value: '   ' }),
+        service.upsertAnswer(student, 1, { questionId: 12, value: '   ' }),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('stores a canonical number string', async () => {
-      await service.upsertResponse(student, 1, {
+      await service.upsertAnswer(student, 1, {
         questionId: 13,
         value: '12.50',
       });
 
-      expect(responses.save).toHaveBeenCalledWith([
+      expect(answers.save).toHaveBeenCalledWith([
         expect.objectContaining({ value: '12.5' }),
       ]);
     });
 
     it('rejects a non-numeric value', async () => {
       await expect(
-        service.upsertResponse(student, 1, { questionId: 13, value: 'nope' }),
+        service.upsertAnswer(student, 1, { questionId: 13, value: 'nope' }),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('stores boolean true/false as canonical strings', async () => {
-      await service.upsertResponse(student, 1, {
+      await service.upsertAnswer(student, 1, {
         questionId: 14,
         value: true,
       });
-      await service.upsertResponse(student, 1, {
+      await service.upsertAnswer(student, 1, {
         questionId: 14,
         value: 'false',
       });
 
-      expect(responses.save).toHaveBeenNthCalledWith(1, [
+      expect(answers.save).toHaveBeenNthCalledWith(1, [
         expect.objectContaining({ value: 'true' }),
       ]);
-      expect(responses.save).toHaveBeenNthCalledWith(2, [
+      expect(answers.save).toHaveBeenNthCalledWith(2, [
         expect.objectContaining({ value: 'false' }),
       ]);
     });
 
     it('rejects an invalid boolean value', async () => {
       await expect(
-        service.upsertResponse(student, 1, { questionId: 14, value: 'yes' }),
+        service.upsertAnswer(student, 1, { questionId: 14, value: 'yes' }),
       ).rejects.toThrow(BadRequestException);
     });
 
     it('rejects answering an inactive question', async () => {
       await expect(
-        service.upsertResponse(student, 1, {
+        service.upsertAnswer(student, 1, {
           questionId: 15,
           value: 'should fail',
         }),
@@ -371,7 +371,7 @@ describe('AssessmentsService', () => {
 
     it('rejects a question from another questionnaire', async () => {
       await expect(
-        service.upsertResponse(student, 1, {
+        service.upsertAnswer(student, 1, {
           questionId: 999,
           value: 'nope',
         }),
@@ -382,7 +382,7 @@ describe('AssessmentsService', () => {
       assessments.findOne.mockResolvedValue(null);
 
       await expect(
-        service.upsertResponse(otherStudent, 1, {
+        service.upsertAnswer(otherStudent, 1, {
           questionId: 10,
           answerOptionId: 101,
         }),
@@ -395,7 +395,7 @@ describe('AssessmentsService', () => {
       );
 
       await expect(
-        service.upsertResponse(student, 1, {
+        service.upsertAnswer(student, 1, {
           questionId: 10,
           answerOptionId: 101,
         }),
@@ -404,47 +404,47 @@ describe('AssessmentsService', () => {
   });
 
   describe('complete', () => {
-    const answered: UserResponse[] = [
+    const answered: UserAnswer[] = [
       {
         id: 1,
         assessmentId: 1,
         questionId: 10,
         answerOptionId: 101,
         value: null,
-      } as UserResponse,
+      } as UserAnswer,
       {
         id: 2,
         assessmentId: 1,
         questionId: 11,
         answerOptionId: 201,
         value: null,
-      } as UserResponse,
+      } as UserAnswer,
       {
         id: 3,
         assessmentId: 1,
         questionId: 12,
         answerOptionId: null,
         value: 'enough',
-      } as UserResponse,
+      } as UserAnswer,
       {
         id: 4,
         assessmentId: 1,
         questionId: 13,
         answerOptionId: null,
         value: '3',
-      } as UserResponse,
+      } as UserAnswer,
       {
         id: 5,
         assessmentId: 1,
         questionId: 14,
         answerOptionId: null,
         value: 'true',
-      } as UserResponse,
+      } as UserAnswer,
     ];
 
     it('blocks completion until all active questions are answered', async () => {
       assessments.findOne.mockResolvedValue(openAssessment());
-      responses.find.mockResolvedValue(answered.slice(0, 2));
+      answers.find.mockResolvedValue(answered.slice(0, 2));
 
       await expect(service.complete(student, 1)).rejects.toThrow(
         BadRequestException,
@@ -455,7 +455,7 @@ describe('AssessmentsService', () => {
     it('sets completedAt when every active question is answered', async () => {
       const assessment = openAssessment();
       assessments.findOne.mockResolvedValue(assessment);
-      responses.find.mockResolvedValue(answered);
+      answers.find.mockResolvedValue(answered);
       assessments.save.mockImplementation(async (row: Assessment) => row);
 
       const result = await service.complete(student, 1);
@@ -469,7 +469,7 @@ describe('AssessmentsService', () => {
     it('ignores inactive questions when completing', async () => {
       const assessment = openAssessment();
       assessments.findOne.mockResolvedValue(assessment);
-      responses.find.mockResolvedValue(answered);
+      answers.find.mockResolvedValue(answered);
       assessments.save.mockImplementation(async (row: Assessment) => row);
 
       await expect(service.complete(student, 1)).resolves.toMatchObject({

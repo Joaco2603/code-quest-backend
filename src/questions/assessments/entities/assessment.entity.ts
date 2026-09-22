@@ -9,8 +9,8 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import type { Relation } from 'typeorm';
-import { User } from '../../user/entities/user.entity.js';
-import { UserResponse } from './user-response.entity.js';
+import { User } from '../../../user/entities/user.entity.js';
+import { UserAnswer } from './user-answer.entity.js';
 
 @Entity({ name: 'assessments' })
 export class Assessment {
@@ -35,6 +35,6 @@ export class Assessment {
   @Column({ name: 'completed_at', type: 'timestamptz', nullable: true })
   completedAt: Date | null;
 
-  @OneToMany(() => UserResponse, (response) => response.assessment)
-  responses: UserResponse[];
+  @OneToMany(() => UserAnswer, (answer) => answer.assessment)
+  answers: UserAnswer[];
 }

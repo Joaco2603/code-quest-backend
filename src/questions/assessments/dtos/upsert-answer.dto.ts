@@ -1,25 +1,20 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import {
-  ArrayUnique,
-  IsArray,
-  IsInt,
-  IsOptional,
-  Min,
-} from 'class-validator';
+import { ArrayUnique, IsArray, IsInt, IsOptional, Min } from 'class-validator';
 
 /**
- * Body of PUT /assessments/:id/responses.
+ * Body of PUT /assessments/:id/answers.
  * "Upsert" = update + insert: the same payload creates the answer when none
  * exists and replaces it when the question was already answered.
  */
-export class UpsertResponseDto {
+export class UpsertAnswerDto {
   @ApiProperty({ description: 'Question being answered.', example: 10 })
   @IsInt()
   @Min(1)
   questionId: number;
 
   @ApiPropertyOptional({
-    description: 'Selected option for single_choice (alternative to answerOptionIds).',
+    description:
+      'Selected option for single_choice (alternative to answerOptionIds).',
     example: 3,
   })
   @IsOptional()
@@ -28,7 +23,8 @@ export class UpsertResponseDto {
   answerOptionId?: number;
 
   @ApiPropertyOptional({
-    description: 'Selected options for multiple_choice (or a single id for single_choice).',
+    description:
+      'Selected options for multiple_choice (or a single id for single_choice).',
     example: [3, 4],
     type: [Number],
   })
