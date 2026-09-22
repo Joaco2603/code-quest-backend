@@ -1,3 +1,7 @@
+import { BadRequestException } from '@nestjs/common';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
+import { PaginationDto } from '../dto/pagination.dto.js';
 import { resolvePagination } from '../helpers/pagination.js';
 
 describe('resolvePagination', () => {
@@ -47,13 +51,84 @@ describe('resolvePagination', () => {
     });
   });
 
-  it('prefers an explicit non-zero offset over a page-derived one', () => {
-    expect(
-      resolvePagination({ page: 2, limit: 5, offset: 30 }, 1000),
-    ).toEqual({ limit: 5, offset: 30 });
+  it('accepts a non-zero offset that matches the page', () => {
+    expect(resolvePagination({ page: 2, limit: 5, offset: 5 }, 1000)).toEqual({
+      limit: 5,
+      offset: 5,
+    });
     expect(resolvePagination({ offset: 40 }, 20)).toEqual({
       limit: 20,
       offset: 40,
     });
+  });
+
+  it('rejects a non-zero offset that disagrees with page', () => {
+    expect(() =>
+      resolvePagination({ page: 2, limit: 5, offset: 30 }, 1000),
+    ).toThrow(BadRequestException);
+    expect(() =>
+      resolvePagination({ page: 1, limit: 10, offset: 5 }, 20),
+    ).toThrow(BadRequestException);
+  });
+});
+
+describe('PaginationDto', () => {
+  async function violations(query: Record<string, unknown>) {
+    const dto = plainToInstance(PaginationDto, query);
+    const errors = await validate(dto);
+    return errors.flatMap((error) => Object.keys(error.constraints ?? {}));
+  }
+
+  it('rejects an empty, zero, or non-numeric limit', async () => {
+    expect(await violations({ limit: '' })).toEqual(
+      expect.arrayContaining(['min']),
+    );
+    expect(await violations({ limit: '0' })).toEqual(
+      expect.arrayContaining(['min']),
+    );
+    expect(await violations({ limit: 'abc' })).toEqual(
+      expect.arrayContaining(['isInt']),
+    );
+  });
+
+  it('rejects an isActive value that is not true or false', async () => {
+    expect(await violations({ isActive: 'maybe' })).toEqual(
+      expect.arrayContaining(['isBoolean']),
+    );
+    expect(await violations({ isActive: '1' })).toEqual(
+      expect.arrayContaining(['isBoolean']),
+    );
+    expect(await violations({ isActive: 'True' })).toEqual(
+      expect.arrayContaining(['isBoolean']),
+    );
+    expect(await violations({})).toEqual([]);
+    expect(await violations({ isActive: 'true' })).toEqual([]);
+    expect(await violations({ isActive: 'false' })).toEqual([]);
+  });
+
+  it('rejects an all value that is not true or false', async () => {
+    expect(await violations({ all: 'maybe' })).toEqual(
+      expect.arrayContaining(['isBoolean']),
+    );
+    expect(await violations({ all: '1' })).toEqual(
+      expect.arrayContaining(['isBoolean']),
+    );
+    expect(await violations({ all: 'TRUE' })).toEqual(
+      expect.arrayContaining(['isBoolean']),
+    );
+    expect(await violations({ all: 'true' })).toEqual([]);
+    expect(await violations({ all: 'false' })).toEqual([]);
+  });
+
+  it('rejects a non-numeric page, pageSize, or offset', async () => {
+    expect(await violations({ page: 'abc' })).toEqual(
+      expect.arrayContaining(['isInt']),
+    );
+    expect(await violations({ pageSize: '' })).toEqual(
+      expect.arrayContaining(['min']),
+    );
+    expect(await violations({ offset: 'abc' })).toEqual(
+      expect.arrayContaining(['isInt']),
+    );
   });
 });

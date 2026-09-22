@@ -370,25 +370,27 @@ describe('UserService', () => {
     expect(page2).toEqual({ items: [], total: 25, limit: 10, offset: 10 });
   });
 
-  it('prefers an explicit offset over a page-derived one', async () => {
+  it('caps an omitted limit at the DTO maximum of 100', async () => {
     const builder = {
       leftJoinAndSelect: vi.fn().mockReturnThis(),
       where: vi.fn().mockReturnThis(),
       andWhere: vi.fn().mockReturnThis(),
       skip: vi.fn().mockReturnThis(),
       take: vi.fn().mockReturnThis(),
-      getManyAndCount: vi.fn().mockResolvedValue([[], 50]),
+      getManyAndCount: vi.fn().mockResolvedValue([[], 0]),
     };
     userRepository.createQueryBuilder = vi.fn().mockReturnValue(builder);
 
-    const result = await service.findAll(
-      { page: 2, limit: 5, offset: 30 },
-      adminActor,
-    );
+    const result = await service.findAll({}, adminActor);
 
-    expect(builder.skip).toHaveBeenCalledWith(30);
-    expect(builder.take).toHaveBeenCalledWith(5);
-    expect(result).toEqual({ items: [], total: 50, limit: 5, offset: 30 });
+    expect(builder.take).toHaveBeenCalledWith(100);
+    expect(result).toEqual({ items: [], total: 0, limit: 100, offset: 0 });
+  });
+
+  it('rejects a page that disagrees with an explicit offset', async () => {
+    await expect(
+      service.findAll({ page: 2, limit: 5, offset: 30 }, adminActor),
+    ).rejects.toThrow(BadRequestException);
   });
 
   it('returns 404 (not 400) for missing ids on findOneById, update and remove', async () => {

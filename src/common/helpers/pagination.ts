@@ -1,3 +1,4 @@
+import { BadRequestException } from '@nestjs/common';
 import { PaginationDto } from '../dto/pagination.dto.js';
 
 /**
@@ -6,9 +7,10 @@ import { PaginationDto } from '../dto/pagination.dto.js';
  *
  * - an explicit `limit` always wins over `pageSize`, which wins over
  *   `defaultLimit`;
- * - an explicit non-zero `offset` always wins over an offset derived from
- *   `page`, so page=1 and page=2 share the same limit and no records are
- *   skipped between pages.
+ * - an omitted offset, or an explicit `0`, is derived from `page`;
+ * - a non-zero `offset` is accepted on its own, or together with `page`
+ *   only when both describe the same row (`offset = (page - 1) * limit`),
+ *   including `page=1`, which only matches `offset=0`.
  *
  * Services return `{ items, total, limit, offset }`; controllers wrap the
  * result once into `{ data, meta }` via `toPaginatedResponse`.
@@ -20,9 +22,20 @@ export function resolvePagination(
   const limit = dto.limit ?? dto.pageSize ?? defaultLimit;
   const page = dto.page;
   const hasExplicitOffset = dto.offset !== undefined && dto.offset !== 0;
+  const pageOffset = page !== undefined ? (page - 1) * limit : undefined;
 
-  if (!hasExplicitOffset && page !== undefined && page > 1) {
-    return { limit, offset: (page - 1) * limit };
+  if (
+    hasExplicitOffset &&
+    pageOffset !== undefined &&
+    dto.offset !== pageOffset
+  ) {
+    throw new BadRequestException(
+      'page and offset must describe the same page',
+    );
+  }
+
+  if (!hasExplicitOffset && pageOffset !== undefined) {
+    return { limit, offset: pageOffset };
   }
 
   return { limit, offset: dto.offset ?? 0 };

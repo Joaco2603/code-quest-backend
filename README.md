@@ -190,8 +190,11 @@ Usuarios con 2FA activado y cuentas `admin`/`client` conservan los desafíos de
 política también se aplica al login con Discord.
 
 La creación administrativa que antes usaba `POST /api/auth/register` pasa a
-`POST /api/auth/register/managed`, con los mismos permisos. Actualiza sus clientes.
-`POST /api/auth/register/user` sigue siendo exclusivo de administradores.
+`POST /api/auth/register/managed`, con los mismos permisos. Esa alta no abre
+sesión: responde `{ "data": { "requiresPasswordChange": true, "userId": "...", "tempToken": "..." } }`
+porque la cuenta nace con cambio de contraseña pendiente. Actualiza sus clientes.
+`POST /api/auth/register/user` sigue siendo exclusivo de administradores y usa
+el mismo desafío.
 
 ### Scripts
 

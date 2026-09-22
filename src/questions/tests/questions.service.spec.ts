@@ -137,19 +137,14 @@ describe('QuestionsService', () => {
     expect(result).toEqual({ items: [], total: 3, limit: 10, offset: 0 });
   });
 
-  it('prefers an explicit offset over a page-derived one', async () => {
-    questionnaireRepository.findAndCount.mockResolvedValue([[], 50]);
-
-    const result = await service.listQuestionnaires({
-      page: 2,
-      limit: 10,
-      offset: 40,
-    });
-
-    expect(questionnaireRepository.findAndCount).toHaveBeenCalledWith(
-      expect.objectContaining({ skip: 40, take: 10 }),
-    );
-    expect(result).toEqual({ items: [], total: 50, limit: 10, offset: 40 });
+  it('rejects an offset that disagrees with page', async () => {
+    await expect(
+      service.listQuestionnaires({
+        page: 2,
+        limit: 10,
+        offset: 40,
+      }),
+    ).rejects.toThrow(BadRequestException);
   });
 
   it('creates a questionnaire', async () => {

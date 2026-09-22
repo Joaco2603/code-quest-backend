@@ -17,7 +17,6 @@ import {
   Verify2FADto,
   ChangePasswordDto,
   ExchangeDiscordDto,
-  AuthRegisterDataResponseDto,
   LoginPasswordChangeDataResponseDto,
   LoginSetupDataResponseDto,
   LoginTwoFactorDataResponseDto,
@@ -28,7 +27,6 @@ import {
   DiscordLinkDataResponseDto,
   DiscordTicketDataResponseDto,
 } from '../dtos/index.js';
-import type { User } from '../../user/entities/user.entity.js';
 import { AuthGuard } from '@nestjs/passport';
 import { GetUser } from '../decorators/get-user.decorators.js';
 import type { AuthUser } from '../interfaces/auth-user.type.js';
@@ -67,7 +65,6 @@ import {
   serializeDiscordTicket,
   serializePasswordChangeResult,
   serializeRecoveryVerifiedResult,
-  serializeRegisteredSession,
   serializeSessionStatus,
   serializeVerifiedSession,
   type DiscordExchangeResult,
@@ -106,8 +103,9 @@ export class AuthController {
       'Creates a new user. Admins can choose the role; clients can only create child users.',
   })
   @ApiCreatedResponse({
-    description: 'User created successfully.',
-    type: AuthRegisterDataResponseDto,
+    description:
+      'User created. The account must change its password before it receives a session.',
+    type: LoginPasswordChangeDataResponseDto,
   })
   @ApiBadRequestResponse({
     description: 'Invalid payload, or the account could not be created.',
@@ -133,12 +131,7 @@ export class AuthController {
           })
         : await this.authService.create(createUserDto);
 
-    const { user: createdUser, token } = created as {
-      user: User;
-      token: string;
-    };
-
-    return toDataResponse(serializeRegisteredSession(createdUser, token));
+    return toDataResponse(serializeDiscordExchangeResult(created));
   }
 
   @Post('register/user')
@@ -148,17 +141,18 @@ export class AuthController {
     description: 'Admin-only shortcut that creates a user with the user role.',
   })
   @ApiCreatedResponse({
-    description: 'Standard user created successfully.',
-    type: AuthRegisterDataResponseDto,
+    description:
+      'Standard user created. The account must change its password before it receives a session.',
+    type: LoginPasswordChangeDataResponseDto,
   })
   @Auth(ValidRoles.admin)
   async createUser(@Body() createUserDto: CreateUserDto) {
-    const { user: createdUser, token } = (await this.authService.create({
+    const created = await this.authService.create({
       ...createUserDto,
       role: 'user',
-    })) as { user: User; token: string };
+    });
 
-    return toDataResponse(serializeRegisteredSession(createdUser, token));
+    return toDataResponse(serializeDiscordExchangeResult(created));
   }
 
   @Post('login')

@@ -103,19 +103,7 @@ export class AuthService {
       password,
     });
 
-    // Raw result: the entity (already stripped of secrets by UserService)
-    // plus the protocol token. The controller serializes the user and wraps
-    // the payload once with `toDataResponse`.
-    const token = this.getJwtToken({
-      sub: user.id,
-      email: user.email,
-      rol: user.role || ValidRoles.user,
-      purpose: JwtPurpose.access,
-      is_two_factor_enabled: user.is_two_factor_enabled,
-      is_two_factor_validated: false,
-    });
-
-    return { user, token };
+    return this.issueManagedAccount(user);
   });
 
   createAdmin = asyncHandler(async (createUserDto: CreateUserDto) => {
@@ -127,17 +115,20 @@ export class AuthService {
       password,
     });
 
-    const token = this.getJwtToken({
-      sub: user.id,
-      email: user.email,
-      rol: user.role,
-      purpose: JwtPurpose.access,
-      is_two_factor_enabled: user.is_two_factor_enabled,
-      is_two_factor_validated: false,
-    });
-
-    return { user, token };
+    return this.issueManagedAccount(user);
   });
+
+  private issueManagedAccount(user: User) {
+    if (user.mustChangePassword) {
+      return {
+        requiresPasswordChange: true as const,
+        userId: user.id,
+        tempToken: this.getTempToken(user),
+      };
+    }
+
+    return this.generateToken(user);
+  }
 
   loginUser = asyncHandler(async (loginUserDto: LoginUserDto) => {
     const { email, password } = loginUserDto;

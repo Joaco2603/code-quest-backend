@@ -86,10 +86,11 @@ describe('AuthController', () => {
       address: '123 Test Street',
     };
 
-    it('should create a new user wrapped in a single data envelope', async () => {
+    it('should create a new user wrapped in a password-change challenge', async () => {
       mockAuthService.create.mockResolvedValue({
-        user: buildUserEntity({ email: 'newuser@example.com' }),
-        token: 'jwt-token-123',
+        requiresPasswordChange: true,
+        userId: '43566ec8-22af-41d3-933a-918b536fe99f',
+        tempToken: 'temp-jwt-token',
       });
 
       const result = await controller.create(mockUser, createUserDto);
@@ -97,12 +98,11 @@ describe('AuthController', () => {
       expect(authService.create).toHaveBeenCalledWith(createUserDto);
       expect(Object.keys(result)).toEqual(['data']);
       expect(result).not.toHaveProperty('data.data');
-      expect(result.data.user).toMatchObject({
-        id: '43566ec8-22af-41d3-933a-918b536fe99f',
-        email: 'newuser@example.com',
-        firstName: 'operator',
+      expect(result.data).toEqual({
+        requiresPasswordChange: true,
+        userId: '43566ec8-22af-41d3-933a-918b536fe99f',
+        tempToken: 'temp-jwt-token',
       });
-      expect(result.data.token).toBe('jwt-token-123');
       expect(JSON.stringify(result)).not.toContain('password');
       expect(JSON.stringify(result)).not.toContain('two_factor_secret');
     });
@@ -110,8 +110,9 @@ describe('AuthController', () => {
     it('should force role user with the client owner for client actors', async () => {
       const clientActor: AuthUser = { ...mockUser, role: ValidRoles.client };
       mockAuthService.create.mockResolvedValue({
-        user: buildUserEntity(),
-        token: 'jwt-token-123',
+        requiresPasswordChange: true,
+        userId: clientActor.id,
+        tempToken: 'temp-jwt-token',
       });
 
       await controller.create(clientActor, createUserDto);
@@ -123,8 +124,9 @@ describe('AuthController', () => {
 
     it('should wrap the register/user shortcut the same way', async () => {
       mockAuthService.create.mockResolvedValue({
-        user: buildUserEntity(),
-        token: 'jwt-token-123',
+        requiresPasswordChange: true,
+        userId: '43566ec8-22af-41d3-933a-918b536fe99f',
+        tempToken: 'temp-jwt-token',
       });
 
       const result = await controller.createUser(createUserDto);
@@ -133,8 +135,11 @@ describe('AuthController', () => {
         expect.objectContaining({ role: 'user' }),
       );
       expect(Object.keys(result)).toEqual(['data']);
-      expect(result.data).toHaveProperty('user');
-      expect(result.data).toHaveProperty('token', 'jwt-token-123');
+      expect(result.data).toEqual({
+        requiresPasswordChange: true,
+        userId: '43566ec8-22af-41d3-933a-918b536fe99f',
+        tempToken: 'temp-jwt-token',
+      });
     });
   });
 

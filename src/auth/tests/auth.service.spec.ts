@@ -236,9 +236,13 @@ describe('AuthService', () => {
       role: 'user',
     };
 
-    it('should create a new user and return with token', async () => {
+    it('should create a new user and return a password-change challenge', async () => {
       const token = 'jwt-token-123';
-      const createdUser = { ...mockUser, password: undefined };
+      const createdUser = {
+        ...mockUser,
+        password: undefined,
+        mustChangePassword: true,
+      };
 
       mockUserService.create.mockResolvedValue(createdUser);
       mockJwtService.sign.mockReturnValue(token);
@@ -246,7 +250,19 @@ describe('AuthService', () => {
       const result = await service.create(createUserDto);
 
       expect(mockUserService.create).toHaveBeenCalled();
-      expect(result).toEqual(expect.objectContaining({ token }));
+      expect(result).toEqual({
+        requiresPasswordChange: true,
+        userId: createdUser.id,
+        tempToken: token,
+      });
+      expect(mockJwtService.sign).toHaveBeenCalledWith(
+        expect.objectContaining({
+          purpose: 'password_change',
+          is_two_factor_validated: false,
+          mustChangePassword: true,
+        }),
+        { expiresIn: '10m' },
+      );
     });
 
     it('should pass the password to UserService for hashing', async () => {
@@ -290,16 +306,25 @@ describe('AuthService', () => {
       role: 'superadmin',
     };
 
-    it('should create an admin user with specified role', async () => {
+    it('should create an admin user that must change password', async () => {
       const token = 'admin-jwt-token';
-      const createdAdmin = { ...mockUser, email: 'admin@example.com' };
+      const createdAdmin = {
+        ...mockUser,
+        email: 'admin@example.com',
+        mustChangePassword: true,
+      };
 
       mockUserService.create.mockResolvedValue(createdAdmin);
       mockJwtService.sign.mockReturnValue(token);
 
       const result = await service.createAdmin(createAdminDto);
 
-      expect(result.token).toBe(token);
+      expect(result).toEqual({
+        requiresPasswordChange: true,
+        userId: createdAdmin.id,
+        tempToken: token,
+      });
+      expect(result).not.toHaveProperty('accessToken');
     });
 
     it('should default to admin role if not specified', async () => {
@@ -321,13 +346,20 @@ describe('AuthService', () => {
       );
     });
 
-    it('should return token with created admin', async () => {
-      mockUserService.create.mockResolvedValue(mockUser);
+    it('should return a password-change token for the created admin', async () => {
+      mockUserService.create.mockResolvedValue({
+        ...mockUser,
+        mustChangePassword: true,
+      });
       mockJwtService.sign.mockReturnValue('admin-token');
 
       const result = await service.createAdmin(createAdminDto);
 
-      expect(result.token).toBe('admin-token');
+      expect(result).toEqual({
+        requiresPasswordChange: true,
+        userId: mockUser.id,
+        tempToken: 'admin-token',
+      });
     });
   });
 

@@ -99,7 +99,7 @@ export class UserService {
     async (paginationDto: PaginationDto, actor: AuthUser) => {
       const { isActive = true } = paginationDto;
       const all = paginationDto.all;
-      const { limit, offset } = resolvePagination(paginationDto, 1000);
+      const { limit, offset } = resolvePagination(paginationDto, 100);
 
       const query = this.userRepository
         .createQueryBuilder('user')

@@ -36,7 +36,7 @@ Todos llevan el prefijo `/api`. Las respuestas usan propiedades JSON en camelCas
 
 Curso serializado (campos exactos, sin spreads): `id, title, description|null, url|null, imageUrl|null, durationMinutes|null, instructor|null, level|null, status, createdAt|ISO UTC, updatedAt|ISO UTC, categories:[{id, name}], technologies:[{id, name}], prerequisiteIds:number[] ordenados`. Una lista vacía devuelve `data:[]`; una página vacía conserva `meta.total`.
 
-Filtros: `search` busca una subcadena literal del título; `level`, `categoryId` y `technologyId` se combinan con AND. Paginación: entradas `page=1`, `limit=20` por defecto, máximo 100 resultados por página, orden por ID; salida `meta:{total, limit, offset}` con `offset=(page-1)*limit`. Solo el listado administrativo acepta `status`.
+Filtros: `search` busca una subcadena literal del título; `level`, `categoryId` y `technologyId` se combinan con AND. Paginación: entradas `page=1`, `limit=20` por defecto, máximo 100 resultados por página, orden por ID; salida `meta:{total, limit, offset}` con `offset=(page-1)*limit`. Si llegan `page` y un `offset` distinto de cero, tienen que describir la misma página (`page=1` solo coincide con `offset=0`); si no, la petición es `400`. Solo el listado administrativo acepta `status`.
 
 Ejemplo de curso completo para `POST /api/admin/courses`, una vez integrada la autenticación:
 
