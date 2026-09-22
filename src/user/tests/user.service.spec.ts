@@ -1,4 +1,8 @@
-import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { QueryFailedError } from 'typeorm';
 import { UserService } from '../user.service.js';
 import { User } from '../entities/user.entity.js';
@@ -385,6 +389,21 @@ describe('UserService', () => {
     expect(builder.skip).toHaveBeenCalledWith(30);
     expect(builder.take).toHaveBeenCalledWith(5);
     expect(result).toEqual({ items: [], total: 50, limit: 5, offset: 30 });
+  });
+
+  it('returns 404 (not 400) for missing ids on findOneById, update and remove', async () => {
+    userRepository.findOne.mockResolvedValue(null);
+    userRepository.findOneBy.mockResolvedValue(null);
+
+    await expect(service.findOneById('missing-id')).rejects.toThrow(
+      NotFoundException,
+    );
+    await expect(
+      service.update('missing-id', { first_name: 'x' }, adminActor),
+    ).rejects.toThrow(NotFoundException);
+    await expect(service.remove('missing-id')).rejects.toThrow(
+      NotFoundException,
+    );
   });
 
   it('scopes client listing to owned users only', async () => {

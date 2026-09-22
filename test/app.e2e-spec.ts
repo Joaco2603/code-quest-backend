@@ -260,6 +260,10 @@ it('supports many categories/technologies and paginated filters without losing r
   expect(page.meta.limit).toBe(1);
   expect(page.meta.offset).toBe(1);
   expect(page.data[0].id).toBe(second.id);
+  const byOffset = (await api().get('/api/courses?offset=40').expect(200))
+    .body;
+  expect(byOffset.meta).toMatchObject({ total: 2, limit: 20, offset: 40 });
+  expect(byOffset.data).toEqual([]);
   await api().get('/api/courses?status=draft').expect(400);
   await api().get('/api/courses?limit=101').expect(400);
 });

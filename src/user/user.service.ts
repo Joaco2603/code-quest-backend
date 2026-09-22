@@ -3,6 +3,7 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import {
   CreateUserDto,
@@ -14,6 +15,7 @@ import { User } from './entities/user.entity.js';
 import { Brackets, QueryFailedError, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { asyncHandler } from '../common/helpers/async-handler.js';
+import { resolvePagination } from '../common/helpers/pagination.js';
 import { PaginationDto } from '../common/dto/pagination.dto.js';
 import { AuthUser, ValidRoles } from '../auth/interfaces/index.js';
 import { AuditLogService } from '../common/services/audit-log.service.js';
@@ -97,7 +99,7 @@ export class UserService {
     async (paginationDto: PaginationDto, actor: AuthUser) => {
       const { isActive = true } = paginationDto;
       const all = paginationDto.all;
-      const { limit, offset } = this.resolvePagination(paginationDto);
+      const { limit, offset } = resolvePagination(paginationDto, 1000);
 
       const query = this.userRepository
         .createQueryBuilder('user')
@@ -147,7 +149,7 @@ export class UserService {
     });
 
     if (!user) {
-      throw new BadRequestException(`User with id ${id} not found`);
+      throw new NotFoundException(`User with id ${id} not found`);
     }
 
     if (actor) {
@@ -341,7 +343,7 @@ export class UserService {
       });
 
       if (!user) {
-        throw new BadRequestException(`User with id ${id} not found`);
+        throw new NotFoundException(`User with id ${id} not found`);
       }
 
       this.assertCanAccessUser(actor, user);
@@ -395,7 +397,7 @@ export class UserService {
   remove = asyncHandler(async (id: string): Promise<UserDeleteResponseDto> => {
     const user = await this.userRepository.findOneBy({ id });
     if (!user) {
-      throw new BadRequestException(`User with id ${id} not found`);
+      throw new NotFoundException(`User with id ${id} not found`);
     }
     await this.userRepository.update(user.id, { isActive: false });
     await this.auditLogService.recordDomainEvent({
@@ -474,30 +476,6 @@ export class UserService {
     if (client) {
       user.client = client;
     }
-  }
-
-  /**
-   * Single precedence for pagination inputs: an explicit `limit` always
-   * wins over `pageSize`; `pageSize` alone acts as the limit. The offset
-   * is derived as `(page - 1) * limit` only when paginating by page;
-   * otherwise the direct `offset` is used. An explicit non-zero offset
-   * always wins over a derived one, so page=1 and page=2 share the same
-   * limit and no records are skipped between pages.
-   */
-  private resolvePagination(paginationDto: PaginationDto): {
-    limit: number;
-    offset: number;
-  } {
-    const limit = paginationDto.limit ?? paginationDto.pageSize ?? 1000;
-    const page = paginationDto.page;
-    const hasExplicitOffset =
-      paginationDto.offset !== undefined && paginationDto.offset !== 0;
-
-    if (!hasExplicitOffset && page !== undefined && page > 1) {
-      return { limit, offset: (page - 1) * limit };
-    }
-
-    return { limit, offset: paginationDto.offset ?? 0 };
   }
 
   private assertCanAccessUser(actor: AuthUser, target: User) {

@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { DataSource, EntityManager, In, QueryFailedError } from 'typeorm';
+import { resolvePagination } from '../common/helpers/pagination.js';
 import { Category, Course, CourseStatus, Technology } from './entities.js';
 import type {
   AdminCourseQueryDto,
@@ -115,8 +116,7 @@ export class CatalogService {
   }
 
   async listCourses(query: AdminCourseQueryDto, admin = false) {
-    const page = query.page ?? 1;
-    const limit = query.limit ?? 20;
+    const { limit, offset } = resolvePagination(query, 20);
     const builder = this.db
       .getRepository(Course)
       .createQueryBuilder('course')
@@ -148,17 +148,17 @@ export class CatalogService {
       );
     const [courses, total] = await builder
       .orderBy('course.id', 'ASC')
-      .skip((page - 1) * limit)
+      .skip(offset)
       .take(limit)
       .getManyAndCount();
-    // Unified pagination: inputs keep page/limit, output exposes
-    // { items, total, limit, offset } with offset=(page-1)*limit.
+    // Unified pagination: inputs accept page/limit/pageSize/offset through
+    // the shared resolver; output exposes { items, total, limit, offset }.
     // Controllers wrap this once into { data, meta }.
     return {
       items: courses.map((course) => serializeCourse(course)),
       total,
       limit,
-      offset: (page - 1) * limit,
+      offset,
     };
   }
 
