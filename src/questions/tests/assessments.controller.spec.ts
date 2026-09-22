@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PassportModule } from '@nestjs/passport';
 import { vi } from 'vitest';
-import { AssessmentsController } from '../assessments.controller.js';
+import { AssessmentsController } from '../controllers/assessments.controller.js';
 import { AssessmentsService } from '../assessments.service.js';
 import { ValidRoles } from '../../auth/interfaces/index.js';
 import type { AuthUser } from '../../auth/interfaces/auth-user.type.js';
@@ -29,7 +29,9 @@ describe('AssessmentsController', () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [PassportModule.register({ defaultStrategy: 'jwt' })],
       controllers: [AssessmentsController],
-      providers: [{ provide: AssessmentsService, useValue: assessmentsService }],
+      providers: [
+        { provide: AssessmentsService, useValue: assessmentsService },
+      ],
     }).compile();
 
     controller = module.get(AssessmentsController);

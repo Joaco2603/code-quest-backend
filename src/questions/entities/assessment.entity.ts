@@ -8,6 +8,7 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
+import type { Relation } from 'typeorm';
 import { User } from '../../user/entities/user.entity.js';
 import { UserResponse } from './user-response.entity.js';
 
@@ -22,7 +23,7 @@ export class Assessment {
 
   @ManyToOne(() => User, { onDelete: 'CASCADE', nullable: false })
   @JoinColumn({ name: 'user_id' })
-  user: User;
+  user: Relation<User>;
 
   @Index()
   @Column({ name: 'questionnaire_id', type: 'int' })

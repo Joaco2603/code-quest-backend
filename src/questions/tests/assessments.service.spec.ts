@@ -8,8 +8,8 @@ import { vi } from 'vitest';
 import { AssessmentsService } from '../assessments.service.js';
 import { ValidRoles } from '../../auth/interfaces/index.js';
 import type { AuthUser } from '../../auth/interfaces/auth-user.type.js';
-import { QuestionType } from '../../questions/enums/question-type.enum.js';
-import type { QuestionnaireDetail } from '../../questions/interfaces/index.js';
+import { QuestionType } from '../enums/question-type.enum.js';
+import type { QuestionnaireDetail } from '../interfaces/index.js';
 import type { Assessment } from '../entities/assessment.entity.js';
 import type { UserResponse } from '../entities/user-response.entity.js';
 
@@ -137,7 +137,9 @@ describe('AssessmentsService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    questionsService.getActiveQuestionnaire.mockResolvedValue(buildQuestionnaire());
+    questionsService.getActiveQuestionnaire.mockResolvedValue(
+      buildQuestionnaire(),
+    );
     assessments.create.mockImplementation((data: Partial<Assessment>) => data);
     responses.create.mockImplementation((data: unknown) => data);
     responses.delete.mockResolvedValue({ affected: 1 });
@@ -182,18 +184,18 @@ describe('AssessmentsService', () => {
         new NotFoundException('Questionnaire not found'),
       );
 
-      await expect(service.start(student, { questionnaireId: 9 })).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.start(student, { questionnaireId: 9 }),
+      ).rejects.toThrow(NotFoundException);
       expect(assessments.save).not.toHaveBeenCalled();
     });
 
     it('rejects a second incomplete assessment for the same questionnaire', async () => {
       assessments.findOne.mockResolvedValue(openAssessment());
 
-      await expect(service.start(student, { questionnaireId: 4 })).rejects.toThrow(
-        ConflictException,
-      );
+      await expect(
+        service.start(student, { questionnaireId: 4 }),
+      ).rejects.toThrow(ConflictException);
       expect(assessments.save).not.toHaveBeenCalled();
     });
 

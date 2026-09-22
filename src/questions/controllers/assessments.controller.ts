@@ -17,13 +17,13 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import { Auth, GetUser } from '../auth/decorators/index.js';
-import { JwtAuthGuard } from '../auth/guards/jwt.guard.js';
-import { TwoFactorGuard } from '../auth/guards/two-factor.guard.js';
-import { ValidRoles } from '../auth/interfaces/index.js';
-import type { AuthUser } from '../auth/interfaces/auth-user.type.js';
-import { AssessmentsService } from './assessments.service.js';
-import { CreateAssessmentDto, UpsertResponseDto } from './dtos/index.js';
+import { Auth, GetUser } from '../../auth/decorators/index.js';
+import { JwtAuthGuard } from '../../auth/guards/jwt.guard.js';
+import { TwoFactorGuard } from '../../auth/guards/two-factor.guard.js';
+import { ValidRoles } from '../../auth/interfaces/index.js';
+import type { AuthUser } from '../../auth/interfaces/auth-user.type.js';
+import { AssessmentsService } from '../assessments.service.js';
+import { CreateAssessmentDto, UpsertResponseDto } from '../dtos/index.js';
 
 @Auth()
 @UseGuards(JwtAuthGuard, TwoFactorGuard)
@@ -52,14 +52,14 @@ export class AssessmentsController {
       },
     },
   })
-  @ApiNotFoundResponse({ description: 'Questionnaire was not found or is inactive.' })
-  @ApiConflictResponse({
-    description: 'An incomplete assessment already exists for this questionnaire.',
+  @ApiNotFoundResponse({
+    description: 'Questionnaire was not found or is inactive.',
   })
-  start(
-    @GetUser() user: AuthUser,
-    @Body() dto: CreateAssessmentDto,
-  ) {
+  @ApiConflictResponse({
+    description:
+      'An incomplete assessment already exists for this questionnaire.',
+  })
+  start(@GetUser() user: AuthUser, @Body() dto: CreateAssessmentDto) {
     return this.assessmentsService.start(user, dto);
   }
 
@@ -114,10 +114,7 @@ export class AssessmentsController {
     },
   })
   @ApiNotFoundResponse({ description: 'Assessment was not found.' })
-  findMine(
-    @GetUser() user: AuthUser,
-    @Param('id', ParseIntPipe) id: number,
-  ) {
+  findMine(@GetUser() user: AuthUser, @Param('id', ParseIntPipe) id: number) {
     return this.assessmentsService.findMine(user, id);
   }
 
@@ -126,7 +123,7 @@ export class AssessmentsController {
   @ApiOperation({
     summary: 'Upsert question response',
     description:
-      'Replaces stored answers for one question. Multiple-choice stores one row per selected option.',
+      'Upsert (update + insert): creates the answer for a question, or replaces it if one already exists. Multiple-choice stores one row per selected option.',
   })
   @ApiOkResponse({ description: 'Assessment with updated responses.' })
   @ApiNotFoundResponse({ description: 'Assessment was not found.' })
@@ -149,10 +146,7 @@ export class AssessmentsController {
   @ApiOkResponse({ description: 'Assessment completed.' })
   @ApiNotFoundResponse({ description: 'Assessment was not found.' })
   @ApiConflictResponse({ description: 'Assessment is already completed.' })
-  complete(
-    @GetUser() user: AuthUser,
-    @Param('id', ParseIntPipe) id: number,
-  ) {
+  complete(@GetUser() user: AuthUser, @Param('id', ParseIntPipe) id: number) {
     return this.assessmentsService.complete(user, id);
   }
 }

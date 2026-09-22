@@ -6,7 +6,8 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { Assessment } from './assessment.entity.js';
+import type { Relation } from 'typeorm';
+import type { Assessment } from './assessment.entity.js';
 
 @Entity({ name: 'user_responses' })
 export class UserResponse {
@@ -17,12 +18,12 @@ export class UserResponse {
   @Column({ name: 'assessment_id', type: 'int' })
   assessmentId: number;
 
-  @ManyToOne(() => Assessment, (assessment) => assessment.responses, {
+  @ManyToOne('Assessment', 'responses', {
     onDelete: 'CASCADE',
     nullable: false,
   })
   @JoinColumn({ name: 'assessment_id' })
-  assessment: Assessment;
+  assessment: Relation<Assessment>;
 
   @Index()
   @Column({ name: 'question_id', type: 'int' })

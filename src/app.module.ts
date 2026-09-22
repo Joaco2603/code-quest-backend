@@ -9,7 +9,6 @@ import { AuthModule } from './auth/auth.module.js';
 import { UserModule } from './user/user.module.js';
 import { CommonModule } from './common/common.module.js';
 import { QuestionsModule } from './questions/questions.module.js';
-import { AssessmentsModule } from './assessments/assessments.module.js';
 const { ObserveModule, ObserveInstrument } = createObserveModule();
 export { ObserveInstrument };
 @Module({
@@ -26,7 +25,6 @@ export { ObserveInstrument };
     AuthModule,
     QuestionsModule,
     CatalogModule,
-    AssessmentsModule,
   ],
 })
 export class AppModule {}
