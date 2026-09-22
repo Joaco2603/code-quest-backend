@@ -7,7 +7,7 @@ Record a student’s questionnaire **attempts** (`assessments`) and typed **answ
 ## Lifecycle
 
 1. **Start** (`POST /assessments`) — authenticated student, `{ questionnaireId }`.
-   - Load via `QuestionsReader.getActiveQuestionnaire`.
+   - Load via `QuestionsService.getActiveQuestionnaire`.
    - Missing or inactive questionnaire → **404** (same as “not available”).
    - **Decision:** at most one **incomplete** assessment per `(user_id, questionnaire_id)`. A second start → **409**. Completed attempts may be started again (history).
 2. **Answer** (`PUT /assessments/:id/responses`) — upsert one question’s rows. Completed assessment → **409**.
@@ -36,23 +36,19 @@ Inactive questions: **cannot be answered** (400). They are **ignored for complet
 - Students only (`user` role). Owner is `assessments.user_id === jwt.sub`.
 - `User.id` is UUID → `assessments.user_id` is `uuid`.
 
-## Questions port (no questions module in this worktree)
+## Questions
 
-`QUESTIONS_READER` token + `QuestionsReader` + snapshot types (camelCase, aligned with questions agent).
-
-Default `TypeormQuestionsReader` reads `questionnaires`, `questions`, `answer_options` with QueryBuilder (assumed snake_case: `is_active`, `questionnaire_id`, `sort_order`). Missing tables fail naturally. Unit tests mock the token.
-
-After merge: swap `{ provide: QUESTIONS_READER, useClass: TypeormQuestionsReader }` for `QuestionsService` if `getActiveQuestionnaire(id)` matches. Follow-up: add SQL FKs from `questionnaire_id` / `question_id` / `answer_option_id` to questions tables (omitted here so this branch lands first).
+`AssessmentsModule` imports `QuestionsModule` and calls `QuestionsService.getActiveQuestionnaire`. That method already returns only active questions. Unit tests mock the service.
 
 ## Persistence
 
 - Entities: `Assessment`, `UserResponse`. `ManyToOne` User `CASCADE`. Integer columns for questionnaire/question/option (no Question entity import).
-- Migration `1789600002000-CreateAssessments.ts`: indexes on `user_id`, `questionnaire_id`, `assessment_id`, `question_id`. FK to `users` + CASCADE from responses → assessments. **No FKs to questions tables.**
+- Migration `1789600002000-CreateAssessments.ts`: indexes on `user_id`, `questionnaire_id`, `assessment_id`, `question_id`. FK to `users` with CASCADE, responses → assessments with CASCADE, and RESTRICT FKs to `questionnaires`, `questions`, and `answer_options`.
 - Do not change global `synchronize`.
 
 ## Tests
 
-Mock `QUESTIONS_READER` + repositories: start; validation happy/reject per type; multiple_choice N rows + replace; complete blocked then `completed_at`; further PUT 409; owner 404; inactive questionnaire cannot start; duplicate incomplete 409.
+Mock `QuestionsService` + repositories: start; validation happy/reject per type; multiple_choice N rows + replace; complete blocked then `completed_at`; further PUT 409; owner 404; inactive questionnaire cannot start; duplicate incomplete 409.
 
 ## Merge risks
 

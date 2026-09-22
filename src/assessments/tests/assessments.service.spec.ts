@@ -8,10 +8,8 @@ import { vi } from 'vitest';
 import { AssessmentsService } from '../assessments.service.js';
 import { ValidRoles } from '../../auth/interfaces/index.js';
 import type { AuthUser } from '../../auth/interfaces/auth-user.type.js';
-import {
-  QuestionType,
-  type QuestionnaireSnapshot,
-} from '../questions-reader.js';
+import { QuestionType } from '../../questions/enums/question-type.enum.js';
+import type { QuestionnaireDetail } from '../../questions/interfaces/index.js';
 import type { Assessment } from '../entities/assessment.entity.js';
 import type { UserResponse } from '../entities/user-response.entity.js';
 
@@ -30,18 +28,19 @@ const otherStudent: AuthUser = {
 };
 
 function buildQuestionnaire(
-  overrides?: Partial<QuestionnaireSnapshot>,
-): QuestionnaireSnapshot {
+  overrides?: Partial<QuestionnaireDetail>,
+): QuestionnaireDetail {
   return {
     id: 4,
     title: 'Onboarding',
+    description: null,
     isActive: true,
+    createdAt: new Date('2026-09-17T08:00:00.000Z'),
     questions: [
       {
         id: 10,
-        questionnaireId: 4,
         question: 'Pick one',
-        type: QuestionType.SingleChoice,
+        type: QuestionType.SINGLE_CHOICE,
         isActive: true,
         sortOrder: 1,
         options: [
@@ -51,9 +50,8 @@ function buildQuestionnaire(
       },
       {
         id: 11,
-        questionnaireId: 4,
         question: 'Pick many',
-        type: QuestionType.MultipleChoice,
+        type: QuestionType.MULTIPLE_CHOICE,
         isActive: true,
         sortOrder: 2,
         options: [
@@ -64,36 +62,32 @@ function buildQuestionnaire(
       },
       {
         id: 12,
-        questionnaireId: 4,
         question: 'Explain',
-        type: QuestionType.Text,
+        type: QuestionType.TEXT,
         isActive: true,
         sortOrder: 3,
         options: [],
       },
       {
         id: 13,
-        questionnaireId: 4,
         question: 'How many',
-        type: QuestionType.Number,
+        type: QuestionType.NUMBER,
         isActive: true,
         sortOrder: 4,
         options: [],
       },
       {
         id: 14,
-        questionnaireId: 4,
         question: 'Agree',
-        type: QuestionType.Boolean,
+        type: QuestionType.BOOLEAN,
         isActive: true,
         sortOrder: 5,
         options: [],
       },
       {
         id: 15,
-        questionnaireId: 4,
         question: 'Retired',
-        type: QuestionType.Text,
+        type: QuestionType.TEXT,
         isActive: false,
         sortOrder: 6,
         options: [],
@@ -117,7 +111,7 @@ function openAssessment(overrides?: Partial<Assessment>): Assessment {
 }
 
 describe('AssessmentsService', () => {
-  const questionsReader = {
+  const questionsService = {
     getActiveQuestionnaire: vi.fn(),
   };
 
@@ -138,12 +132,12 @@ describe('AssessmentsService', () => {
   const service = new AssessmentsService(
     assessments as never,
     responses as never,
-    questionsReader as never,
+    questionsService as never,
   );
 
   beforeEach(() => {
     vi.clearAllMocks();
-    questionsReader.getActiveQuestionnaire.mockResolvedValue(buildQuestionnaire());
+    questionsService.getActiveQuestionnaire.mockResolvedValue(buildQuestionnaire());
     assessments.create.mockImplementation((data: Partial<Assessment>) => data);
     responses.create.mockImplementation((data: unknown) => data);
     responses.delete.mockResolvedValue({ affected: 1 });
@@ -167,7 +161,7 @@ describe('AssessmentsService', () => {
 
       const result = await service.start(student, { questionnaireId: 4 });
 
-      expect(questionsReader.getActiveQuestionnaire).toHaveBeenCalledWith(4);
+      expect(questionsService.getActiveQuestionnaire).toHaveBeenCalledWith(4);
       expect(assessments.findOne).toHaveBeenCalledWith({
         where: {
           userId: student.id,
@@ -184,7 +178,7 @@ describe('AssessmentsService', () => {
     });
 
     it('rejects an inactive questionnaire', async () => {
-      questionsReader.getActiveQuestionnaire.mockRejectedValue(
+      questionsService.getActiveQuestionnaire.mockRejectedValue(
         new NotFoundException('Questionnaire not found'),
       );
 

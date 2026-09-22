@@ -1,7 +1,6 @@
 import {
   BadRequestException,
   ConflictException,
-  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -10,13 +9,12 @@ import { IsNull, Repository } from 'typeorm';
 import { Assessment } from './entities/assessment.entity.js';
 import { UserResponse } from './entities/user-response.entity.js';
 import { CreateAssessmentDto, UpsertResponseDto } from './dtos/index.js';
-import {
-  QUESTIONS_READER,
-  QuestionType,
-  type QuestionnaireSnapshot,
-  type QuestionsReader,
-  type QuestionSnapshot,
-} from './questions-reader.js';
+import { QuestionsService } from '../questions/questions.service.js';
+import { QuestionType } from '../questions/enums/question-type.enum.js';
+import type {
+  QuestionDetail,
+  QuestionnaireDetail,
+} from '../questions/interfaces/index.js';
 import type { AuthUser } from '../auth/interfaces/auth-user.type.js';
 
 export type AssessmentResponseView = {
@@ -42,8 +40,7 @@ export class AssessmentsService {
     private readonly assessments: Repository<Assessment>,
     @InjectRepository(UserResponse)
     private readonly responses: Repository<UserResponse>,
-    @Inject(QUESTIONS_READER)
-    private readonly questionsReader: QuestionsReader,
+    private readonly questionsService: QuestionsService,
   ) {}
 
   async start(
@@ -148,9 +145,9 @@ export class AssessmentsService {
 
   private async loadActiveQuestionnaire(
     id: number,
-  ): Promise<QuestionnaireSnapshot> {
+  ): Promise<QuestionnaireDetail> {
     const questionnaire =
-      await this.questionsReader.getActiveQuestionnaire(id);
+      await this.questionsService.getActiveQuestionnaire(id);
     if (!questionnaire.isActive) {
       throw new NotFoundException('Questionnaire not found');
     }
@@ -174,9 +171,9 @@ export class AssessmentsService {
   }
 
   private findQuestion(
-    questionnaire: QuestionnaireSnapshot,
+    questionnaire: QuestionnaireDetail,
     questionId: number,
-  ): QuestionSnapshot {
+  ): QuestionDetail {
     const question = questionnaire.questions.find((item) => item.id === questionId);
     if (!question) {
       throw new BadRequestException(
@@ -191,13 +188,13 @@ export class AssessmentsService {
 
   private buildResponseRows(
     assessmentId: number,
-    question: QuestionSnapshot,
+    question: QuestionDetail,
     dto: UpsertResponseDto,
   ): Array<Partial<UserResponse>> {
     const optionIds = this.resolveOptionIds(dto);
 
     switch (question.type) {
-      case QuestionType.SingleChoice: {
+      case QuestionType.SINGLE_CHOICE: {
         if (optionIds.length !== 1) {
           throw new BadRequestException(
             'single_choice requires exactly one answer option',
@@ -213,7 +210,7 @@ export class AssessmentsService {
           },
         ];
       }
-      case QuestionType.MultipleChoice: {
+      case QuestionType.MULTIPLE_CHOICE: {
         if (optionIds.length === 0) {
           throw new BadRequestException(
             'multiple_choice requires at least one answer option',
@@ -227,7 +224,7 @@ export class AssessmentsService {
           value: null,
         }));
       }
-      case QuestionType.Text: {
+      case QuestionType.TEXT: {
         this.assertNoOptionIds(optionIds);
         return [
           {
@@ -238,7 +235,7 @@ export class AssessmentsService {
           },
         ];
       }
-      case QuestionType.Number: {
+      case QuestionType.NUMBER: {
         this.assertNoOptionIds(optionIds);
         return [
           {
@@ -249,7 +246,7 @@ export class AssessmentsService {
           },
         ];
       }
-      case QuestionType.Boolean: {
+      case QuestionType.BOOLEAN: {
         this.assertNoOptionIds(optionIds);
         return [
           {
@@ -290,7 +287,7 @@ export class AssessmentsService {
   }
 
   private assertOptionsBelong(
-    question: QuestionSnapshot,
+    question: QuestionDetail,
     optionIds: number[],
   ): void {
     const allowed = new Set(question.options.map((option) => option.id));
@@ -337,20 +334,20 @@ export class AssessmentsService {
   }
 
   private hasValidStoredResponse(
-    question: QuestionSnapshot,
+    question: QuestionDetail,
     responses: UserResponse[],
   ): boolean {
     const rows = responses.filter((row) => row.questionId === question.id);
     if (rows.length === 0) return false;
 
     switch (question.type) {
-      case QuestionType.SingleChoice:
+      case QuestionType.SINGLE_CHOICE:
         return (
           rows.length === 1 &&
           rows[0].answerOptionId != null &&
           question.options.some((option) => option.id === rows[0].answerOptionId)
         );
-      case QuestionType.MultipleChoice: {
+      case QuestionType.MULTIPLE_CHOICE: {
         const optionIds = rows.map((row) => row.answerOptionId);
         if (optionIds.some((id) => id == null)) return false;
         const unique = new Set(optionIds);
@@ -359,15 +356,15 @@ export class AssessmentsService {
           question.options.some((option) => option.id === id),
         );
       }
-      case QuestionType.Text:
+      case QuestionType.TEXT:
         return rows.length === 1 && Boolean(rows[0].value?.trim());
-      case QuestionType.Number:
+      case QuestionType.NUMBER:
         return (
           rows.length === 1 &&
           rows[0].value != null &&
           Number.isFinite(Number(rows[0].value))
         );
-      case QuestionType.Boolean:
+      case QuestionType.BOOLEAN:
         return (
           rows.length === 1 &&
           (rows[0].value === 'true' || rows[0].value === 'false')
