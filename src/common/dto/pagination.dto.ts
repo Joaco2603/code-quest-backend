@@ -8,8 +8,10 @@ import {
   IsString,
   IsBoolean,
 } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class PaginationDto {
+  @ApiPropertyOptional({ default: 0, minimum: 0, example: 0 })
   @IsOptional()
   @IsInt()
   @Min(0)
@@ -26,6 +28,7 @@ export class PaginationDto {
   })
   offset?: number = 0;
 
+  @ApiPropertyOptional({ default: 10, minimum: 1, maximum: 100, example: 10 })
   @IsOptional()
   @IsInt()
   @Min(1)
@@ -43,6 +46,7 @@ export class PaginationDto {
   })
   limit?: number;
 
+  @ApiPropertyOptional({ default: 1, minimum: 1, example: 1 })
   @IsOptional()
   @IsInt()
   @Min(1)
@@ -59,6 +63,7 @@ export class PaginationDto {
   })
   page?: number;
 
+  @ApiPropertyOptional({ default: 10, minimum: 1, maximum: 100, example: 10 })
   @IsOptional()
   @IsInt()
   @Min(1)
@@ -76,18 +81,29 @@ export class PaginationDto {
   })
   pageSize?: number;
 
+  @ApiPropertyOptional({ example: 'createdAt' })
   @IsOptional()
   @IsString()
   sort?: string;
 
+  @ApiPropertyOptional({ enum: ['asc', 'desc', 'ASC', 'DESC'], example: 'asc' })
   @IsOptional()
   @IsIn(['asc', 'desc', 'ASC', 'DESC'])
   order?: 'asc' | 'desc' | 'ASC' | 'DESC';
 
+  @ApiPropertyOptional({
+    description: 'Opaque cursor for keyset pagination',
+    example: 'd29ya2VyOjEwMA==',
+  })
   @IsOptional()
   @IsString()
   cursor?: string;
 
+  @ApiPropertyOptional({
+    description: 'Return records regardless of the isActive filter',
+    type: Boolean,
+    example: false,
+  })
   @IsOptional()
   @Transform((value) => {
     if (!value.obj) return false;
@@ -96,6 +112,11 @@ export class PaginationDto {
   @IsBoolean()
   all?: boolean;
 
+  @ApiPropertyOptional({
+    description: 'Filter by active state when supported by the endpoint',
+    type: Boolean,
+    example: true,
+  })
   @IsOptional()
   @Transform((value) => {
     if (!value.obj) return true;

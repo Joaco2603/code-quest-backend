@@ -115,6 +115,43 @@ describe('QuestionsService', () => {
     } as AnswerOption;
   }
 
+  it('derives offset from page so page=2 lands on the second page', async () => {
+    questionnaireRepository.findAndCount.mockResolvedValue([[], 25]);
+
+    const result = await service.listQuestionnaires({ page: 2, limit: 10 });
+
+    expect(questionnaireRepository.findAndCount).toHaveBeenCalledWith(
+      expect.objectContaining({ skip: 10, take: 10 }),
+    );
+    expect(result).toEqual({ items: [], total: 25, limit: 10, offset: 10 });
+  });
+
+  it('defaults to limit 10 and offset 0 without pagination input', async () => {
+    questionnaireRepository.findAndCount.mockResolvedValue([[], 3]);
+
+    const result = await service.listQuestionnaires({});
+
+    expect(questionnaireRepository.findAndCount).toHaveBeenCalledWith(
+      expect.objectContaining({ skip: 0, take: 10 }),
+    );
+    expect(result).toEqual({ items: [], total: 3, limit: 10, offset: 0 });
+  });
+
+  it('prefers an explicit offset over a page-derived one', async () => {
+    questionnaireRepository.findAndCount.mockResolvedValue([[], 50]);
+
+    const result = await service.listQuestionnaires({
+      page: 2,
+      limit: 10,
+      offset: 40,
+    });
+
+    expect(questionnaireRepository.findAndCount).toHaveBeenCalledWith(
+      expect.objectContaining({ skip: 40, take: 10 }),
+    );
+    expect(result).toEqual({ items: [], total: 50, limit: 10, offset: 40 });
+  });
+
   it('creates a questionnaire', async () => {
     const created = await service.createQuestionnaire({
       title: 'Skills intake',

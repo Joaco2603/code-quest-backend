@@ -8,6 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PaginationDto } from '../common/dto/pagination.dto.js';
 import { asyncHandler } from '../common/helpers/async-handler.js';
+import { resolvePagination } from '../common/helpers/pagination.js';
 import {
   CreateAnswerOptionDto,
   CreateQuestionDto,
@@ -62,8 +63,8 @@ export class QuestionsService {
   );
 
   listQuestionnaires = asyncHandler(async (paginationDto: PaginationDto) => {
-    const { offset = 0, isActive } = paginationDto;
-    const limit = paginationDto.limit ?? paginationDto.pageSize ?? 10;
+    const { isActive } = paginationDto;
+    const { limit, offset } = resolvePagination(paginationDto, 10);
     const where = typeof isActive === 'boolean' ? { isActive } : {};
 
     const [items, total] = await this.questionnaireRepository.findAndCount({
