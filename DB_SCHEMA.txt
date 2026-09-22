@@ -86,7 +86,7 @@ Table assessments {
   }
 }
 
-Table user_responses {
+Table user_answers {
   id integer [primary key]
   assessment_id integer [not null]
   question_id integer [not null]
@@ -187,9 +187,9 @@ Ref: users.id < roadmaps.user_id
 Ref: questions.id < answer_options.question_id
 Ref: users.id < assessments.user_id
 Ref: questionnaires.id < assessments.questionnaire_id
-Ref: assessments.id < user_responses.assessment_id
-Ref: questions.id < user_responses.question_id
-Ref: answer_options.id ?< user_responses.answer_option_id
+Ref: assessments.id < user_answers.assessment_id
+Ref: questions.id < user_answers.question_id
+Ref: answer_options.id ?< user_answers.answer_option_id
 Ref: users.id < user_technologies.user_id
 Ref: technologies.id < user_technologies.technology_id
 Ref: courses.id < course_technologies.course_id [delete: cascade]

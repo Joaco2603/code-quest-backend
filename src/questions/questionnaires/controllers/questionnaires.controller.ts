@@ -18,11 +18,11 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import { Auth } from '../../auth/decorators/index.js';
-import { JwtAuthGuard } from '../../auth/guards/jwt.guard.js';
-import { TwoFactorGuard } from '../../auth/guards/two-factor.guard.js';
-import { ValidRoles } from '../../auth/interfaces/index.js';
-import { PaginationDto } from '../../common/dto/pagination.dto.js';
+import { Auth } from '../../../auth/decorators/index.js';
+import { JwtAuthGuard } from '../../../auth/guards/jwt.guard.js';
+import { TwoFactorGuard } from '../../../auth/guards/two-factor.guard.js';
+import { ValidRoles } from '../../../auth/interfaces/index.js';
+import { PaginationDto } from '../../../common/dto/pagination.dto.js';
 import {
   CreateQuestionDto,
   CreateQuestionnaireDto,
@@ -94,7 +94,7 @@ export class QuestionnairesController {
   @ApiOperation({
     summary: 'Deactivate a questionnaire',
     description:
-      'Soft-deletes by setting is_active=false so later responses stay referencable.',
+      'Soft-deletes by setting is_active=false so later answers stay referencable.',
   })
   @ApiOkResponse({ description: 'Questionnaire deactivated.' })
   remove(@Param('id', ParseIntPipe) id: number) {

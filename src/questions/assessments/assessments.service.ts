@@ -7,17 +7,17 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Repository } from 'typeorm';
 import { Assessment } from './entities/assessment.entity.js';
-import { UserResponse } from './entities/user-response.entity.js';
-import { CreateAssessmentDto, UpsertResponseDto } from './dtos/index.js';
-import { QuestionsService } from './questions.service.js';
-import { QuestionType } from './enums/question-type.enum.js';
+import { UserAnswer } from './entities/user-answer.entity.js';
+import { CreateAssessmentDto, UpsertAnswerDto } from './dtos/index.js';
+import { QuestionsService } from '../questionnaires/questions.service.js';
+import { QuestionType } from '../questionnaires/enums/question-type.enum.js';
 import type {
   QuestionDetail,
   QuestionnaireDetail,
-} from './interfaces/index.js';
-import type { AuthUser } from '../auth/interfaces/auth-user.type.js';
+} from '../questionnaires/interfaces/index.js';
+import type { AuthUser } from '../../auth/interfaces/auth-user.type.js';
 
-export type AssessmentResponseView = {
+export type AssessmentAnswerView = {
   id: number;
   questionId: number;
   answerOptionId: number | null;
@@ -30,7 +30,7 @@ export type AssessmentView = {
   questionnaireId: number;
   createdAt: Date;
   completedAt: Date | null;
-  responses?: AssessmentResponseView[];
+  answers?: AssessmentAnswerView[];
 };
 
 @Injectable()
@@ -38,8 +38,8 @@ export class AssessmentsService {
   constructor(
     @InjectRepository(Assessment)
     private readonly assessments: Repository<Assessment>,
-    @InjectRepository(UserResponse)
-    private readonly responses: Repository<UserResponse>,
+    @InjectRepository(UserAnswer)
+    private readonly answers: Repository<UserAnswer>,
     private readonly questionsService: QuestionsService,
   ) {}
 
@@ -84,18 +84,18 @@ export class AssessmentsService {
 
   async findMine(user: AuthUser, id: number): Promise<AssessmentView> {
     const assessment = await this.getOwned(user, id);
-    const responses = await this.responses.find({
+    const answers = await this.answers.find({
       where: { assessmentId: assessment.id },
       order: { id: 'ASC' },
     });
-    return this.toView(assessment, responses);
+    return this.toView(assessment, answers);
   }
 
   /** Upsert (update + insert): delete this question's rows, then insert the new ones. */
-  async upsertResponse(
+  async upsertAnswer(
     user: AuthUser,
     id: number,
-    dto: UpsertResponseDto,
+    dto: UpsertAnswerDto,
   ): Promise<AssessmentView> {
     const assessment = await this.getOwned(user, id);
     this.assertWritable(assessment);
@@ -104,14 +104,14 @@ export class AssessmentsService {
       assessment.questionnaireId,
     );
     const question = this.findQuestion(questionnaire, dto.questionId);
-    const rows = this.buildResponseRows(assessment.id, question, dto);
+    const rows = this.buildAnswerRows(assessment.id, question, dto);
 
-    await this.responses.delete({
+    await this.answers.delete({
       assessmentId: assessment.id,
       questionId: question.id,
     });
-    const created = this.responses.create(rows);
-    await this.responses.save(created);
+    const created = this.answers.create(rows);
+    await this.answers.save(created);
 
     return this.findMine(user, id);
   }
@@ -123,13 +123,13 @@ export class AssessmentsService {
     const questionnaire = await this.loadActiveQuestionnaire(
       assessment.questionnaireId,
     );
-    const responses = await this.responses.find({
+    const answers = await this.answers.find({
       where: { assessmentId: assessment.id },
     });
 
     const unanswered = questionnaire.questions.filter(
       (question) =>
-        question.isActive && !this.hasValidStoredResponse(question, responses),
+        question.isActive && !this.hasValidStoredAnswer(question, answers),
     );
 
     if (unanswered.length > 0) {
@@ -140,7 +140,7 @@ export class AssessmentsService {
 
     assessment.completedAt = new Date();
     const saved = await this.assessments.save(assessment);
-    return this.toView(saved, responses);
+    return this.toView(saved, answers);
   }
 
   private async loadActiveQuestionnaire(
@@ -188,11 +188,11 @@ export class AssessmentsService {
     return question;
   }
 
-  private buildResponseRows(
+  private buildAnswerRows(
     assessmentId: number,
     question: QuestionDetail,
-    dto: UpsertResponseDto,
-  ): Array<Partial<UserResponse>> {
+    dto: UpsertAnswerDto,
+  ): Array<Partial<UserAnswer>> {
     const optionIds = this.resolveOptionIds(dto);
 
     switch (question.type) {
@@ -264,7 +264,7 @@ export class AssessmentsService {
     }
   }
 
-  private resolveOptionIds(dto: UpsertResponseDto): number[] {
+  private resolveOptionIds(dto: UpsertAnswerDto): number[] {
     const fromArray = dto.answerOptionIds ?? [];
     const unique = [...new Set(fromArray)];
     if (dto.answerOptionId != null) {
@@ -335,11 +335,11 @@ export class AssessmentsService {
     throw new BadRequestException('value must be true or false');
   }
 
-  private hasValidStoredResponse(
+  private hasValidStoredAnswer(
     question: QuestionDetail,
-    responses: UserResponse[],
+    answers: UserAnswer[],
   ): boolean {
-    const rows = responses.filter((row) => row.questionId === question.id);
+    const rows = answers.filter((row) => row.questionId === question.id);
     if (rows.length === 0) return false;
 
     switch (question.type) {
@@ -380,7 +380,7 @@ export class AssessmentsService {
 
   private toView(
     assessment: Assessment,
-    responses?: UserResponse[],
+    answers?: UserAnswer[],
   ): AssessmentView {
     return {
       id: assessment.id,
@@ -388,9 +388,9 @@ export class AssessmentsService {
       questionnaireId: assessment.questionnaireId,
       createdAt: assessment.createdAt,
       completedAt: assessment.completedAt,
-      ...(responses
+      ...(answers
         ? {
-            responses: responses.map((row) => ({
+            answers: answers.map((row) => ({
               id: row.id,
               questionId: row.questionId,
               answerOptionId: row.answerOptionId,

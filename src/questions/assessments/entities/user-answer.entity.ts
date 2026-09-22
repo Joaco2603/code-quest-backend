@@ -9,8 +9,8 @@ import {
 import type { Relation } from 'typeorm';
 import type { Assessment } from './assessment.entity.js';
 
-@Entity({ name: 'user_responses' })
-export class UserResponse {
+@Entity({ name: 'user_answers' })
+export class UserAnswer {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -18,7 +18,7 @@ export class UserResponse {
   @Column({ name: 'assessment_id', type: 'int' })
   assessmentId: number;
 
-  @ManyToOne('Assessment', 'responses', {
+  @ManyToOne('Assessment', 'answers', {
     onDelete: 'CASCADE',
     nullable: false,
   })

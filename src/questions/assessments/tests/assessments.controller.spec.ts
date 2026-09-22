@@ -3,8 +3,8 @@ import { PassportModule } from '@nestjs/passport';
 import { vi } from 'vitest';
 import { AssessmentsController } from '../controllers/assessments.controller.js';
 import { AssessmentsService } from '../assessments.service.js';
-import { ValidRoles } from '../../auth/interfaces/index.js';
-import type { AuthUser } from '../../auth/interfaces/auth-user.type.js';
+import { ValidRoles } from '../../../auth/interfaces/index.js';
+import type { AuthUser } from '../../../auth/interfaces/auth-user.type.js';
 
 describe('AssessmentsController', () => {
   let controller: AssessmentsController;
@@ -21,7 +21,7 @@ describe('AssessmentsController', () => {
     start: vi.fn(),
     listMine: vi.fn(),
     findMine: vi.fn(),
-    upsertResponse: vi.fn(),
+    upsertAnswer: vi.fn(),
     complete: vi.fn(),
   };
 
@@ -64,15 +64,15 @@ describe('AssessmentsController', () => {
     expect(assessmentsService.findMine).toHaveBeenCalledWith(student, 1);
   });
 
-  it('upserts a response', async () => {
-    assessmentsService.upsertResponse.mockResolvedValue({ id: 1 });
+  it('upserts an answer', async () => {
+    assessmentsService.upsertAnswer.mockResolvedValue({ id: 1 });
 
-    await controller.upsertResponse(student, 1, {
+    await controller.upsertAnswer(student, 1, {
       questionId: 10,
       answerOptionId: 101,
     });
 
-    expect(assessmentsService.upsertResponse).toHaveBeenCalledWith(student, 1, {
+    expect(assessmentsService.upsertAnswer).toHaveBeenCalledWith(student, 1, {
       questionId: 10,
       answerOptionId: 101,
     });

@@ -456,7 +456,7 @@ export function setupSwagger(
     .addTag('Questionnaires', 'Admin and student questionnaire APIs.')
     .addTag('Questions', 'Question authoring for questionnaires.')
     .addTag('Answer options', 'Choice options for questionnaire questions.')
-    .addTag('Assessments', 'Questionnaire attempts and typed student responses.')
+    .addTag('Assessments', 'Questionnaire attempts and typed student answers.')
     .addTag('Challenges', 'Coding challenges, listing, and detail.')
     .addTag('Submissions', 'Challenge submissions and evaluation results.')
     .addTag('Health', 'API and database health checks.')
