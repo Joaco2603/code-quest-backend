@@ -49,9 +49,7 @@ export type TwoFactorChallenge = {
 };
 
 export type LoginChallenge =
-  | PasswordChangeChallenge
-  | SetupChallenge
-  | TwoFactorChallenge;
+  PasswordChangeChallenge | SetupChallenge | TwoFactorChallenge;
 
 export type VerifiedSessionResult = {
   accessToken: string;
@@ -76,9 +74,7 @@ export function serializeRegisteredSession(
   };
 }
 
-export function serializeAuthSessionUser(
-  source: AuthUser,
-): AuthSessionUserDto {
+export function serializeAuthSessionUser(source: AuthUser): AuthSessionUserDto {
   return {
     id: source.id,
     email: source.email,
@@ -146,11 +142,10 @@ export function serializeLoginTwoFactor(
 
 export function serializeLoginChallenge(
   source: LoginChallenge,
-): (
+):
   | LoginPasswordChangeResponseDto
   | LoginSetupResponseDto
-  | LoginTwoFactorResponseDto
-) {
+  | LoginTwoFactorResponseDto {
   if ('requiresPasswordChange' in source) {
     return serializeLoginPasswordChange(source);
   }
@@ -172,12 +167,11 @@ export function serializeVerifiedSession(
 
 export function serializeDiscordExchangeResult(
   source: DiscordExchangeResult,
-): (
+):
   | LoginPasswordChangeResponseDto
   | LoginSetupResponseDto
   | LoginTwoFactorResponseDto
-  | VerifiedSessionResponseDto
-) {
+  | VerifiedSessionResponseDto {
   if (isVerifiedSessionResult(source)) {
     return serializeVerifiedSession(source.user, source.accessToken);
   }
@@ -215,14 +209,19 @@ export function serializeTwoFactorSetup(source: {
 
 export function serializeTwoFactorEnable(source: {
   message: string;
+  accessToken: string;
 }): TwoFactorEnableResponseDto {
-  return { message: source.message };
+  return { message: source.message, accessToken: source.accessToken };
 }
 
 export function serializeTwoFactorDisable(source: {
   message: string;
+  accessToken?: string;
 }): TwoFactorDisableResponseDto {
-  return { message: source.message };
+  return {
+    message: source.message,
+    ...(source.accessToken ? { accessToken: source.accessToken } : {}),
+  };
 }
 
 export function serializeDiscordLink(url: string): DiscordLinkResponseDto {

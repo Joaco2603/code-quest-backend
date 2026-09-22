@@ -8,6 +8,7 @@ import { ConfigService } from '@nestjs/config';
 import { AuthUser } from '../interfaces/auth-user.type.js';
 import { JwtPayload } from '../interfaces/jwt-payload.type.js';
 import { JwtPurpose } from '../interfaces/jwt-purpose.js';
+import { accessTokenMatchesAccount } from '../helpers/access-token-policy.js';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -50,15 +51,18 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     if (!user.isActive)
       throw new UnauthorizedException('User is inactive, talk with an admin');
 
+    if (!accessTokenMatchesAccount(user, payload)) {
+      throw new UnauthorizedException('Session is no longer valid');
+    }
+
     return {
       id: payload.sub,
       email: payload.email ?? user.email,
-      is_two_factor_enabled:
-        payload.is_two_factor_enabled ?? user.is_two_factor_enabled,
+      is_two_factor_enabled: user.is_two_factor_enabled,
       is_two_factor_validated: payload.is_two_factor_validated ?? false,
       role: user.role,
       client_id: payload.client ?? user.client?.id,
-      mustChangePassword: payload.mustChangePassword,
+      mustChangePassword: user.mustChangePassword,
       isRecovery: payload.isRecovery,
       purpose: payload.purpose,
     };

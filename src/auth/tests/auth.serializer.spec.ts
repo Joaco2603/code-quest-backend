@@ -199,14 +199,28 @@ describe('auth serializers', () => {
     });
     expect(serializeProvisioning).toBeDefined();
 
-    expect(serializeTwoFactorEnable({ message: '2FA enabled' })).toEqual({
+    expect(
+      serializeTwoFactorEnable({
+        message: '2FA enabled',
+        accessToken: 'replacement-token',
+      }),
+    ).toEqual({
       message: '2FA enabled',
-    });
-    expect(serializeTwoFactorDisable({ message: '2FA disabled' })).toEqual({
-      message: '2FA disabled',
+      accessToken: 'replacement-token',
     });
     expect(
-      serializePasswordChangeResult({ message: 'Password changed successfully' }),
+      serializeTwoFactorDisable({
+        message: '2FA disabled',
+        accessToken: 'replacement-token',
+      }),
+    ).toEqual({
+      message: '2FA disabled',
+      accessToken: 'replacement-token',
+    });
+    expect(
+      serializePasswordChangeResult({
+        message: 'Password changed successfully',
+      }),
     ).toEqual({ message: 'Password changed successfully' });
 
     expect(
@@ -225,9 +239,9 @@ describe('auth serializers', () => {
   });
 
   it('serializes discord link and ticket payloads without extra fields', () => {
-    expect(serializeDiscordLink('https://discord.com/oauth2/authorize')).toEqual(
-      { url: 'https://discord.com/oauth2/authorize' },
-    );
+    expect(
+      serializeDiscordLink('https://discord.com/oauth2/authorize'),
+    ).toEqual({ url: 'https://discord.com/oauth2/authorize' });
     expect(serializeDiscordTicket('ticket-123')).toEqual({
       code: 'ticket-123',
     });

@@ -86,6 +86,12 @@ export class AuthController {
       'Creates an active standard user and returns a full session. Privileged fields are rejected.',
   })
   @ApiCreatedResponse({ type: VerifiedSessionDataResponseDto })
+  @ApiBadRequestResponse({
+    description: 'Invalid payload, or the account could not be created.',
+    schema: {
+      example: { statusCode: 400, message: 'Unable to create the account' },
+    },
+  })
   @RateLimit(5, 60_000)
   async register(@Body() dto: RegisterUserDto) {
     const { user, accessToken } = await this.authService.register(dto);
@@ -104,8 +110,10 @@ export class AuthController {
     type: AuthRegisterDataResponseDto,
   })
   @ApiBadRequestResponse({
-    description: 'Invalid user payload or duplicated email.',
-    schema: { example: { statusCode: 400, message: 'Email already exists' } },
+    description: 'Invalid payload, or the account could not be created.',
+    schema: {
+      example: { statusCode: 400, message: 'Unable to create the account' },
+    },
   })
   @ApiUnauthorizedResponse({
     description: 'Missing or invalid bearer token.',

@@ -1,11 +1,13 @@
 import {
   Controller,
+  ForbiddenException,
   Post,
   Req,
   Body,
   UseGuards,
 } from '@nestjs/common';
 import { TwoFactorService } from '../services/two-factor.service.js';
+import { AuthService } from '../services/auth.service.js';
 import { JwtAuthGuard } from '../guards/jwt.guard.js';
 import { TwoFactorGuard } from '../guards/two-factor.guard.js';
 import {
@@ -33,7 +35,10 @@ import {
 @Controller('2fa')
 @UseGuards(JwtAuthGuard)
 export class TwoFactorController {
-  constructor(private readonly twoFactorService: TwoFactorService) {}
+  constructor(
+    private readonly twoFactorService: TwoFactorService,
+    private readonly authService: AuthService,
+  ) {}
 
   @Post('generate')
   @ApiOperation({
@@ -63,16 +68,30 @@ export class TwoFactorController {
     description: '2FA enabled.',
     type: TwoFactorEnableDataResponseDto,
   })
-  async enable(
-    @Req() req: { user: AuthUser },
-    @Body() dto: Verify2FADto,
-  ) {
+  async enable(@Req() req: { user: AuthUser }, @Body() dto: Verify2FADto) {
+    const account =
+      await this.authService.assertAccountReadyForSessionReplacement(req.user);
     const result = await this.twoFactorService.confirmEnable(
       req.user.id,
       dto.code,
     );
+    account.is_two_factor_enabled = true;
+    const session = await this.authService.issueVerifiedAccessToken(
+      req.user,
+      account,
+    );
+    if (!session) {
+      throw new ForbiddenException(
+        'Finish the pending challenge before opening a full session',
+      );
+    }
 
-    return toDataResponse(serializeTwoFactorEnable(result));
+    return toDataResponse(
+      serializeTwoFactorEnable({
+        message: result.message,
+        accessToken: session.accessToken,
+      }),
+    );
   }
 
   @Post('disable')
@@ -87,8 +106,20 @@ export class TwoFactorController {
     type: TwoFactorDisableDataResponseDto,
   })
   async disable(@Req() req: { user: AuthUser }) {
+    const account =
+      await this.authService.assertAccountReadyForSessionReplacement(req.user);
     const result = await this.twoFactorService.disable(req.user.id);
+    account.is_two_factor_enabled = false;
+    const session = await this.authService.issueVerifiedAccessToken(
+      req.user,
+      account,
+    );
 
-    return toDataResponse(serializeTwoFactorDisable(result));
+    return toDataResponse(
+      serializeTwoFactorDisable({
+        message: result.message,
+        ...(session ? { accessToken: session.accessToken } : {}),
+      }),
+    );
   }
 }

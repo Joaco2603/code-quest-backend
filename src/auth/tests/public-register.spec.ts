@@ -67,6 +67,16 @@ describe('Public registration HTTP contract', () => {
       expect(register).not.toHaveBeenCalled();
     },
   );
+  it.each(['first_name', 'last_name'])(
+    'rejects blank %s after trimming',
+    async (field) => {
+      await request(app.getHttpServer())
+        .post('/api/auth/register')
+        .send({ ...payload, [field]: '   ' })
+        .expect(400);
+      expect(register).not.toHaveBeenCalled();
+    },
+  );
   it('rejects weak passwords', async () => {
     await request(app.getHttpServer())
       .post('/api/auth/register')

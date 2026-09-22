@@ -48,7 +48,9 @@ export class CreateUserDto {
   @IsString()
   @MinLength(2)
   @MaxLength(70)
-  @Transform(({ value }) => value?.toLowerCase())
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().toLowerCase() : value,
+  )
   first_name: string;
 
   @ApiProperty({
@@ -60,7 +62,9 @@ export class CreateUserDto {
   @IsString()
   @MinLength(2)
   @MaxLength(70)
-  @Transform(({ value }) => value?.toLowerCase())
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().toLowerCase() : value,
+  )
   last_name: string;
 
   @ApiProperty({
@@ -72,7 +76,9 @@ export class CreateUserDto {
   @IsString()
   @MinLength(5)
   @MaxLength(300)
-  @Transform(({ value }) => value?.toLowerCase())
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim().toLowerCase() : value,
+  )
   address: string;
 
   @ApiPropertyOptional({

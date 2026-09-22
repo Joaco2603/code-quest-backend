@@ -11,13 +11,19 @@ import {
   UserDeleteResponseDto,
 } from './dtos/index.js';
 import { User } from './entities/user.entity.js';
-import { Brackets, Repository } from 'typeorm';
+import { Brackets, QueryFailedError, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { asyncHandler } from '../common/helpers/async-handler.js';
 import { PaginationDto } from '../common/dto/pagination.dto.js';
 import { AuthUser, ValidRoles } from '../auth/interfaces/index.js';
 import { AuditLogService } from '../common/services/audit-log.service.js';
 import { BcryptAdapter } from '../auth/adapters/bcrypt.adapter.js';
+
+const DUPLICATE_ACCOUNT_MESSAGE = 'Unable to create the account';
+
+type CreateUserInput = Omit<CreateUserDto, 'address'> & {
+  address?: string | null;
+};
 
 type TwoFactorState = {
   two_factor_secret?: string | null;
@@ -36,30 +42,35 @@ export class UserService {
 
   create = asyncHandler(
     async (
-      createUserDto: CreateUserDto,
+      createUserDto: CreateUserInput,
       options?: { selfRegistered: boolean },
     ) => {
-      const { client_id, password, ...userData } = createUserDto;
+      const { client_id, password, address, ...userData } = createUserDto;
+      const passwordHash = await this.hashPassword(password);
 
       const existingUser = await this.userRepository.findOne({
         where: { email: userData.email },
       });
 
       if (existingUser) {
-        throw new BadRequestException(
-          `User with email ${userData.email} already exists`,
-        );
+        throw new BadRequestException(DUPLICATE_ACCOUNT_MESSAGE);
       }
 
       const user = this.userRepository.create({
         ...userData,
+        address: address ?? null,
         mustChangePassword: options?.selfRegistered ? false : true,
-        password: await this.hashPassword(password),
+        password: passwordHash,
         role: (userData.role as ValidRoles) || ValidRoles.user,
         client: client_id ? ({ id: client_id } as User) : null,
       });
 
-      await this.userRepository.save(user);
+      try {
+        await this.userRepository.save(user);
+      } catch (error) {
+        this.rethrowDuplicateAccount(error);
+        throw error;
+      }
       await this.auditLogService.recordDomainEvent({
         statusCode: 201,
         outcome: 'success',
@@ -256,9 +267,7 @@ export class UserService {
     });
 
     if (existingUser) {
-      throw new BadRequestException(
-        `User with email ${data.email} already exists`,
-      );
+      throw new BadRequestException(DUPLICATE_ACCOUNT_MESSAGE);
     }
 
     const user = this.userRepository.create({
@@ -273,7 +282,12 @@ export class UserService {
       isActive: true,
     });
 
-    await this.userRepository.save(user);
+    try {
+      await this.userRepository.save(user);
+    } catch (error) {
+      this.rethrowDuplicateAccount(error);
+      throw error;
+    }
     await this.auditLogService.recordDomainEvent({
       statusCode: 201,
       outcome: 'success',
@@ -519,5 +533,16 @@ export class UserService {
     }
 
     query.andWhere('user.id = :actorId', { actorId: actor.id });
+  }
+
+  private rethrowDuplicateAccount(error: unknown): void {
+    if (!(error instanceof QueryFailedError)) {
+      return;
+    }
+
+    const code = (error.driverError as { code?: string }).code;
+    if (code === '23505') {
+      throw new BadRequestException(DUPLICATE_ACCOUNT_MESSAGE);
+    }
   }
 }

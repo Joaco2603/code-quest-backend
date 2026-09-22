@@ -1,4 +1,5 @@
-import { ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import { QueryFailedError } from 'typeorm';
 import { UserService } from '../user.service.js';
 import { User } from '../entities/user.entity.js';
 import { AuditLogService } from '../../common/services/audit-log.service.js';
@@ -81,6 +82,43 @@ describe('UserService', () => {
       expect(await bcryptAdapter.compareHash('Password1!', hashed)).toBe(true);
     },
   );
+
+  it('rejects a duplicate email without revealing the address', async () => {
+    userRepository.findOne.mockResolvedValue({ id: 'existing' });
+
+    await expect(
+      service.create({
+        email: 'taken@example.com',
+        password: 'Password1!',
+        first_name: 'New',
+        last_name: 'User',
+        address: 'Street 123',
+      }),
+    ).rejects.toThrow(new BadRequestException('Unable to create the account'));
+    expect(userRepository.save).not.toHaveBeenCalled();
+  });
+
+  it('maps a unique email violation to the same conflict', async () => {
+    userRepository.findOne.mockResolvedValue(null);
+    userRepository.create.mockImplementation((data: Partial<User>) => ({
+      id: 'user-1',
+      role: ValidRoles.user,
+      ...data,
+    }));
+    userRepository.save.mockRejectedValue(
+      new QueryFailedError('INSERT', [], { code: '23505' } as never),
+    );
+
+    await expect(
+      service.create({
+        email: 'taken@example.com',
+        password: 'Password1!',
+        first_name: 'New',
+        last_name: 'User',
+        address: 'Street 123',
+      }),
+    ).rejects.toThrow(new BadRequestException('Unable to create the account'));
+  });
 
   it('rejects role changes from client users', async () => {
     userRepository.findOne.mockResolvedValue({
