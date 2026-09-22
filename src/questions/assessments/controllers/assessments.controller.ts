@@ -49,6 +49,7 @@ export class AssessmentsController {
         questionnaireId: 4,
         createdAt: '2026-09-17T08:00:00.000Z',
         completedAt: null,
+        questionnaireActive: true,
       },
     },
   })
@@ -79,6 +80,7 @@ export class AssessmentsController {
           questionnaireId: 4,
           createdAt: '2026-09-17T08:00:00.000Z',
           completedAt: null,
+          questionnaireActive: true,
         },
       ],
     },
@@ -102,6 +104,7 @@ export class AssessmentsController {
         questionnaireId: 4,
         createdAt: '2026-09-17T08:00:00.000Z',
         completedAt: null,
+        questionnaireActive: true,
         answers: [
           {
             id: 10,
@@ -127,7 +130,10 @@ export class AssessmentsController {
   })
   @ApiOkResponse({ description: 'Assessment with updated answers.' })
   @ApiNotFoundResponse({ description: 'Assessment was not found.' })
-  @ApiConflictResponse({ description: 'Assessment is already completed.' })
+  @ApiConflictResponse({
+    description:
+      'Assessment is already completed, or its questionnaire is inactive.',
+  })
   upsertAnswer(
     @GetUser() user: AuthUser,
     @Param('id', ParseIntPipe) id: number,
@@ -145,7 +151,10 @@ export class AssessmentsController {
   })
   @ApiOkResponse({ description: 'Assessment completed.' })
   @ApiNotFoundResponse({ description: 'Assessment was not found.' })
-  @ApiConflictResponse({ description: 'Assessment is already completed.' })
+  @ApiConflictResponse({
+    description:
+      'Assessment is already completed, or its questionnaire is inactive.',
+  })
   complete(@GetUser() user: AuthUser, @Param('id', ParseIntPipe) id: number) {
     return this.assessmentsService.complete(user, id);
   }

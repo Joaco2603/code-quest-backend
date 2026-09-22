@@ -3,14 +3,14 @@ import {
   ConflictException,
   NotFoundException,
 } from '@nestjs/common';
-import { IsNull } from 'typeorm';
+import { IsNull, QueryFailedError } from 'typeorm';
 import { vi } from 'vitest';
 import { AssessmentsService } from '../assessments.service.js';
+import { Assessment } from '../entities/assessment.entity.js';
 import { ValidRoles } from '../../../auth/interfaces/index.js';
 import type { AuthUser } from '../../../auth/interfaces/auth-user.type.js';
 import { QuestionType } from '../../questionnaires/enums/question-type.enum.js';
 import type { QuestionnaireDetail } from '../../questionnaires/interfaces/index.js';
-import type { Assessment } from '../entities/assessment.entity.js';
 import type { UserAnswer } from '../entities/user-answer.entity.js';
 
 const student: AuthUser = {
@@ -44,8 +44,8 @@ function buildQuestionnaire(
         isActive: true,
         sortOrder: 1,
         options: [
-          { id: 101, label: 'A', value: 'a', sortOrder: 1 },
-          { id: 102, label: 'B', value: 'b', sortOrder: 2 },
+          { id: 101, label: 'A', value: 'a', sortOrder: 1, isActive: true },
+          { id: 102, label: 'B', value: 'b', sortOrder: 2, isActive: true },
         ],
       },
       {
@@ -55,9 +55,9 @@ function buildQuestionnaire(
         isActive: true,
         sortOrder: 2,
         options: [
-          { id: 201, label: 'X', value: 'x', sortOrder: 1 },
-          { id: 202, label: 'Y', value: 'y', sortOrder: 2 },
-          { id: 203, label: 'Z', value: 'z', sortOrder: 3 },
+          { id: 201, label: 'X', value: 'x', sortOrder: 1, isActive: true },
+          { id: 202, label: 'Y', value: 'y', sortOrder: 2, isActive: true },
+          { id: 203, label: 'Z', value: 'z', sortOrder: 3, isActive: true },
         ],
       },
       {
@@ -113,6 +113,8 @@ function openAssessment(overrides?: Partial<Assessment>): Assessment {
 describe('AssessmentsService', () => {
   const questionsService = {
     getActiveQuestionnaire: vi.fn(),
+    getQuestionnaireForAttempt: vi.fn(),
+    questionnaireActivity: vi.fn(),
   };
 
   const assessments = {
@@ -129,9 +131,39 @@ describe('AssessmentsService', () => {
     save: vi.fn(),
   };
 
+  const db = {
+    transaction: vi.fn(
+      async (
+        work: (manager: {
+          query: (sql: string, params: unknown[]) => Promise<unknown[]>;
+          getRepository: (entity: unknown) => unknown;
+        }) => Promise<unknown>,
+      ) =>
+        work({
+          query: async (sql: string, params: unknown[]) => {
+            if (sql.includes('FROM "questionnaires"')) {
+              const questionnaire =
+                await questionsService.getQuestionnaireForAttempt(params[0]);
+              return [{ is_active: questionnaire.isActive === true }];
+            }
+            if (sql.includes('FROM "answer_options"')) {
+              return (params[0] as number[]).map((id) => ({ id }));
+            }
+            const found = await assessments.findOne({
+              where: { id: params[0], userId: params[1] },
+            });
+            return found ? [{ id: found.id }] : [];
+          },
+          getRepository: (entity: unknown) =>
+            entity === Assessment ? assessments : answers,
+        }),
+    ),
+  };
+
   const service = new AssessmentsService(
     assessments as never,
     answers as never,
+    db as never,
     questionsService as never,
   );
 
@@ -139,6 +171,12 @@ describe('AssessmentsService', () => {
     vi.clearAllMocks();
     questionsService.getActiveQuestionnaire.mockResolvedValue(
       buildQuestionnaire(),
+    );
+    questionsService.getQuestionnaireForAttempt.mockResolvedValue(
+      buildQuestionnaire(),
+    );
+    questionsService.questionnaireActivity.mockImplementation(
+      async (ids: number[]) => new Map(ids.map((id) => [id, true])),
     );
     assessments.create.mockImplementation((data: Partial<Assessment>) => data);
     answers.create.mockImplementation((data: unknown) => data);
@@ -176,6 +214,7 @@ describe('AssessmentsService', () => {
         userId: student.id,
         questionnaireId: 4,
         completedAt: null,
+        questionnaireActive: true,
       });
     });
 
@@ -197,6 +236,19 @@ describe('AssessmentsService', () => {
         service.start(student, { questionnaireId: 4 }),
       ).rejects.toThrow(ConflictException);
       expect(assessments.save).not.toHaveBeenCalled();
+    });
+
+    it('maps a concurrent unique violation to the incomplete conflict', async () => {
+      assessments.findOne.mockResolvedValue(null);
+      const driverError = new Error('duplicate key');
+      Object.assign(driverError, { code: '23505' });
+      assessments.save.mockRejectedValue(
+        new QueryFailedError('INSERT', [], driverError),
+      );
+
+      await expect(
+        service.start(student, { questionnaireId: 4 }),
+      ).rejects.toThrow(ConflictException);
     });
 
     it('allows a new assessment after a previous one is completed', async () => {
@@ -334,6 +386,69 @@ describe('AssessmentsService', () => {
       await expect(
         service.upsertAnswer(student, 1, { questionId: 13, value: 'nope' }),
       ).rejects.toThrow(BadRequestException);
+    });
+
+    it('rejects a blank number', async () => {
+      await expect(
+        service.upsertAnswer(student, 1, { questionId: 13, value: '' }),
+      ).rejects.toThrow(BadRequestException);
+      await expect(
+        service.upsertAnswer(student, 1, { questionId: 13, value: '   ' }),
+      ).rejects.toThrow(BadRequestException);
+      expect(answers.save).not.toHaveBeenCalled();
+    });
+
+    it('rejects a deactivated answer option', async () => {
+      const questionnaire = buildQuestionnaire();
+      questionnaire.questions[0].options[0].isActive = false;
+      questionsService.getQuestionnaireForAttempt.mockResolvedValue(
+        questionnaire,
+      );
+
+      await expect(
+        service.upsertAnswer(student, 1, {
+          questionId: 10,
+          answerOptionId: 101,
+        }),
+      ).rejects.toThrow(BadRequestException);
+      expect(answers.delete).not.toHaveBeenCalled();
+    });
+
+    it('rejects an empty choice question and still accepts the others', async () => {
+      const questionnaire = buildQuestionnaire();
+      for (const option of questionnaire.questions[0].options) {
+        option.isActive = false;
+      }
+      questionsService.getQuestionnaireForAttempt.mockResolvedValue(
+        questionnaire,
+      );
+
+      await expect(
+        service.upsertAnswer(student, 1, {
+          questionId: 10,
+          answerOptionId: 101,
+        }),
+      ).rejects.toThrow(ConflictException);
+
+      await service.upsertAnswer(student, 1, {
+        questionId: 12,
+        value: 'still ok',
+      });
+      expect(answers.save).toHaveBeenCalled();
+    });
+
+    it('rejects writes while the questionnaire is inactive', async () => {
+      questionsService.getQuestionnaireForAttempt.mockResolvedValue(
+        buildQuestionnaire({ isActive: false }),
+      );
+
+      await expect(
+        service.upsertAnswer(student, 1, {
+          questionId: 12,
+          value: 'later',
+        }),
+      ).rejects.toThrow(ConflictException);
+      expect(answers.delete).not.toHaveBeenCalled();
     });
 
     it('stores boolean true/false as canonical strings', async () => {
@@ -477,6 +592,53 @@ describe('AssessmentsService', () => {
       });
     });
 
+    it('keeps a stored answer valid after its option is deactivated', async () => {
+      const questionnaire = buildQuestionnaire();
+      questionnaire.questions[0].options[0].isActive = false;
+      questionsService.getQuestionnaireForAttempt.mockResolvedValue(
+        questionnaire,
+      );
+      const assessment = openAssessment();
+      assessments.findOne.mockResolvedValue(assessment);
+      answers.find.mockResolvedValue(answered);
+      assessments.save.mockImplementation(async (row: Assessment) => row);
+
+      await expect(service.complete(student, 1)).resolves.toMatchObject({
+        questionnaireActive: true,
+      });
+    });
+
+    it('rejects completion of a choice question with no active options', async () => {
+      const questionnaire = buildQuestionnaire();
+      for (const option of questionnaire.questions[0].options) {
+        option.isActive = false;
+      }
+      questionsService.getQuestionnaireForAttempt.mockResolvedValue(
+        questionnaire,
+      );
+      assessments.findOne.mockResolvedValue(openAssessment());
+      answers.find.mockResolvedValue(
+        answered.filter((row) => row.questionId !== 10),
+      );
+
+      await expect(service.complete(student, 1)).rejects.toThrow(
+        ConflictException,
+      );
+      expect(assessments.save).not.toHaveBeenCalled();
+    });
+
+    it('rejects completion while the questionnaire is inactive', async () => {
+      assessments.findOne.mockResolvedValue(openAssessment());
+      questionsService.getQuestionnaireForAttempt.mockResolvedValue(
+        buildQuestionnaire({ isActive: false }),
+      );
+
+      await expect(service.complete(student, 1)).rejects.toThrow(
+        ConflictException,
+      );
+      expect(assessments.save).not.toHaveBeenCalled();
+    });
+
     it('rejects a second complete call', async () => {
       assessments.findOne.mockResolvedValue(
         openAssessment({ completedAt: new Date() }),
@@ -499,6 +661,19 @@ describe('AssessmentsService', () => {
         order: { createdAt: 'DESC' },
       });
       expect(result).toHaveLength(1);
+      expect(result[0].questionnaireActive).toBe(true);
+    });
+
+    it('shows an inactive questionnaire on the owned assessment', async () => {
+      assessments.findOne.mockResolvedValue(openAssessment());
+      answers.find.mockResolvedValue([]);
+      questionsService.questionnaireActivity.mockResolvedValue(
+        new Map([[4, false]]),
+      );
+
+      const result = await service.findMine(student, 1);
+
+      expect(result.questionnaireActive).toBe(false);
     });
 
     it('returns 404 for another user assessment', async () => {

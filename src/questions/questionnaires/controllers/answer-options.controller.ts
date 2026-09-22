@@ -39,8 +39,12 @@ export class AnswerOptionsController {
   }
 
   @Delete(':id')
-  @ApiOperation({ summary: 'Hard-delete an answer option' })
-  @ApiOkResponse({ description: 'Option deleted.' })
+  @ApiOperation({
+    summary: 'Deactivate an answer option',
+    description:
+      'Soft-deletes by setting is_active=false so stored answers stay referencable.',
+  })
+  @ApiOkResponse({ description: 'Option deactivated.' })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.questionsService.deleteOption(id);
   }

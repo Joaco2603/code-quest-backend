@@ -5,6 +5,7 @@ export type AnswerOptionDetail = {
   label: string;
   value: string | null;
   sortOrder: number;
+  isActive: boolean;
 };
 
 export type QuestionDetail = {

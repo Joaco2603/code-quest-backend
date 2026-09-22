@@ -80,7 +80,9 @@ describe('QuestionsService', () => {
     optionRepository.remove.mockResolvedValue(undefined);
   });
 
-  function questionnaire(overrides: Partial<Questionnaire> = {}): Questionnaire {
+  function questionnaire(
+    overrides: Partial<Questionnaire> = {},
+  ): Questionnaire {
     return {
       id: 1,
       title: 'Skills intake',
@@ -111,6 +113,7 @@ describe('QuestionsService', () => {
       label: 'JavaScript',
       value: 'js',
       sortOrder: 0,
+      isActive: true,
       ...overrides,
     } as AnswerOption;
   }
@@ -181,9 +184,9 @@ describe('QuestionsService', () => {
       question({ type: QuestionType.TEXT }),
     );
 
-    await expect(
-      service.createOption(10, { label: 'Nope' }),
-    ).rejects.toThrow(BadRequestException);
+    await expect(service.createOption(10, { label: 'Nope' })).rejects.toThrow(
+      BadRequestException,
+    );
   });
 
   it('hides inactive questionnaires and questions from students', async () => {
@@ -276,8 +279,29 @@ describe('QuestionsService', () => {
 
     const detail = await service.getActiveQuestionnaire(1);
     expect(detail.questions.map((item: Question) => item.id)).toEqual([10, 12]);
-    expect(detail.questions[1].options.map((item: AnswerOption) => item.id)).toEqual([
-      101, 102, 103,
+    expect(
+      detail.questions[1].options.map((item: AnswerOption) => item.id),
+    ).toEqual([101, 102, 103]);
+  });
+
+  it('returns the other questions when one choice question has no active options', async () => {
+    questionnaireRepository.findOne.mockResolvedValue(
+      questionnaire({
+        questions: [
+          question({ id: 10, sortOrder: 0, options: [] }),
+          question({
+            id: 12,
+            sortOrder: 1,
+            type: QuestionType.TEXT,
+            options: [],
+          }),
+        ],
+      }),
+    );
+
+    const detail = await service.getActiveQuestionnaire(1);
+    expect(detail.questions.map((item: { id: number }) => item.id)).toEqual([
+      10, 12,
     ]);
   });
 
@@ -304,9 +328,9 @@ describe('QuestionsService', () => {
     await expect(service.getQuestionnaireForAdmin(99)).rejects.toThrow(
       NotFoundException,
     );
-    await expect(
-      service.updateQuestion(99, { question: 'x' }),
-    ).rejects.toThrow(NotFoundException);
+    await expect(service.updateQuestion(99, { question: 'x' })).rejects.toThrow(
+      NotFoundException,
+    );
     await expect(service.deleteOption(99)).rejects.toThrow(NotFoundException);
   });
 
@@ -326,6 +350,62 @@ describe('QuestionsService', () => {
     expect(questionRepository.save).toHaveBeenCalledWith(
       expect.objectContaining({ isActive: false }),
     );
+
+    optionRepository.findOne.mockResolvedValue(option());
+    const deactivatedOption = await service.deleteOption(100);
+    expect(deactivatedOption).toEqual({
+      message: 'Answer option deactivated',
+      id: 100,
+    });
+    expect(optionRepository.save).toHaveBeenCalledWith(
+      expect.objectContaining({ isActive: false }),
+    );
+    expect(optionRepository.remove).not.toHaveBeenCalled();
+  });
+
+  it('hides inactive options from students and keeps them for attempts', async () => {
+    const active = option({ id: 1, isActive: true });
+    const retired = option({ id: 2, isActive: false, label: 'Retired' });
+    questionnaireRepository.findOne.mockResolvedValue(
+      questionnaire({
+        questions: [question({ options: [active, retired] })],
+      }),
+    );
+
+    const studentView = await service.getActiveQuestionnaire(1);
+    expect(
+      studentView.questions[0].options.map((item: { id: number }) => item.id),
+    ).toEqual([1]);
+
+    const attempt = await service.getQuestionnaireForAttempt(1);
+    expect(
+      attempt.questions[0].options.map((item: { id: number }) => item.id),
+    ).toEqual([1, 2]);
+  });
+
+  it('returns an inactive questionnaire for an existing attempt', async () => {
+    questionnaireRepository.findOne.mockResolvedValue(
+      questionnaire({
+        isActive: false,
+        questions: [question({ options: [option()] })],
+      }),
+    );
+
+    const attempt = await service.getQuestionnaireForAttempt(1);
+    expect(attempt.isActive).toBe(false);
+  });
+
+  it('allows a type change when every option is inactive', async () => {
+    questionRepository.findOne.mockResolvedValue(
+      question({ options: [option({ isActive: false })] }),
+    );
+    questionRepository.save.mockImplementation(async (row: Question) => row);
+
+    const updated = await service.updateQuestion(10, {
+      type: QuestionType.TEXT,
+    });
+
+    expect(updated.type).toBe(QuestionType.TEXT);
   });
 
   it('blocks incompatible type changes when options exist', async () => {

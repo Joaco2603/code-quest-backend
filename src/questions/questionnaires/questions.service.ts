@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { PaginationDto } from '../../common/dto/pagination.dto.js';
 import { asyncHandler } from '../../common/helpers/async-handler.js';
 import {
@@ -48,7 +48,7 @@ export class QuestionsService {
       });
       const saved = await this.questionnaireRepository.save(questionnaire);
       saved.questions = [];
-      return this.toQuestionnaireDetail(saved, false);
+      return this.toQuestionnaireDetail(saved, false, false);
     },
   );
 
@@ -65,7 +65,9 @@ export class QuestionsService {
     });
 
     return {
-      items: items.map((item) => this.toQuestionnaireDetail(item, false)),
+      items: items.map((item) =>
+        this.toQuestionnaireDetail(item, false, false),
+      ),
       total,
       offset,
       limit,
@@ -78,7 +80,7 @@ export class QuestionsService {
       order: { createdAt: 'DESC', id: 'DESC' },
     });
 
-    return items.map((item) => this.toQuestionnaireDetail(item, false));
+    return items.map((item) => this.toQuestionnaireDetail(item, false, false));
   });
 
   getActiveQuestionnaire = asyncHandler(
@@ -87,16 +89,34 @@ export class QuestionsService {
       if (!questionnaire.isActive) {
         throw new NotFoundException(`Questionnaire ${id} was not found`);
       }
-      const detail = this.toQuestionnaireDetail(questionnaire, true);
-      this.assertChoiceQuestionsHaveOptions(detail);
+      const detail = this.toQuestionnaireDetail(questionnaire, true, true);
+      this.assertQuestionnaireCanBeStarted(detail);
       return detail;
     },
   );
 
+  /** Attempt view: inactive questionnaires stay readable, and stored answers keep deactivated options. */
+  getQuestionnaireForAttempt = asyncHandler(
+    async (id: number): Promise<QuestionnaireDetail> => {
+      const questionnaire = await this.loadQuestionnaire(id);
+      return this.toQuestionnaireDetail(questionnaire, true, false);
+    },
+  );
+
+  questionnaireActivity = asyncHandler(async (ids: number[]) => {
+    const unique = [...new Set(ids)];
+    if (unique.length === 0) return new Map<number, boolean>();
+    const rows = await this.questionnaireRepository.find({
+      where: { id: In(unique) },
+      select: { id: true, isActive: true },
+    });
+    return new Map(rows.map((row) => [row.id, row.isActive]));
+  });
+
   getQuestionnaireForAdmin = asyncHandler(
     async (id: number): Promise<QuestionnaireDetail> => {
       const questionnaire = await this.loadQuestionnaire(id);
-      return this.toQuestionnaireDetail(questionnaire, false);
+      return this.toQuestionnaireDetail(questionnaire, false, false);
     },
   );
 
@@ -112,7 +132,7 @@ export class QuestionsService {
       }
       if (dto.isActive !== undefined) questionnaire.isActive = dto.isActive;
       await this.questionnaireRepository.save(questionnaire);
-      return this.toQuestionnaireDetail(questionnaire, false);
+      return this.toQuestionnaireDetail(questionnaire, false, false);
     },
   );
 
@@ -146,6 +166,7 @@ export class QuestionsService {
             label: option.label,
             value: option.value ?? null,
             sortOrder: option.sortOrder ?? 0,
+            isActive: true,
             question: { id: saved.id } as Question,
           }),
         );
@@ -154,7 +175,7 @@ export class QuestionsService {
         saved.options = [];
       }
 
-      return this.toQuestionDetail(saved);
+      return this.toQuestionDetail(saved, false);
     },
   );
 
@@ -163,11 +184,14 @@ export class QuestionsService {
       const question = await this.loadQuestion(id);
       const nextType = dto.type ?? question.type;
 
+      const activeOptions = (question.options ?? []).filter(
+        (option) => option.isActive !== false,
+      );
       if (
         dto.type !== undefined &&
         dto.type !== question.type &&
         !isChoiceQuestionType(nextType) &&
-        (question.options?.length ?? 0) > 0
+        activeOptions.length > 0
       ) {
         throw new ConflictException(
           'Cannot change question type while answer options exist',
@@ -180,7 +204,7 @@ export class QuestionsService {
       if (dto.sortOrder !== undefined) question.sortOrder = dto.sortOrder;
 
       await this.questionRepository.save(question);
-      return this.toQuestionDetail(question);
+      return this.toQuestionDetail(question, false);
     },
   );
 
@@ -203,32 +227,36 @@ export class QuestionsService {
         label: dto.label,
         value: dto.value ?? null,
         sortOrder: dto.sortOrder ?? 0,
+        isActive: true,
         question: { id: question.id } as Question,
       });
       const saved = await this.optionRepository.save(option);
       question.options = [...(question.options ?? []), saved];
-      return this.toQuestionDetail(question);
+      return this.toQuestionDetail(question, false);
     },
   );
 
-  updateOption = asyncHandler(async (id: number, dto: UpdateAnswerOptionDto) => {
-    const option = await this.loadOption(id);
-    if (dto.label !== undefined) option.label = dto.label;
-    if (dto.value !== undefined) option.value = dto.value;
-    if (dto.sortOrder !== undefined) option.sortOrder = dto.sortOrder;
-    await this.optionRepository.save(option);
-    return {
-      id: option.id,
-      label: option.label,
-      value: option.value,
-      sortOrder: option.sortOrder,
-    };
-  });
+  updateOption = asyncHandler(
+    async (id: number, dto: UpdateAnswerOptionDto) => {
+      const option = await this.loadOption(id);
+      if (dto.label !== undefined) option.label = dto.label;
+      if (dto.value !== undefined) option.value = dto.value;
+      if (dto.sortOrder !== undefined) option.sortOrder = dto.sortOrder;
+      await this.optionRepository.save(option);
+      return {
+        id: option.id,
+        label: option.label,
+        value: option.value,
+        sortOrder: option.sortOrder,
+      };
+    },
+  );
 
   deleteOption = asyncHandler(async (id: number) => {
     const option = await this.loadOption(id);
-    await this.optionRepository.remove(option);
-    return { message: 'Answer option deleted', id };
+    option.isActive = false;
+    await this.optionRepository.save(option);
+    return { message: 'Answer option deactivated', id };
   });
 
   assertQuestionInQuestionnaire = asyncHandler(
@@ -242,7 +270,7 @@ export class QuestionsService {
           `Question ${questionId} was not found in questionnaire ${questionnaireId}`,
         );
       }
-      return this.toQuestionDetail(question);
+      return this.toQuestionDetail(question, false);
     },
   );
 
@@ -287,26 +315,35 @@ export class QuestionsService {
     }
   }
 
-  private assertChoiceQuestionsHaveOptions(detail: QuestionnaireDetail) {
-    const incomplete = detail.questions.find(
-      (question) =>
-        isChoiceQuestionType(question.type) && question.options.length === 0,
-    );
-    if (incomplete) {
-      throw new ConflictException(
-        `Choice question ${incomplete.id} has no answer options`,
-      );
+  private questionCanBeAnswered(question: QuestionDetail): boolean {
+    if (!isChoiceQuestionType(question.type)) return true;
+    return question.options.some((option) => option.isActive !== false);
+  }
+
+  private assertQuestionnaireCanBeStarted(detail: QuestionnaireDetail): void {
+    if (detail.questions.length === 0) return;
+    if (
+      detail.questions.some((question) => this.questionCanBeAnswered(question))
+    ) {
+      return;
     }
+    const blocked = detail.questions.find((question) =>
+      isChoiceQuestionType(question.type),
+    );
+    throw new ConflictException(
+      `Choice question ${blocked?.id ?? 'unknown'} has no answer options`,
+    );
   }
 
   private toQuestionnaireDetail(
     questionnaire: Questionnaire,
     activeQuestionsOnly: boolean,
+    activeOptionsOnly: boolean,
   ): QuestionnaireDetail {
     const questions = (questionnaire.questions ?? [])
       .filter((question) => !activeQuestionsOnly || question.isActive)
       .sort(this.bySortThenId)
-      .map((question) => this.toQuestionDetail(question));
+      .map((question) => this.toQuestionDetail(question, activeOptionsOnly));
 
     return {
       id: questionnaire.id,
@@ -318,14 +355,19 @@ export class QuestionsService {
     };
   }
 
-  private toQuestionDetail(question: Question): QuestionDetail {
+  private toQuestionDetail(
+    question: Question,
+    activeOptionsOnly: boolean,
+  ): QuestionDetail {
     const options = [...(question.options ?? [])]
+      .filter((option) => !activeOptionsOnly || option.isActive !== false)
       .sort(this.bySortThenId)
       .map((option) => ({
         id: option.id,
         label: option.label,
         value: option.value ?? null,
         sortOrder: option.sortOrder,
+        isActive: option.isActive !== false,
       }));
 
     return {

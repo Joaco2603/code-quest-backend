@@ -350,8 +350,8 @@ expect U28 PUT "/assessments/${ID_A}/answers" "$TOKEN_A" "$(jq -nc --argjson que
 expect U29 PUT "/assessments/${ID_A}/answers" "$TOKEN_A" "$(jq -nc --argjson questionId "$QN" '{questionId:$questionId,value:true}')" 400 'finite number'
 expect U30 PUT "/assessments/${ID_A}/answers" "$TOKEN_A" "$(jq -nc --argjson questionId "$QN" '{questionId:$questionId,value:"abc"}')" 400 'finite number'
 expect U31 PUT "/assessments/${ID_A}/answers" "$TOKEN_A" "$(jq -nc --argjson questionId "$QN" '{questionId:$questionId,value:"Infinity"}')" 400 'finite number'
-expect U32 PUT "/assessments/${ID_A}/answers" "$TOKEN_A" "$(jq -nc --argjson questionId "$QN" '{questionId:$questionId,value:""}')" 200 '"value":"0"'
-expect U33 PUT "/assessments/${ID_A}/answers" "$TOKEN_A" "$(jq -nc --argjson questionId "$QN" '{questionId:$questionId,value:"   "}')" 200 '"value":"0"'
+expect U32 PUT "/assessments/${ID_A}/answers" "$TOKEN_A" "$(jq -nc --argjson questionId "$QN" '{questionId:$questionId,value:""}')" 400 'finite number'
+expect U33 PUT "/assessments/${ID_A}/answers" "$TOKEN_A" "$(jq -nc --argjson questionId "$QN" '{questionId:$questionId,value:"   "}')" 400 'finite number'
 expect U34 PUT "/assessments/${ID_A}/answers" "$TOKEN_A" "$(jq -nc --argjson questionId "$QN" '{questionId:$questionId,value:0}')" 200 '"value":"0"'
 expect U35 PUT "/assessments/${ID_A}/answers" "$TOKEN_A" "$(jq -nc --argjson questionId "$QN" '{questionId:$questionId,value:-1}')" 200 '"value":"-1"'
 expect U36 PUT "/assessments/${ID_A}/answers" "$TOKEN_A" "$(jq -nc --argjson questionId "$QN" '{questionId:$questionId,value:"  3.5  "}')" 200 '"value":"3.5"'
@@ -401,7 +401,7 @@ C4_OPT="$(jq -r '.options[0].id' "$BODY_FILE")"
 expect S_OPT POST /assessments "$TOKEN_A" "$(jq -nc --argjson questionnaireId "$Q_OPT" '{questionnaireId:$questionnaireId}')" 201
 ID_OPT="$(jq -r '.id' "$BODY_FILE")"
 expect C04a PUT "/assessments/${ID_OPT}/answers" "$TOKEN_A" "$(jq -nc --argjson questionId "$C4_Q" --argjson answerOptionId "$C4_OPT" '{questionId:$questionId,answerOptionId:$answerOptionId}')" 200
-expect C04 DELETE "/answer-options/${C4_OPT}" "$TOKEN_ADMIN" '' 500
+expect C04 DELETE "/answer-options/${C4_OPT}" "$TOKEN_ADMIN" '' 200 'Answer option deactivated'
 
 expect C05 POST "/assessments/${ID_A}/complete" "$TOKEN_A" '' 201 '"completedAt":"'
 expect C06 POST "/assessments/${ID_EMPTY}/complete" "$TOKEN_A" '' 201
@@ -420,8 +420,9 @@ MID_Q="$(jq -r '.id' "$BODY_FILE")"
 expect S_MID POST /assessments "$TOKEN_A" "$(jq -nc --argjson questionnaireId "$Q_MID" '{questionnaireId:$questionnaireId}')" 201
 ID_MID="$(jq -r '.id' "$BODY_FILE")"
 admin_call DELETE "/questionnaires/${Q_MID}"
-expect M01 PUT "/assessments/${ID_MID}/answers" "$TOKEN_A" "$(jq -nc --argjson questionId "$MID_Q" '{questionId:$questionId}')" 404 'was not found'
-expect M02 POST "/assessments/${ID_MID}/complete" "$TOKEN_A" '' 404 'was not found'
+expect M01 PUT "/assessments/${ID_MID}/answers" "$TOKEN_A" "$(jq -nc --argjson questionId "$MID_Q" '{questionId:$questionId}')" 409 'Questionnaire is inactive'
+expect M02 POST "/assessments/${ID_MID}/complete" "$TOKEN_A" '' 409 'Questionnaire is inactive'
+expect M02b GET "/assessments/${ID_MID}" "$TOKEN_A" '' 200 '"questionnaireActive":false'
 
 admin_call POST /questionnaires "$(jq -nc --arg title "edge-$TAG-strip-a" '{title:$title}')"
 Q_STRIP_A="$(jq -r '.id' "$BODY_FILE")"
@@ -440,6 +441,20 @@ ID_STRIP="$(jq -r '.id' "$BODY_FILE")"
 admin_call DELETE "/answer-options/${STRIP_OPT}"
 expect M03b PUT "/assessments/${ID_STRIP}/answers" "$TOKEN_A" "$(jq -nc --argjson questionId "$STRIP_Q" '{questionId:$questionId}')" 409 'has no answer options'
 expect M03c POST "/assessments/${ID_STRIP}/complete" "$TOKEN_A" '' 409 'has no answer options'
+
+admin_call POST /questionnaires "$(jq -nc --arg title "edge-$TAG-strip-mix" '{title:$title}')"
+Q_MIX="$(jq -r '.id' "$BODY_FILE")"
+add_question "$Q_MIX" 'mix-choice' single_choice 0 '[{"label":"s","sortOrder":0}]'
+MIX_CHOICE="$(jq -r '.id' "$BODY_FILE")"
+MIX_OPT="$(jq -r '.options[0].id' "$BODY_FILE")"
+add_question "$Q_MIX" 'mix-text' text 1 '[]'
+MIX_TEXT="$(jq -r '.id' "$BODY_FILE")"
+admin_call DELETE "/answer-options/${MIX_OPT}"
+expect S_MIX POST /assessments "$TOKEN_A" "$(jq -nc --argjson questionnaireId "$Q_MIX" '{questionnaireId:$questionnaireId}')" 201
+ID_MIX="$(jq -r '.id' "$BODY_FILE")"
+expect M03d PUT "/assessments/${ID_MIX}/answers" "$TOKEN_A" "$(jq -nc --argjson questionId "$MIX_TEXT" '{questionId:$questionId,value:"sigue"}')" 200 '"value":"sigue"'
+expect M03e PUT "/assessments/${ID_MIX}/answers" "$TOKEN_A" "$(jq -nc --argjson questionId "$MIX_CHOICE" '{questionId:$questionId}')" 409 'has no answer options'
+expect M03f POST "/assessments/${ID_MIX}/complete" "$TOKEN_A" '' 409 'has no answer options'
 
 admin_call POST /questionnaires "$(jq -nc --arg title "edge-$TAG-m4" '{title:$title}')"
 Q_M4="$(jq -r '.id' "$BODY_FILE")"

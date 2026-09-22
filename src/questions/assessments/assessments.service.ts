@@ -1,16 +1,26 @@
 import {
   BadRequestException,
   ConflictException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
+import {
+  DataSource,
+  EntityManager,
+  IsNull,
+  QueryFailedError,
+  Repository,
+} from 'typeorm';
 import { Assessment } from './entities/assessment.entity.js';
 import { UserAnswer } from './entities/user-answer.entity.js';
 import { CreateAssessmentDto, UpsertAnswerDto } from './dtos/index.js';
 import { QuestionsService } from '../questionnaires/questions.service.js';
-import { QuestionType } from '../questionnaires/enums/question-type.enum.js';
+import {
+  isChoiceQuestionType,
+  QuestionType,
+} from '../questionnaires/enums/question-type.enum.js';
 import type {
   QuestionDetail,
   QuestionnaireDetail,
@@ -30,8 +40,12 @@ export type AssessmentView = {
   questionnaireId: number;
   createdAt: Date;
   completedAt: Date | null;
+  questionnaireActive: boolean;
   answers?: AssessmentAnswerView[];
 };
+
+const INCOMPLETE_ASSESSMENT =
+  'An incomplete assessment already exists for this questionnaire';
 
 @Injectable()
 export class AssessmentsService {
@@ -40,6 +54,8 @@ export class AssessmentsService {
     private readonly assessments: Repository<Assessment>,
     @InjectRepository(UserAnswer)
     private readonly answers: Repository<UserAnswer>,
+    @Inject(DataSource)
+    private readonly db: DataSource,
     private readonly questionsService: QuestionsService,
   ) {}
 
@@ -60,9 +76,7 @@ export class AssessmentsService {
     });
 
     if (existing) {
-      throw new ConflictException(
-        'An incomplete assessment already exists for this questionnaire',
-      );
+      throw new ConflictException(INCOMPLETE_ASSESSMENT);
     }
 
     const created = this.assessments.create({
@@ -70,8 +84,15 @@ export class AssessmentsService {
       questionnaireId: questionnaire.id,
       completedAt: null,
     });
-    const saved = await this.assessments.save(created);
-    return this.toView(saved);
+    try {
+      const saved = await this.assessments.save(created);
+      return this.toView(saved, true);
+    } catch (error) {
+      if (this.isUniqueViolation(error)) {
+        throw new ConflictException(INCOMPLETE_ASSESSMENT);
+      }
+      throw error;
+    }
   }
 
   async listMine(user: AuthUser): Promise<AssessmentView[]> {
@@ -79,7 +100,12 @@ export class AssessmentsService {
       where: { userId: user.id },
       order: { createdAt: 'DESC' },
     });
-    return rows.map((row) => this.toView(row));
+    const activity = await this.activityFor(
+      rows.map((row) => row.questionnaireId),
+    );
+    return rows.map((row) =>
+      this.toView(row, activity.get(row.questionnaireId) ?? false),
+    );
   }
 
   async findMine(user: AuthUser, id: number): Promise<AssessmentView> {
@@ -88,7 +114,12 @@ export class AssessmentsService {
       where: { assessmentId: assessment.id },
       order: { id: 'ASC' },
     });
-    return this.toView(assessment, answers);
+    const activity = await this.activityFor([assessment.questionnaireId]);
+    return this.toView(
+      assessment,
+      activity.get(assessment.questionnaireId) ?? false,
+      answers,
+    );
   }
 
   /** Upsert (update + insert): delete this question's rows, then insert the new ones. */
@@ -97,50 +128,79 @@ export class AssessmentsService {
     id: number,
     dto: UpsertAnswerDto,
   ): Promise<AssessmentView> {
-    const assessment = await this.getOwned(user, id);
-    this.assertWritable(assessment);
-
-    const questionnaire = await this.loadActiveQuestionnaire(
-      assessment.questionnaireId,
-    );
-    const question = this.findQuestion(questionnaire, dto.questionId);
-    const rows = this.buildAnswerRows(assessment.id, question, dto);
-
-    await this.answers.delete({
-      assessmentId: assessment.id,
-      questionId: question.id,
+    await this.writeOwned(user, id, async (assessment, manager) => {
+      this.assertWritable(assessment);
+      const questionnaire = await this.loadAttemptQuestionnaire(
+        assessment.questionnaireId,
+      );
+      this.assertQuestionnaireActive(questionnaire);
+      const question = this.findQuestion(questionnaire, dto.questionId);
+      this.assertChoiceQuestionHasOptions(question);
+      const rows = this.buildAnswerRows(assessment.id, question, dto);
+      await this.lockActiveQuestionnaire(manager, assessment.questionnaireId);
+      await this.lockActiveOptions(
+        manager,
+        rows
+          .map((row) => row.answerOptionId)
+          .filter((id): id is number => id != null),
+      );
+      const answers = manager.getRepository(UserAnswer);
+      await answers.delete({
+        assessmentId: assessment.id,
+        questionId: question.id,
+      });
+      const created = answers.create(rows);
+      await answers.save(created);
     });
-    const created = this.answers.create(rows);
-    await this.answers.save(created);
 
     return this.findMine(user, id);
   }
 
   async complete(user: AuthUser, id: number): Promise<AssessmentView> {
-    const assessment = await this.getOwned(user, id);
-    this.assertWritable(assessment);
+    const saved = await this.writeOwned(
+      user,
+      id,
+      async (assessment, manager) => {
+        this.assertWritable(assessment);
+        const questionnaire = await this.loadAttemptQuestionnaire(
+          assessment.questionnaireId,
+        );
+        this.assertQuestionnaireActive(questionnaire);
+        const stored = await manager.getRepository(UserAnswer).find({
+          where: { assessmentId: assessment.id },
+        });
 
-    const questionnaire = await this.loadActiveQuestionnaire(
-      assessment.questionnaireId,
+        const blocked = questionnaire.questions.find(
+          (question) =>
+            question.isActive &&
+            this.choiceQuestionWithoutActiveOptions(question) &&
+            !this.hasValidStoredAnswer(question, stored),
+        );
+        if (blocked) {
+          throw new ConflictException(
+            `Choice question ${blocked.id} has no answer options`,
+          );
+        }
+
+        const unanswered = questionnaire.questions.filter(
+          (question) =>
+            question.isActive && !this.hasValidStoredAnswer(question, stored),
+        );
+
+        if (unanswered.length > 0) {
+          throw new BadRequestException(
+            'All active questions must be answered before completing the assessment',
+          );
+        }
+
+        await this.lockActiveQuestionnaire(manager, assessment.questionnaireId);
+        assessment.completedAt = new Date();
+        const row = await manager.getRepository(Assessment).save(assessment);
+        return { row, stored };
+      },
     );
-    const answers = await this.answers.find({
-      where: { assessmentId: assessment.id },
-    });
 
-    const unanswered = questionnaire.questions.filter(
-      (question) =>
-        question.isActive && !this.hasValidStoredAnswer(question, answers),
-    );
-
-    if (unanswered.length > 0) {
-      throw new BadRequestException(
-        'All active questions must be answered before completing the assessment',
-      );
-    }
-
-    assessment.completedAt = new Date();
-    const saved = await this.assessments.save(assessment);
-    return this.toView(saved, answers);
+    return this.toView(saved.row, true, saved.stored);
   }
 
   private async loadActiveQuestionnaire(
@@ -152,6 +212,99 @@ export class AssessmentsService {
       throw new NotFoundException('Questionnaire not found');
     }
     return questionnaire;
+  }
+
+  private async loadAttemptQuestionnaire(
+    id: number,
+  ): Promise<QuestionnaireDetail> {
+    return this.questionsService.getQuestionnaireForAttempt(id);
+  }
+
+  private choiceQuestionWithoutActiveOptions(
+    question: QuestionDetail,
+  ): boolean {
+    return (
+      isChoiceQuestionType(question.type) &&
+      !question.options.some((option) => option.isActive !== false)
+    );
+  }
+
+  private assertChoiceQuestionHasOptions(question: QuestionDetail): void {
+    if (this.choiceQuestionWithoutActiveOptions(question)) {
+      throw new ConflictException(
+        `Choice question ${question.id} has no answer options`,
+      );
+    }
+  }
+
+  private assertQuestionnaireActive(questionnaire: QuestionnaireDetail): void {
+    if (!questionnaire.isActive) {
+      throw new ConflictException('Questionnaire is inactive');
+    }
+  }
+
+  private async lockActiveQuestionnaire(
+    manager: EntityManager,
+    questionnaireId: number,
+  ): Promise<void> {
+    const rows: Array<{ is_active: boolean }> = await manager.query(
+      `SELECT "is_active" FROM "questionnaires" WHERE "id" = $1 FOR UPDATE`,
+      [questionnaireId],
+    );
+    if (rows.length === 0 || rows[0].is_active !== true) {
+      throw new ConflictException('Questionnaire is inactive');
+    }
+  }
+
+  private async lockActiveOptions(
+    manager: EntityManager,
+    optionIds: number[],
+  ): Promise<void> {
+    if (optionIds.length === 0) return;
+    const rows: Array<{ id: number }> = await manager.query(
+      `SELECT "id" FROM "answer_options" WHERE "id" = ANY($1::int[]) AND "is_active" = true FOR UPDATE`,
+      [optionIds],
+    );
+    if (rows.length !== new Set(optionIds).size) {
+      throw new BadRequestException(
+        'Answer option does not belong to this question',
+      );
+    }
+  }
+
+  private async activityFor(ids: number[]): Promise<Map<number, boolean>> {
+    const flags = await this.questionsService.questionnaireActivity(ids);
+    return flags instanceof Map ? flags : new Map();
+  }
+
+  private async writeOwned<T>(
+    user: AuthUser,
+    id: number,
+    work: (assessment: Assessment, manager: EntityManager) => Promise<T>,
+  ): Promise<T> {
+    return this.db.transaction(async (manager) => {
+      const locked: Array<{ id: number }> = await manager.query(
+        `SELECT "id" FROM "assessments" WHERE "id" = $1 AND "user_id" = $2 FOR UPDATE`,
+        [id, user.id],
+      );
+      if (locked.length === 0) {
+        throw new NotFoundException('Assessment not found');
+      }
+      const assessment = await manager.getRepository(Assessment).findOne({
+        where: { id, userId: user.id },
+      });
+      if (!assessment) {
+        throw new NotFoundException('Assessment not found');
+      }
+      return work(assessment, manager);
+    });
+  }
+
+  private isUniqueViolation(error: unknown): boolean {
+    return (
+      error instanceof QueryFailedError &&
+      (error.driverError as { code?: string }).code === '23505'
+    );
   }
 
   private async getOwned(user: AuthUser, id: number): Promise<Assessment> {
@@ -292,7 +445,11 @@ export class AssessmentsService {
     question: QuestionDetail,
     optionIds: number[],
   ): void {
-    const allowed = new Set(question.options.map((option) => option.id));
+    const allowed = new Set(
+      question.options
+        .filter((option) => option.isActive !== false)
+        .map((option) => option.id),
+    );
     const invalid = optionIds.filter((id) => !allowed.has(id));
     if (invalid.length > 0) {
       throw new BadRequestException(
@@ -320,7 +477,11 @@ export class AssessmentsService {
       return String(value);
     }
     if (typeof value === 'string') {
-      const parsed = Number(value.trim());
+      const trimmed = value.trim();
+      if (!trimmed) {
+        throw new BadRequestException('value must be a finite number');
+      }
+      const parsed = Number(trimmed);
       if (!Number.isFinite(parsed)) {
         throw new BadRequestException('value must be a finite number');
       }
@@ -380,6 +541,7 @@ export class AssessmentsService {
 
   private toView(
     assessment: Assessment,
+    questionnaireActive: boolean,
     answers?: UserAnswer[],
   ): AssessmentView {
     return {
@@ -388,6 +550,7 @@ export class AssessmentsService {
       questionnaireId: assessment.questionnaireId,
       createdAt: assessment.createdAt,
       completedAt: assessment.completedAt,
+      questionnaireActive,
       ...(answers
         ? {
             answers: answers.map((row) => ({

@@ -67,6 +67,7 @@ Table answer_options {
   label varchar [not null]
   value varchar
   sort_order integer
+  is_active boolean [not null, default: true]
 
   indexes {
     question_id
@@ -75,7 +76,7 @@ Table answer_options {
 
 Table assessments {
   id integer [primary key]
-  user_id integer [not null]
+  user_id uuid [not null]
   questionnaire_id integer [not null]
   created_at timestamp
   completed_at timestamp
@@ -83,6 +84,7 @@ Table assessments {
   indexes {
     user_id
     questionnaire_id
+    (user_id, questionnaire_id) [unique, note: 'partial, only where completed_at is null']
   }
 }
 

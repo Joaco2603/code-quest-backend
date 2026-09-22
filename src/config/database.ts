@@ -13,6 +13,7 @@ import { CreateUsersAndAuditLogs1760000000000 } from '../database/migrations/176
 import { CreateQuestions1789600001000 } from '../database/migrations/1789600001000-CreateQuestions.js';
 import { CreateAssessments1789600002000 } from '../database/migrations/1789600002000-CreateAssessments.js';
 import { RenameUserResponsesToUserAnswers1789600003000 } from '../database/migrations/1789600003000-RenameUserResponsesToUserAnswers.js';
+import { AssessmentGuards1789600004000 } from '../database/migrations/1789600004000-AssessmentGuards.js';
 
 export function databaseOptions(
   env: NodeJS.ProcessEnv = process.env,
@@ -45,6 +46,7 @@ export function databaseOptions(
       CreateQuestions1789600001000,
       CreateAssessments1789600002000,
       RenameUserResponsesToUserAnswers1789600003000,
+      AssessmentGuards1789600004000,
     ],
   };
 }
