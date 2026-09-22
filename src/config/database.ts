@@ -9,6 +9,7 @@ import { Question } from '../questions/entities/question.entity.js';
 import { Questionnaire } from '../questions/entities/questionnaire.entity.js';
 import { CreateUsersAndAuditLogs1760000000000 } from '../database/migrations/1760000000000-CreateUsersAndAuditLogs.js';
 import { CreateQuestions1789600001000 } from '../database/migrations/1789600001000-CreateQuestions.js';
+import { CreateAssessments1789600002000 } from '../database/migrations/1789600002000-CreateAssessments.js';
 
 export function databaseOptions(
   env: NodeJS.ProcessEnv = process.env,
@@ -37,6 +38,7 @@ export function databaseOptions(
       CreateUsersAndAuditLogs1760000000000,
       CreateCatalog1789600000000,
       CreateQuestions1789600001000,
+      CreateAssessments1789600002000,
     ],
   };
 }
