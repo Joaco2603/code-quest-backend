@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { PaginationMetaDto } from '../../common/dto/api-response.dto.js';
+import { PaginationMetaDto } from '../../../common/dto/api-response.dto.js';
 import { QuestionType } from '../enums/question-type.enum.js';
 
 /**

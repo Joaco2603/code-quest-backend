@@ -15,11 +15,11 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import { Auth } from '../../auth/decorators/index.js';
-import { JwtAuthGuard } from '../../auth/guards/jwt.guard.js';
-import { TwoFactorGuard } from '../../auth/guards/two-factor.guard.js';
-import { ValidRoles } from '../../auth/interfaces/index.js';
-import { toDataResponse } from '../../common/dto/api-response.dto.js';
+import { Auth } from '../../../auth/decorators/index.js';
+import { JwtAuthGuard } from '../../../auth/guards/jwt.guard.js';
+import { TwoFactorGuard } from '../../../auth/guards/two-factor.guard.js';
+import { ValidRoles } from '../../../auth/interfaces/index.js';
+import { toDataResponse } from '../../../common/dto/api-response.dto.js';
 import {
   CreateAnswerOptionDto,
   UpdateQuestionDto,
