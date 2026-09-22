@@ -5,8 +5,10 @@ import { CreateCatalog1789600000000 } from '../database/migrations/1789600000000
 import { User } from '../user/entities/user.entity.js';
 import { AuditLog } from '../common/entities/audit-log.entity.js';
 import { AnswerOption } from '../questions/entities/answer-option.entity.js';
+import { Assessment } from '../questions/entities/assessment.entity.js';
 import { Question } from '../questions/entities/question.entity.js';
 import { Questionnaire } from '../questions/entities/questionnaire.entity.js';
+import { UserResponse } from '../questions/entities/user-response.entity.js';
 import { CreateUsersAndAuditLogs1760000000000 } from '../database/migrations/1760000000000-CreateUsersAndAuditLogs.js';
 import { CreateQuestions1789600001000 } from '../database/migrations/1789600001000-CreateQuestions.js';
 import { CreateAssessments1789600002000 } from '../database/migrations/1789600002000-CreateAssessments.js';
@@ -33,6 +35,8 @@ export function databaseOptions(
       AnswerOption,
       Question,
       Questionnaire,
+      Assessment,
+      UserResponse,
     ],
     migrations: [
       CreateUsersAndAuditLogs1760000000000,

@@ -7,6 +7,11 @@ import {
   Min,
 } from 'class-validator';
 
+/**
+ * Body of PUT /assessments/:id/responses.
+ * "Upsert" = update + insert: the same payload creates the answer when none
+ * exists and replaces it when the question was already answered.
+ */
 export class UpsertResponseDto {
   @ApiProperty({ description: 'Question being answered.', example: 10 })
   @IsInt()

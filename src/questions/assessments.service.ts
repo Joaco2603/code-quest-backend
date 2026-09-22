@@ -9,12 +9,12 @@ import { IsNull, Repository } from 'typeorm';
 import { Assessment } from './entities/assessment.entity.js';
 import { UserResponse } from './entities/user-response.entity.js';
 import { CreateAssessmentDto, UpsertResponseDto } from './dtos/index.js';
-import { QuestionsService } from '../questions/questions.service.js';
-import { QuestionType } from '../questions/enums/question-type.enum.js';
+import { QuestionsService } from './questions.service.js';
+import { QuestionType } from './enums/question-type.enum.js';
 import type {
   QuestionDetail,
   QuestionnaireDetail,
-} from '../questions/interfaces/index.js';
+} from './interfaces/index.js';
 import type { AuthUser } from '../auth/interfaces/auth-user.type.js';
 
 export type AssessmentResponseView = {
@@ -91,6 +91,7 @@ export class AssessmentsService {
     return this.toView(assessment, responses);
   }
 
+  /** Upsert (update + insert): delete this question's rows, then insert the new ones. */
   async upsertResponse(
     user: AuthUser,
     id: number,
@@ -128,8 +129,7 @@ export class AssessmentsService {
 
     const unanswered = questionnaire.questions.filter(
       (question) =>
-        question.isActive &&
-        !this.hasValidStoredResponse(question, responses),
+        question.isActive && !this.hasValidStoredResponse(question, responses),
     );
 
     if (unanswered.length > 0) {
@@ -174,7 +174,9 @@ export class AssessmentsService {
     questionnaire: QuestionnaireDetail,
     questionId: number,
   ): QuestionDetail {
-    const question = questionnaire.questions.find((item) => item.id === questionId);
+    const question = questionnaire.questions.find(
+      (item) => item.id === questionId,
+    );
     if (!question) {
       throw new BadRequestException(
         'Question does not belong to this questionnaire',
@@ -345,7 +347,9 @@ export class AssessmentsService {
         return (
           rows.length === 1 &&
           rows[0].answerOptionId != null &&
-          question.options.some((option) => option.id === rows[0].answerOptionId)
+          question.options.some(
+            (option) => option.id === rows[0].answerOptionId,
+          )
         );
       case QuestionType.MULTIPLE_CHOICE: {
         const optionIds = rows.map((row) => row.answerOptionId);
