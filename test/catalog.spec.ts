@@ -80,6 +80,24 @@ describe('DTO validation', () => {
         .length,
     ).toBeGreaterThan(0);
   });
+  it('accepts offset and pageSize query inputs', async () => {
+    const dto = plainToInstance(CourseQueryDto, {
+      offset: '40',
+      pageSize: '50',
+    });
+    expect(await validate(dto)).toEqual([]);
+    expect(dto.offset).toBe(40);
+    expect(dto.pageSize).toBe(50);
+    expect(dto.limit).toBeUndefined();
+    expect(
+      (await validate(plainToInstance(CourseQueryDto, { offset: '-1' })))
+        .length,
+    ).toBeGreaterThan(0);
+    expect(
+      (await validate(plainToInstance(CourseQueryDto, { pageSize: '101' })))
+        .length,
+    ).toBeGreaterThan(0);
+  });
 });
 it('denies administrative operations until trusted authentication is integrated', () => {
   expect(new CatalogAdminGuard().canActivate({} as ExecutionContext)).toBe(

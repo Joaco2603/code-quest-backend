@@ -3,10 +3,29 @@ import { AuthController } from '../controllers/auth.controller.js';
 import { AuthService } from '../services/auth.service.js';
 import { AuthUser } from '../interfaces/auth-user.type.js';
 import { CreateUserDto, LoginUserDto, Verify2FADto } from '../dtos/index.js';
+import type { VerifiedSessionResponseDto } from '../dtos/index.js';
 import { UnauthorizedException } from '@nestjs/common';
 import { ValidRoles } from '../interfaces/index.js';
 import { PassportModule } from '@nestjs/passport';
+import { User } from '../../user/entities/user.entity.js';
 import { vi, type Mocked } from 'vitest';
+
+function buildUserEntity(overrides: Partial<User> = {}): User {
+  const user = new User();
+  user.id = '43566ec8-22af-41d3-933a-918b536fe99f';
+  user.email = 'operator@example.com';
+  user.discordId = null;
+  user.first_name = 'operator';
+  user.last_name = 'quest';
+  user.address = 'Code Quest main campus';
+  user.isActive = true;
+  user.role = ValidRoles.user;
+  user.client = null;
+  user.is_two_factor_enabled = true;
+  user.is_two_factor_pending = false;
+  user.mustChangePassword = false;
+  return Object.assign(user, overrides);
+}
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -25,6 +44,8 @@ describe('AuthController', () => {
     loginUser: vi.fn(),
     checkAuthStatus: vi.fn(),
     verify2FA: vi.fn(),
+    verify2FAForRecovery: vi.fn(),
+    changePassword: vi.fn(),
     beginDiscordLogin: vi.fn(),
     beginDiscordLink: vi.fn(),
     completeDiscordLogin: vi.fn(),
@@ -65,27 +86,60 @@ describe('AuthController', () => {
       address: '123 Test Street',
     };
 
-    it('should create a new user', async () => {
-      const expectedResult = {
-        ...mockUser,
-        token: 'jwt-token-123',
-      };
-
-      mockAuthService.create.mockResolvedValue(expectedResult);
+    it('should create a new user wrapped in a password-change challenge', async () => {
+      mockAuthService.create.mockResolvedValue({
+        requiresPasswordChange: true,
+        userId: '43566ec8-22af-41d3-933a-918b536fe99f',
+        tempToken: 'temp-jwt-token',
+      });
 
       const result = await controller.create(mockUser, createUserDto);
 
       expect(authService.create).toHaveBeenCalledWith(createUserDto);
-      expect(result).toEqual(expectedResult);
+      expect(Object.keys(result)).toEqual(['data']);
+      expect(result).not.toHaveProperty('data.data');
+      expect(result.data).toEqual({
+        requiresPasswordChange: true,
+        userId: '43566ec8-22af-41d3-933a-918b536fe99f',
+        tempToken: 'temp-jwt-token',
+      });
+      expect(JSON.stringify(result)).not.toContain('password');
+      expect(JSON.stringify(result)).not.toContain('two_factor_secret');
     });
 
-    it('should call authService.create with correct dto', async () => {
-      mockAuthService.create.mockResolvedValue(mockUser);
+    it('should force role user with the client owner for client actors', async () => {
+      const clientActor: AuthUser = { ...mockUser, role: ValidRoles.client };
+      mockAuthService.create.mockResolvedValue({
+        requiresPasswordChange: true,
+        userId: clientActor.id,
+        tempToken: 'temp-jwt-token',
+      });
 
-      await controller.create(mockUser, createUserDto);
+      await controller.create(clientActor, createUserDto);
 
-      expect(authService.create).toHaveBeenCalledTimes(1);
-      expect(authService.create).toHaveBeenCalledWith(createUserDto);
+      expect(authService.create).toHaveBeenCalledWith(
+        expect.objectContaining({ role: 'user', client_id: clientActor.id }),
+      );
+    });
+
+    it('should wrap the register/user shortcut the same way', async () => {
+      mockAuthService.create.mockResolvedValue({
+        requiresPasswordChange: true,
+        userId: '43566ec8-22af-41d3-933a-918b536fe99f',
+        tempToken: 'temp-jwt-token',
+      });
+
+      const result = await controller.createUser(createUserDto);
+
+      expect(authService.create).toHaveBeenCalledWith(
+        expect.objectContaining({ role: 'user' }),
+      );
+      expect(Object.keys(result)).toEqual(['data']);
+      expect(result.data).toEqual({
+        requiresPasswordChange: true,
+        userId: '43566ec8-22af-41d3-933a-918b536fe99f',
+        tempToken: 'temp-jwt-token',
+      });
     });
   });
 
@@ -95,35 +149,59 @@ describe('AuthController', () => {
       password: 'Password123!',
     };
 
-    it('should login user and return requires2FA when 2FA is enabled', async () => {
-      const expectedResult = {
+    it('should wrap the requires2FA variant without provisioning material', async () => {
+      mockAuthService.loginUser.mockResolvedValue({
         requires2FA: true,
         tempToken: 'temp-jwt-token',
-      };
-
-      mockAuthService.loginUser.mockResolvedValue(expectedResult);
+      });
 
       const result = await controller.loginUser(loginUserDto);
 
       expect(authService.loginUser).toHaveBeenCalledWith(loginUserDto);
-      expect(result).toEqual(expectedResult);
+      expect(Object.keys(result)).toEqual(['data']);
+      expect(result.data).toEqual({
+        requires2FA: true,
+        tempToken: 'temp-jwt-token',
+      });
+      expect(result.data).not.toHaveProperty('secret');
+      expect(result.data).not.toHaveProperty('otpauthUrl');
+      expect(result.data).not.toHaveProperty('qr');
     });
 
-    it('should login user and return requiresSetup when 2FA is not set', async () => {
-      const expectedResult = {
+    it('should wrap the requiresSetup variant with provisioning material', async () => {
+      mockAuthService.loginUser.mockResolvedValue({
         requiresSetup: true,
         secret: 'secret123',
         otpauthUrl: 'otpauth://...',
         qr: 'data:image/png;base64,...',
+        pending: true,
         tempToken: 'temp-jwt-token',
-      };
-
-      mockAuthService.loginUser.mockResolvedValue(expectedResult);
+      });
 
       const result = await controller.loginUser(loginUserDto);
 
-      expect((result as any).requiresSetup).toBe(true);
-      expect((result as any).secret).toBeDefined();
+      expect(result.data).toMatchObject({
+        requiresSetup: true,
+        secret: 'secret123',
+        tempToken: 'temp-jwt-token',
+      });
+    });
+
+    it('should wrap the requiresPasswordChange variant', async () => {
+      mockAuthService.loginUser.mockResolvedValue({
+        requiresPasswordChange: true,
+        userId: 'user-uuid-123',
+        tempToken: 'temp-jwt-token',
+      });
+
+      const result = await controller.loginUser(loginUserDto);
+
+      expect(result.data).toEqual({
+        requiresPasswordChange: true,
+        userId: 'user-uuid-123',
+        tempToken: 'temp-jwt-token',
+      });
+      expect(result.data).not.toHaveProperty('secret');
     });
 
     it('should throw UnauthorizedException for invalid credentials', async () => {
@@ -138,27 +216,44 @@ describe('AuthController', () => {
   });
 
   describe('checkAuthStatus (GET /auth/renovated)', () => {
-    it('should return user with new token', async () => {
-      const expectedResult = {
-        ...mockUser,
+    it('should return the camelCase session wrapped in data', async () => {
+      mockAuthService.checkAuthStatus.mockResolvedValue({
+        user: {
+          ...mockUser,
+          client_id: 'client-1',
+          mustChangePassword: false,
+        },
         token: 'new-jwt-token',
-      };
-
-      mockAuthService.checkAuthStatus.mockResolvedValue(expectedResult);
+      });
 
       const result = await controller.checkAuthStatus(mockUser);
 
       expect(authService.checkAuthStatus).toHaveBeenCalledWith(mockUser);
-      expect(result).toEqual(expectedResult);
+      expect(Object.keys(result)).toEqual(['data']);
+      expect(result.data).toEqual({
+        user: {
+          id: 'user-uuid-123',
+          email: 'test@example.com',
+          role: ValidRoles.admin,
+          isTwoFactorEnabled: false,
+          isTwoFactorValidated: true,
+          clientId: 'client-1',
+          mustChangePassword: false,
+        },
+        token: 'new-jwt-token',
+      });
     });
 
-    it('should call checkAuthStatus with the user from decorator', async () => {
-      mockAuthService.checkAuthStatus.mockResolvedValue(mockUser);
+    it('should map absent session fields to null', async () => {
+      mockAuthService.checkAuthStatus.mockResolvedValue({
+        user: mockUser,
+        token: 'new-jwt-token',
+      });
 
-      await controller.checkAuthStatus(mockUser);
+      const result = await controller.checkAuthStatus(mockUser);
 
-      expect(authService.checkAuthStatus).toHaveBeenCalledTimes(1);
-      expect(authService.checkAuthStatus).toHaveBeenCalledWith(mockUser);
+      expect(result.data.user.clientId).toBeNull();
+      expect(result.data.user.mustChangePassword).toBeNull();
     });
   });
 
@@ -171,12 +266,14 @@ describe('AuthController', () => {
       user: mockUser,
     };
 
-    it('should verify 2FA code and return access token', async () => {
-      const expectedResult = {
-        access_token: 'valid-access-token',
-      };
-
-      mockAuthService.verify2FA.mockResolvedValue(expectedResult);
+    it('should verify 2FA code and return the serialized session in data', async () => {
+      mockAuthService.verify2FA.mockResolvedValue({
+        accessToken: 'valid-access-token',
+        user: buildUserEntity({
+          password: 'hash-must-not-leak',
+          two_factor_secret: 'totp-must-not-leak',
+        } as Partial<User>),
+      });
 
       const result = await controller.verify(mockRequest, verify2FADto);
 
@@ -184,7 +281,15 @@ describe('AuthController', () => {
         mockRequest.user.id,
         verify2FADto.code,
       );
-      expect(result).toEqual(expectedResult);
+      expect(Object.keys(result)).toEqual(['data']);
+      expect(result.data.accessToken).toBe('valid-access-token');
+      expect(result.data.user).toMatchObject({
+        id: '43566ec8-22af-41d3-933a-918b536fe99f',
+        firstName: 'operator',
+      });
+      expect(result.data).not.toHaveProperty('access_token');
+      expect(JSON.stringify(result)).not.toContain('hash-must-not-leak');
+      expect(JSON.stringify(result)).not.toContain('totp-must-not-leak');
     });
 
     it('should throw UnauthorizedException for invalid 2FA code', async () => {
@@ -198,7 +303,10 @@ describe('AuthController', () => {
     });
 
     it('should use user id from request', async () => {
-      mockAuthService.verify2FA.mockResolvedValue({ access_token: 'token' });
+      mockAuthService.verify2FA.mockResolvedValue({
+        accessToken: 'token',
+        user: buildUserEntity(),
+      });
 
       await controller.verify(mockRequest, verify2FADto);
 
@@ -206,6 +314,48 @@ describe('AuthController', () => {
         'user-uuid-123',
         '123456',
       );
+    });
+  });
+
+  describe('changePassword (POST /auth/change-password)', () => {
+    it('should wrap the confirmation message in data', async () => {
+      mockAuthService.changePassword.mockResolvedValue({
+        message: 'Password changed successfully',
+      });
+
+      const result = await controller.changePassword(
+        { user: mockUser },
+        { userId: 'user-uuid-123', password: 'NewPassword1!' },
+      );
+
+      expect(result).toEqual({
+        data: { message: 'Password changed successfully' },
+      });
+    });
+  });
+
+  describe('forgotPassword2FA (POST /auth/forgot-password-2fa)', () => {
+    it('should wrap the recovery challenge with its temp token', async () => {
+      mockAuthService.verify2FAForRecovery.mockResolvedValue({
+        message: 'Code verified',
+        tempToken: 'recovery-token',
+        userId: 'user-uuid-123',
+        requiresPasswordChange: true,
+      });
+
+      const result = await controller.forgotPassword2FA({
+        email: 'test@example.com',
+        code: '123456',
+      });
+
+      expect(result).toEqual({
+        data: {
+          message: 'Code verified',
+          tempToken: 'recovery-token',
+          userId: 'user-uuid-123',
+          requiresPasswordChange: true,
+        },
+      });
     });
   });
 
@@ -234,6 +384,34 @@ describe('AuthController', () => {
       expect(res.redirect).toHaveBeenCalledWith(
         'https://discord.com/oauth2/authorize?client_id=abc',
       );
+    });
+  });
+
+  describe('linkDiscord (POST /auth/discord/link)', () => {
+    it('should wrap the authorization url in data and keep the cookie', () => {
+      mockAuthService.beginDiscordLink.mockReturnValue({
+        url: 'https://discord.com/oauth2/authorize?client_id=abc',
+        cookieValue: 'signed-oauth-session',
+      });
+      mockAuthService.getDiscordStateCookieOptions.mockReturnValue({
+        httpOnly: true,
+        path: '/api/auth',
+      });
+      const res = {
+        cookie: vi.fn(),
+        json: vi.fn(),
+      };
+
+      controller.linkDiscord(mockUser, res as never);
+
+      expect(res.cookie).toHaveBeenCalledWith(
+        'discord_oauth_state',
+        'signed-oauth-session',
+        expect.objectContaining({ httpOnly: true }),
+      );
+      expect(res.json).toHaveBeenCalledWith({
+        data: { url: 'https://discord.com/oauth2/authorize?client_id=abc' },
+      });
     });
   });
 
@@ -274,7 +452,7 @@ describe('AuthController', () => {
       );
     });
 
-    it('should return the ticket as JSON when format=json', async () => {
+    it('should return the ticket wrapped in data when format=json', async () => {
       mockAuthService.completeDiscordLogin.mockResolvedValue({
         code: 'discord-ticket',
       });
@@ -293,7 +471,9 @@ describe('AuthController', () => {
         res as never,
       );
 
-      expect(res.json).toHaveBeenCalledWith({ code: 'discord-ticket' });
+      expect(res.json).toHaveBeenCalledWith({
+        data: { code: 'discord-ticket' },
+      });
       expect(res.redirect).not.toHaveBeenCalled();
     });
 
@@ -327,14 +507,76 @@ describe('AuthController', () => {
   });
 
   describe('exchangeDiscord (POST /auth/discord/exchange)', () => {
-    it('should exchange the one-time ticket', async () => {
-      const payload = { access_token: 'access-token', user: mockUser };
-      mockAuthService.exchangeDiscordTicket.mockResolvedValue(payload);
+    it('should wrap the full session with the serialized user', async () => {
+      mockAuthService.exchangeDiscordTicket.mockResolvedValue({
+        accessToken: 'access-token',
+        user: buildUserEntity({
+          password: 'hash-must-not-leak',
+          two_factor_secret: 'totp-must-not-leak',
+        } as Partial<User>),
+      });
 
       const result = await controller.exchangeDiscord({ code: 'ticket' });
 
       expect(authService.exchangeDiscordTicket).toHaveBeenCalledWith('ticket');
-      expect(result).toEqual(payload);
+      expect(Object.keys(result)).toEqual(['data']);
+      const session = result.data as VerifiedSessionResponseDto;
+      expect(session.accessToken).toBe('access-token');
+      expect(session.user).toMatchObject({
+        id: '43566ec8-22af-41d3-933a-918b536fe99f',
+        firstName: 'operator',
+      });
+      expect(JSON.stringify(result)).not.toContain('hash-must-not-leak');
+    });
+
+    it('should wrap challenge variants without provisioning material', async () => {
+      mockAuthService.exchangeDiscordTicket.mockResolvedValue({
+        requires2FA: true,
+        tempToken: 'temp-token',
+      });
+
+      const result = await controller.exchangeDiscord({ code: 'ticket' });
+
+      expect(result).toEqual({
+        data: { requires2FA: true, tempToken: 'temp-token' },
+      });
+      expect(result.data).not.toHaveProperty('secret');
+    });
+
+    it('should wrap the setup variant with provisioning material', async () => {
+      mockAuthService.exchangeDiscordTicket.mockResolvedValue({
+        requiresSetup: true,
+        secret: 'secret123',
+        otpauthUrl: 'otpauth://...',
+        qr: 'data:image/png;base64,...',
+        pending: true,
+        tempToken: 'temp-token',
+      });
+
+      const result = await controller.exchangeDiscord({ code: 'ticket' });
+
+      expect(result.data).toMatchObject({
+        requiresSetup: true,
+        secret: 'secret123',
+      });
+    });
+
+    it('should wrap the password-change variant', async () => {
+      mockAuthService.exchangeDiscordTicket.mockResolvedValue({
+        requiresPasswordChange: true,
+        userId: 'user-uuid-123',
+        tempToken: 'temp-token',
+      });
+
+      const result = await controller.exchangeDiscord({ code: 'ticket' });
+
+      expect(result).toEqual({
+        data: {
+          requiresPasswordChange: true,
+          userId: 'user-uuid-123',
+          tempToken: 'temp-token',
+        },
+      });
     });
   });
 });

@@ -1,3 +1,4 @@
+import { RegisterUserDto } from '../dtos/register-user.dto.js';
 import {
   Body,
   Controller,
@@ -16,6 +17,15 @@ import {
   Verify2FADto,
   ChangePasswordDto,
   ExchangeDiscordDto,
+  LoginPasswordChangeDataResponseDto,
+  LoginSetupDataResponseDto,
+  LoginTwoFactorDataResponseDto,
+  VerifiedSessionDataResponseDto,
+  AuthSessionDataResponseDto,
+  PasswordChangeDataResponseDto,
+  RecoveryVerifiedDataResponseDto,
+  DiscordLinkDataResponseDto,
+  DiscordTicketDataResponseDto,
 } from '../dtos/index.js';
 import { AuthGuard } from '@nestjs/passport';
 import { GetUser } from '../decorators/get-user.decorators.js';
@@ -39,13 +49,27 @@ import {
   ApiBadRequestResponse,
   ApiBody,
   ApiCreatedResponse,
+  ApiExtraModels,
   ApiFoundResponse,
   ApiOkResponse,
   ApiOperation,
   ApiQuery,
   ApiUnauthorizedResponse,
   ApiTags,
+  getSchemaPath,
 } from '@nestjs/swagger';
+import { toDataResponse } from '../../common/dto/api-response.dto.js';
+import {
+  serializeDiscordExchangeResult,
+  serializeDiscordLink,
+  serializeDiscordTicket,
+  serializePasswordChangeResult,
+  serializeRecoveryVerifiedResult,
+  serializeSessionStatus,
+  serializeVerifiedSession,
+  type DiscordExchangeResult,
+  type VerifiedSessionResult,
+} from '../serializers/auth.serializer.js';
 
 @ApiTags('Code Quest Used Endpoints', 'Auth')
 @Controller('auth')
@@ -53,6 +77,25 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
+  @ApiOperation({
+    summary: 'Create a public account',
+    description:
+      'Creates an active standard user and returns a full session. Privileged fields are rejected.',
+  })
+  @ApiCreatedResponse({ type: VerifiedSessionDataResponseDto })
+  @ApiBadRequestResponse({
+    description: 'Invalid payload, or the account could not be created.',
+    schema: {
+      example: { statusCode: 400, message: 'Unable to create the account' },
+    },
+  })
+  @RateLimit(5, 60_000)
+  async register(@Body() dto: RegisterUserDto) {
+    const { user, accessToken } = await this.authService.register(dto);
+    return toDataResponse(serializeVerifiedSession(user, accessToken));
+  }
+
+  @Post('register/managed')
   @ApiBearerAuth('access-token')
   @ApiOperation({
     summary: 'Register a user',
@@ -60,36 +103,35 @@ export class AuthController {
       'Creates a new user. Admins can choose the role; clients can only create child users.',
   })
   @ApiCreatedResponse({
-    description: 'User created successfully.',
-    schema: {
-      example: {
-        id: 'de69dcfb-ca41-4b7b-9685-aabd64e83982',
-        email: 'operator@example.com',
-        first_name: 'operator',
-        last_name: 'quest',
-        role: 'user',
-        isActive: true,
-      },
-    },
+    description:
+      'User created. The account must change its password before it receives a session.',
+    type: LoginPasswordChangeDataResponseDto,
   })
   @ApiBadRequestResponse({
-    description: 'Invalid user payload or duplicated email.',
-    schema: { example: { statusCode: 400, message: 'Email already exists' } },
+    description: 'Invalid payload, or the account could not be created.',
+    schema: {
+      example: { statusCode: 400, message: 'Unable to create the account' },
+    },
   })
   @ApiUnauthorizedResponse({
     description: 'Missing or invalid bearer token.',
   })
   @UseGuards(AuthGuard(), TwoFactorGuard)
   @Auth(ValidRoles.admin, ValidRoles.client)
-  create(@GetUser() user: AuthUser, @Body() createUserDto: CreateUserDto) {
-    if (user.role === ValidRoles.client) {
-      return this.authService.create({
-        ...createUserDto,
-        role: 'user',
-        client_id: user.id,
-      });
-    }
-    return this.authService.create(createUserDto);
+  async create(
+    @GetUser() user: AuthUser,
+    @Body() createUserDto: CreateUserDto,
+  ) {
+    const created =
+      user.role === ValidRoles.client
+        ? await this.authService.create({
+            ...createUserDto,
+            role: 'user',
+            client_id: user.id,
+          })
+        : await this.authService.create(createUserDto);
+
+    return toDataResponse(serializeDiscordExchangeResult(created));
   }
 
   @Post('register/user')
@@ -99,52 +141,41 @@ export class AuthController {
     description: 'Admin-only shortcut that creates a user with the user role.',
   })
   @ApiCreatedResponse({
-    description: 'Standard user created successfully.',
-    schema: {
-      example: {
-        id: 'de69dcfb-ca41-4b7b-9685-aabd64e83982',
-        email: 'user@example.com',
-        role: 'user',
-        isActive: true,
-      },
-    },
+    description:
+      'Standard user created. The account must change its password before it receives a session.',
+    type: LoginPasswordChangeDataResponseDto,
   })
   @Auth(ValidRoles.admin)
-  createUser(@Body() createUserDto: CreateUserDto) {
-    return this.authService.create({ ...createUserDto, role: 'user' });
+  async createUser(@Body() createUserDto: CreateUserDto) {
+    const created = await this.authService.create({
+      ...createUserDto,
+      role: 'user',
+    });
+
+    return toDataResponse(serializeDiscordExchangeResult(created));
   }
 
   @Post('login')
   @ApiOperation({
     summary: 'Authenticate user',
     description:
-      'Validates email and password. The response may require 2FA verification before full access.',
+      'Validates email and password. Returns a full session for standard users without 2FA, or a password-change / 2FA challenge when required.',
   })
+  @ApiExtraModels(
+    VerifiedSessionDataResponseDto,
+    LoginPasswordChangeDataResponseDto,
+    LoginSetupDataResponseDto,
+    LoginTwoFactorDataResponseDto,
+  )
   @ApiCreatedResponse({
     description:
-      'Login accepted. Response may include a temporary token for 2FA/password change or an access token.',
+      'Login accepted. Inspect the `data` variant to continue the flow.',
     schema: {
       oneOf: [
-        {
-          example: {
-            requires2FA: true,
-            tempToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-            userId: '43566ec8-22af-41d3-933a-918b536fe99f',
-            role: 'user',
-          },
-        },
-        {
-          example: {
-            accessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-            refreshToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-            role: 'client',
-            user: {
-              id: 'de69dcfb-ca41-4b7b-9685-aabd64e83982',
-              email: 'client@example.com',
-              first_name: 'client',
-            },
-          },
-        },
+        { $ref: getSchemaPath(VerifiedSessionDataResponseDto) },
+        { $ref: getSchemaPath(LoginPasswordChangeDataResponseDto) },
+        { $ref: getSchemaPath(LoginSetupDataResponseDto) },
+        { $ref: getSchemaPath(LoginTwoFactorDataResponseDto) },
       ],
     },
   })
@@ -153,8 +184,12 @@ export class AuthController {
     schema: { example: { statusCode: 401, message: 'Invalid credentials' } },
   })
   @RateLimit(5, 60_000)
-  loginUser(@Body() loginUserDto: LoginUserDto) {
-    return this.authService.loginUser(loginUserDto);
+  async loginUser(@Body() loginUserDto: LoginUserDto) {
+    const result = (await this.authService.loginUser(
+      loginUserDto,
+    )) as DiscordExchangeResult;
+
+    return toDataResponse(serializeDiscordExchangeResult(result));
   }
 
   @Get('discord')
@@ -182,18 +217,14 @@ export class AuthController {
   })
   @ApiOkResponse({
     description: 'Discord authorization URL for the authenticated user.',
-    schema: {
-      example: {
-        url: 'https://discord.com/oauth2/authorize?client_id=abc',
-      },
-    },
+    type: DiscordLinkDataResponseDto,
   })
   @UseGuards(JwtAuthGuard, TwoFactorGuard)
   @RateLimit(10, 60_000)
   linkDiscord(@GetUser() user: AuthUser, @Res() res: Response) {
     const started = this.authService.beginDiscordLink(user);
     this.setDiscordOAuthCookie(res, started.cookieValue);
-    return res.json({ url: started.url });
+    return res.json(toDataResponse(serializeDiscordLink(started.url)));
   }
 
   @Get('discord/callback')
@@ -213,11 +244,7 @@ export class AuthController {
   })
   @ApiOkResponse({
     description: 'One-time Discord login ticket.',
-    schema: {
-      example: {
-        code: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-      },
-    },
+    type: DiscordTicketDataResponseDto,
   })
   @ApiFoundResponse({
     description: 'Redirects to the frontend with a one-time code or error.',
@@ -274,51 +301,57 @@ export class AuthController {
   @ApiOperation({
     summary: 'Exchange Discord login ticket',
     description:
-      'Consumes the one-time ticket from /auth/discord/callback and returns a session, or the same 2FA/password-change challenge used by password login.',
+      'Consumes the one-time ticket from /auth/discord/callback and returns a session wrapped in `data`: either a full session with the serialized user, or the same password-change / 2FA-setup / 2FA-pending challenge used by password login. Tickets are single use.',
   })
+  @ApiExtraModels(
+    LoginPasswordChangeDataResponseDto,
+    LoginSetupDataResponseDto,
+    LoginTwoFactorDataResponseDto,
+    VerifiedSessionDataResponseDto,
+  )
   @ApiCreatedResponse({
     description: 'Discord login completed or pending a follow-up challenge.',
     schema: {
-      example: {
-        access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-        user: {
-          id: '43566ec8-22af-41d3-933a-918b536fe99f',
-          email: 'student@example.com',
-          role: 'user',
-        },
-      },
+      oneOf: [
+        { $ref: getSchemaPath(VerifiedSessionDataResponseDto) },
+        { $ref: getSchemaPath(LoginPasswordChangeDataResponseDto) },
+        { $ref: getSchemaPath(LoginSetupDataResponseDto) },
+        { $ref: getSchemaPath(LoginTwoFactorDataResponseDto) },
+      ],
     },
   })
   @ApiUnauthorizedResponse({
     description: 'Invalid, expired, or reused Discord login ticket.',
   })
   @RateLimit(10, 60_000)
-  exchangeDiscord(@Body() dto: ExchangeDiscordDto) {
-    return this.authService.exchangeDiscordTicket(dto.code);
+  async exchangeDiscord(@Body() dto: ExchangeDiscordDto) {
+    const result = (await this.authService.exchangeDiscordTicket(
+      dto.code,
+    )) as DiscordExchangeResult;
+
+    return toDataResponse(serializeDiscordExchangeResult(result));
   }
 
   @Get('renovated')
   @ApiBearerAuth('access-token')
   @ApiOperation({
     summary: 'Refresh authenticated session',
-    description: 'Returns the current authenticated user and refreshed auth data.',
+    description:
+      'Returns the current authenticated user and refreshed auth data.',
   })
   @ApiOkResponse({
     description: 'Authenticated session data.',
-    schema: {
-      example: {
-        user: {
-          id: '43566ec8-22af-41d3-933a-918b536fe99f',
-          email: 'operator@example.com',
-          role: 'user',
-        },
-        token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-      },
-    },
+    type: AuthSessionDataResponseDto,
   })
   @UseGuards(AuthGuard(), TwoFactorGuard)
-  checkAuthStatus(@GetUser() user: AuthUser) {
-    return this.authService.checkAuthStatus(user);
+  async checkAuthStatus(@GetUser() user: AuthUser) {
+    const { user: sessionUser, token } =
+      (await this.authService.checkAuthStatus(user)) as {
+        user: AuthUser;
+        token: string;
+      };
+
+    return toDataResponse(serializeSessionStatus(sessionUser, token));
   }
 
   @UseGuards(JwtAuthGuard, PendingTwoFactorGuard)
@@ -327,31 +360,23 @@ export class AuthController {
   @ApiOperation({
     summary: 'Verify 2FA code',
     description:
-      'Completes login for users that have a pending two-factor authentication challenge.',
+      'Completes login for users that have a pending two-factor authentication challenge. Returns the full session with the serialized user.',
   })
   @ApiCreatedResponse({
     description: '2FA code verified and access token issued.',
-    schema: {
-      example: {
-        accessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-        refreshToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-        role: 'user',
-        user: {
-          id: '43566ec8-22af-41d3-933a-918b536fe99f',
-          email: 'operator@example.com',
-        },
-      },
-    },
+    type: VerifiedSessionDataResponseDto,
   })
   @ApiUnauthorizedResponse({
     description: 'Invalid or expired temporary token/code.',
   })
   @RateLimit(5, 60_000)
-  async verify(
-    @Req() req: { user: AuthUser },
-    @Body() dto: Verify2FADto,
-  ) {
-    return this.authService.verify2FA(req.user.id, dto.code);
+  async verify(@Req() req: { user: AuthUser }, @Body() dto: Verify2FADto) {
+    const { accessToken, user } = (await this.authService.verify2FA(
+      req.user.id,
+      dto.code,
+    )) as VerifiedSessionResult;
+
+    return toDataResponse(serializeVerifiedSession(user, accessToken));
   }
 
   @UseGuards(JwtAuthGuard, ChangePasswordGuard)
@@ -364,24 +389,29 @@ export class AuthController {
   })
   @ApiCreatedResponse({
     description: 'Password changed successfully.',
-    schema: { example: { message: 'Password changed successfully' } },
+    type: PasswordChangeDataResponseDto,
   })
   @ApiBadRequestResponse({
     description: 'Password does not satisfy validation rules.',
   })
   @RateLimit(5, 60_000)
-  changePassword(
+  async changePassword(
     @Req() req: { user: AuthUser },
     @Body() changePasswordDto: ChangePasswordDto,
   ) {
-    return this.authService.changePassword(req.user.id, changePasswordDto);
+    const result = (await this.authService.changePassword(
+      req.user.id,
+      changePasswordDto,
+    )) as { message: string };
+
+    return toDataResponse(serializePasswordChangeResult(result));
   }
 
   @Post('forgot-password-2fa')
   @ApiOperation({
     summary: 'Verify recovery 2FA code',
     description:
-      'Validates a two-factor code during the password recovery workflow.',
+      'Validates a two-factor code during the password recovery workflow. Returns a recovery token scoped to the password change.',
   })
   @ApiBody({
     schema: {
@@ -399,19 +429,24 @@ export class AuthController {
   })
   @ApiCreatedResponse({
     description: 'Recovery 2FA code verified and temporary token returned.',
-    schema: {
-      example: {
-        tempToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-        userId: '43566ec8-22af-41d3-933a-918b536fe99f',
-      },
-    },
+    type: RecoveryVerifiedDataResponseDto,
   })
   @ApiBadRequestResponse({
     description: 'Invalid email/code combination.',
   })
   @RateLimit(5, 60_000)
-  forgotPassword2FA(@Body() body: { email: string; code: string }) {
-    return this.authService.verify2FAForRecovery(body.email, body.code);
+  async forgotPassword2FA(@Body() body: { email: string; code: string }) {
+    const result = (await this.authService.verify2FAForRecovery(
+      body.email,
+      body.code,
+    )) as {
+      message: string;
+      tempToken: string;
+      userId: string;
+      requiresPasswordChange: true;
+    };
+
+    return toDataResponse(serializeRecoveryVerifiedResult(result));
   }
 
   private respondDiscordLogin(
@@ -425,7 +460,7 @@ export class AuthController {
       if (payload.error) {
         throw new UnauthorizedException(payload.error);
       }
-      return res.json({ code: payload.code });
+      return res.json(toDataResponse(serializeDiscordTicket(payload.code!)));
     }
 
     return res.redirect(redirectUrl);

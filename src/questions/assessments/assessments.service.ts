@@ -12,9 +12,9 @@ import { CreateAssessmentDto, UpsertAnswerDto } from './dtos/index.js';
 import { QuestionsService } from '../questionnaires/questions.service.js';
 import { QuestionType } from '../questionnaires/enums/question-type.enum.js';
 import type {
-  QuestionDetail,
-  QuestionnaireDetail,
-} from '../questionnaires/interfaces/index.js';
+  QuestionResponseDto,
+  QuestionnaireResponseDto,
+} from '../questionnaires/dtos/questionnaire-response.dto.js';
 import type { AuthUser } from '../../auth/interfaces/auth-user.type.js';
 
 export type AssessmentAnswerView = {
@@ -145,7 +145,7 @@ export class AssessmentsService {
 
   private async loadActiveQuestionnaire(
     id: number,
-  ): Promise<QuestionnaireDetail> {
+  ): Promise<QuestionnaireResponseDto> {
     const questionnaire =
       await this.questionsService.getActiveQuestionnaire(id);
     if (!questionnaire.isActive) {
@@ -171,9 +171,9 @@ export class AssessmentsService {
   }
 
   private findQuestion(
-    questionnaire: QuestionnaireDetail,
+    questionnaire: QuestionnaireResponseDto,
     questionId: number,
-  ): QuestionDetail {
+  ): QuestionResponseDto {
     const question = questionnaire.questions.find(
       (item) => item.id === questionId,
     );
@@ -190,7 +190,7 @@ export class AssessmentsService {
 
   private buildAnswerRows(
     assessmentId: number,
-    question: QuestionDetail,
+    question: QuestionResponseDto,
     dto: UpsertAnswerDto,
   ): Array<Partial<UserAnswer>> {
     const optionIds = this.resolveOptionIds(dto);
@@ -289,7 +289,7 @@ export class AssessmentsService {
   }
 
   private assertOptionsBelong(
-    question: QuestionDetail,
+    question: QuestionResponseDto,
     optionIds: number[],
   ): void {
     const allowed = new Set(question.options.map((option) => option.id));
@@ -336,7 +336,7 @@ export class AssessmentsService {
   }
 
   private hasValidStoredAnswer(
-    question: QuestionDetail,
+    question: QuestionResponseDto,
     answers: UserAnswer[],
   ): boolean {
     const rows = answers.filter((row) => row.questionId === question.id);
