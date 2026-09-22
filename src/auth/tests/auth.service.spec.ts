@@ -234,18 +234,18 @@ describe('AuthService', () => {
     };
 
     it('should throw UnauthorizedException if user not found', async () => {
-      mockUserService.findOneByEmail.mockResolvedValue(null);
+      mockUserService.findOneByEmailOptional.mockResolvedValue(null);
 
       await expect(service.loginUser(loginUserDto)).rejects.toThrow(
         UnauthorizedException,
       );
       await expect(service.loginUser(loginUserDto)).rejects.toThrow(
-        'Credentials are not valid',
+        'Invalid credentials',
       );
     });
 
     it('should throw UnauthorizedException if user is inactive', async () => {
-      mockUserService.findOneByEmail.mockResolvedValue({
+      mockUserService.findOneByEmailOptional.mockResolvedValue({
         ...mockUser,
         isActive: false,
       });
@@ -254,7 +254,7 @@ describe('AuthService', () => {
         UnauthorizedException,
       );
       await expect(service.loginUser(loginUserDto)).rejects.toThrow(
-        'User is inactive, talk with an admin',
+        'Invalid credentials',
       );
     });
 
@@ -263,7 +263,7 @@ describe('AuthService', () => {
         ...mockUser,
         password: '$2b$15$differentHashThatWontMatch',
       };
-      mockUserService.findOneByEmail.mockResolvedValue(
+      mockUserService.findOneByEmailOptional.mockResolvedValue(
         userWithDifferentPassword,
       );
 
@@ -275,7 +275,7 @@ describe('AuthService', () => {
     it('should return requiresSetup if 2FA is not enabled', async () => {
       // Create a proper bcrypt hash for the test password
       const bcrypt = new BcryptAdapter();
-      const hashedPassword = bcrypt.hashing('Password123!', 15);
+      const hashedPassword = await bcrypt.hashing('Password123!', 15);
 
       const userWithout2FA = {
         ...mockUser,
@@ -289,7 +289,7 @@ describe('AuthService', () => {
         pending: true,
       };
 
-      mockUserService.findOneByEmail.mockResolvedValue(userWithout2FA);
+      mockUserService.findOneByEmailOptional.mockResolvedValue(userWithout2FA);
       mockJwtService.sign.mockReturnValue('temp-token');
       mockTwoFactorService.generateSecretIfNotExists.mockResolvedValue(
         twoFAData,
@@ -304,7 +304,7 @@ describe('AuthService', () => {
 
     it('should return requires2FA if 2FA is already enabled', async () => {
       const bcrypt = new BcryptAdapter();
-      const hashedPassword = bcrypt.hashing('Password123!', 15);
+      const hashedPassword = await bcrypt.hashing('Password123!', 15);
 
       const userWith2FA = {
         ...mockUser,
@@ -312,7 +312,7 @@ describe('AuthService', () => {
         is_two_factor_enabled: true,
       };
 
-      mockUserService.findOneByEmail.mockResolvedValue(userWith2FA);
+      mockUserService.findOneByEmailOptional.mockResolvedValue(userWith2FA);
       mockJwtService.sign.mockReturnValue('temp-token');
 
       const result = await service.loginUser(loginUserDto);
@@ -422,13 +422,13 @@ describe('AuthService', () => {
     };
 
     it('should reject password login when the account has no password', async () => {
-      mockUserService.findOneByEmail.mockResolvedValue({
+      mockUserService.findOneByEmailOptional.mockResolvedValue({
         ...mockUser,
         password: null,
       });
 
       await expect(service.loginUser(loginUserDto)).rejects.toThrow(
-        'This account uses Discord login',
+        'Invalid credentials',
       );
     });
   });

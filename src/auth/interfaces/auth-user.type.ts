@@ -1,4 +1,5 @@
 import { ValidRoles } from './valid-roles.type.js';
+import type { JwtPurpose } from './jwt-purpose.js';
 
 export interface AuthUser {
   id: string;
@@ -9,4 +10,5 @@ export interface AuthUser {
   client_id?: string;
   mustChangePassword?: boolean;
   isRecovery?: boolean;
+  purpose?: JwtPurpose;
 }

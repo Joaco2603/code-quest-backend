@@ -1,0 +1,201 @@
+// Catalog implemented by CreateCatalog1789600000000. Other modules remain a shared design, not migrated here.
+Enum skill_level {
+  beginner
+  intermediate
+  advanced
+}
+
+Enum course_status {
+  draft
+  published
+  archived
+}
+
+Enum question_type {
+  single_choice
+  multiple_choice
+  text
+  number
+  boolean
+}
+
+Table users {
+  id integer [primary key]
+  username varchar [unique]
+  role varchar
+  created_at timestamp
+}
+
+Table user_technologies {
+  id integer [primary key]
+
+  user_id integer [not null]
+  technology_id integer [not null]
+  level skill_level [not null]
+
+  indexes {
+    (user_id, technology_id) [unique]
+    technology_id
+  }
+}
+
+Table questionnaires {
+  id integer [primary key]
+  title varchar
+  description varchar
+  is_active boolean [default: true]
+  created_at timestamp
+}
+
+Table questions {
+  id integer [primary key]
+  questionnaire_id integer [not null]
+  question varchar [not null]
+  type question_type [not null]
+  is_active boolean [default: true]
+  sort_order integer [not null]
+
+  indexes {
+    (questionnaire_id, sort_order)
+    (questionnaire_id, is_active)
+  }
+}
+
+Table answer_options {
+  id integer [primary key]
+  question_id integer [not null]
+  label varchar [not null]
+  value varchar
+  sort_order integer
+
+  indexes {
+    question_id
+  }
+}
+
+Table assessments {
+  id integer [primary key]
+  user_id integer [not null]
+  questionnaire_id integer [not null]
+  created_at timestamp
+  completed_at timestamp
+
+  indexes {
+    user_id
+    questionnaire_id
+  }
+}
+
+Table user_responses {
+  id integer [primary key]
+  assessment_id integer [not null]
+  question_id integer [not null]
+  answer_option_id integer
+  value varchar
+
+  indexes {
+    assessment_id
+    question_id
+  }
+}
+
+Table courses {
+  id integer [primary key, increment]
+  title varchar(200) [not null]
+  description text
+  url varchar(2048)
+  image_url varchar(2048)
+  duration_minutes integer [note: 'Positive minutes']
+  instructor varchar(150)
+  level skill_level
+  status course_status [not null, default: 'draft']
+  created_at timestamptz [not null]
+  updated_at timestamptz [not null]
+
+  indexes {
+    (status, level)
+  }
+}
+
+Table categories {
+  id integer [primary key, increment]
+  name varchar(100) [not null, note: 'Unique after trimming and ignoring case']
+}
+
+Table course_categories {
+  course_id integer [not null]
+  category_id integer [not null]
+  indexes {
+    (course_id, category_id) [pk]
+    category_id
+  }
+}
+
+Table course_prerequisites {
+  course_id integer [not null]
+  prerequisite_id integer [not null]
+  indexes {
+    (course_id, prerequisite_id) [pk]
+    prerequisite_id
+  }
+  Note: 'No self references or cycles; publication requires published prerequisites'
+}
+
+Table roadmaps {
+  id integer [primary key]
+  title varchar
+  user_id integer [not null]
+
+  indexes {
+    user_id
+  }
+}
+
+Table roadmap_courses {
+  id integer [primary key]
+  roadmap_id integer [not null]
+  course_id integer [not null]
+  progress integer [default: 0]
+  sort_order integer [not null]
+
+  indexes {
+    course_id
+    (roadmap_id, course_id) [unique]
+    (roadmap_id, sort_order) [unique]
+  }
+}
+
+
+
+Table technologies {
+  id integer [primary key, increment]
+  name varchar(100) [not null, note: 'Unique after trimming and ignoring case']
+}
+
+Table course_technologies {  course_id integer [not null]
+  technology_id integer [not null]
+
+  indexes {
+    (course_id, technology_id) [pk]
+    technology_id
+  }
+}
+
+Ref: roadmaps.id < roadmap_courses.roadmap_id
+Ref: courses.id < roadmap_courses.course_id
+Ref: users.id < roadmaps.user_id
+Ref: questions.id < answer_options.question_id
+Ref: users.id < assessments.user_id
+Ref: questionnaires.id < assessments.questionnaire_id
+Ref: assessments.id < user_responses.assessment_id
+Ref: questions.id < user_responses.question_id
+Ref: answer_options.id ?< user_responses.answer_option_id
+Ref: users.id < user_technologies.user_id
+Ref: technologies.id < user_technologies.technology_id
+Ref: courses.id < course_technologies.course_id [delete: cascade]
+Ref: technologies.id < course_technologies.technology_id [delete: restrict]
+Ref: questionnaires.id < questions.questionnaire_id
+Ref: courses.id < course_categories.course_id [delete: cascade]
+Ref: categories.id < course_categories.category_id [delete: restrict]
+Ref: courses.id < course_prerequisites.course_id [delete: cascade]
+Ref: courses.id < course_prerequisites.prerequisite_id [delete: restrict]

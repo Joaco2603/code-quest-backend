@@ -1,44 +1,21 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { createObserveModule } from '@nestjs/observe';
+import { CatalogModule } from './catalog/catalog.module.js';
+import { databaseOptions } from './config/database.js';
 import configuration from './config/envs.js';
+import { createObserveModule } from '@nestjs/observe';
 import { AuthModule } from './auth/auth.module.js';
 import { UserModule } from './user/user.module.js';
 import { CommonModule } from './common/common.module.js';
-import { CatalogModule } from './catalog/catalog.module.js';
+import { QuestionsModule } from './questions/questions.module.js';
 import { RoadmapsModule } from './roadmaps/roadmaps.module.js';
-
 const { ObserveModule, ObserveInstrument } = createObserveModule();
 export { ObserveInstrument };
-
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      load: [configuration],
-    }),
-    TypeOrmModule.forRootAsync({
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => {
-        const nodeEnv = configService.get<string>('app.nodeEnv');
-        const isProd = nodeEnv === 'production';
-        const synchronize = process.env.DB_SYNCHRONIZE
-          ? process.env.DB_SYNCHRONIZE === 'true'
-          : !isProd;
-
-        return {
-          type: 'postgres',
-          url: configService.get<string>('database.url'),
-          autoLoadEntities: true,
-          synchronize,
-          logging: process.env.DB_LOGGING
-            ? process.env.DB_LOGGING === 'true'
-            : !isProd,
-          ssl: isProd ? { rejectUnauthorized: false } : false,
-        };
-      },
-    }),
+    ConfigModule.forRoot({ isGlobal: true, load: [configuration] }),
+    TypeOrmModule.forRootAsync({ useFactory: () => databaseOptions() }),
     ObserveModule.forRoot({
       appKey: 'YOUR_APP_KEY',
       appSecret: 'YOUR_APP_SECRET',
@@ -47,6 +24,7 @@ export { ObserveInstrument };
     CommonModule,
     UserModule,
     AuthModule,
+    QuestionsModule,
     CatalogModule,
     RoadmapsModule,
   ],

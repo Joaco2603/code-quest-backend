@@ -97,7 +97,7 @@ NODE_ENV=development
 PORT=3000
 
 DB_HOST=localhost
-DB_PORT=5432
+DB_PORT=5433
 DB_NAME=code_quest
 DB_USERNAME=postgres
 DB_PASSWORD=postgres
@@ -106,36 +106,45 @@ DB_PASSWORD=postgres
 ALLOWED_ORIGINS=http://localhost:3000
 
 # Requeridos en production
-# ENCRYPTION_KEY=
-# ENCRYPTION_IV=
+# DB_HOST, DB_NAME, DB_USERNAME y DB_PASSWORD deben definirse explícitamente.
 
-# Rate limit (valores por defecto)
-RATE_LIMIT_TTL_MS=60000
-RATE_LIMIT_MAX=120
-
-# JWT (requerido)
-JWT_SECRET=change-me
-
-# Discord OAuth (requerido en production)
+# JWT_SECRET: mínimo 32 caracteres aleatorios.
+# ENCRYPTION_KEY: 32 bytes en hexadecimal (64 caracteres).
+JWT_SECRET=
+ENCRYPTION_KEY=
+# Discord OAuth: requerido en production
 DISCORD_CLIENT_ID=
 DISCORD_CLIENT_SECRET=
 DISCORD_CALLBACK_URL=http://localhost:3000/api/auth/discord/callback
 FRONTEND_URL=http://localhost:8080
-# DISCORD_FRONTEND_REDIRECT_PATH=/auth/discord
 
 # TypeORM
-# DB_SYNCHRONIZE=true   # por defecto true fuera de production
+DB_SYNCHRONIZE=false   # usar migraciones
 # DB_MIGRATIONS_RUN=false
+DB_SSL=false          # production usa TLS verificado por defecto
 # DB_LOGGING=true
 ```
 
-4. Crea la base de datos:
+4. Inicia PostgreSQL con Docker (crea la base y conserva sus datos en un volumen):
+
+```bash
+docker compose -p codequest-dev -f compose.dev.yml up -d --wait
+```
+
+Si ya usas otra instancia PostgreSQL, ajusta host, puerto y credenciales en `.env` y crea la base allí:
 
 ```sql
 CREATE DATABASE code_quest;
 ```
 
----
+5. Aplica las migraciones de usuarios, auditoría, catálogo y cuestionarios (en una base nueva):
+
+```bash
+pnpm migration:run
+```
+
+La configuración completa está en [`.env.example`](.env.example). No se cargan cursos automáticamente.
+Si ya existen tablas creadas desde un esquema anterior, revisa su adaptación antes de ejecutar la migración inicial.
 
 ## Cómo ejecutar
 
@@ -150,21 +159,10 @@ pnpm start:prod
 
 La API queda en `http://localhost:3000/api`.
 
-Cuando Swagger esté cableado en el bootstrap:
+Documentación disponible al iniciar:
 
 - Documentación: `http://localhost:3000/api/docs`
 - Referencia Scalar: `http://localhost:3000/api/reference`
-
-### Login con Discord
-
-1. Crea una aplicación en el [portal de Discord](https://discord.com/developers/applications).
-2. En **OAuth2 → Redirects** agrega `http://localhost:3000/api/auth/discord/callback`.
-3. Copia el Client ID y el Client Secret al `.env`.
-4. El botón de login del frontend debe abrir `http://localhost:3000/api/auth/discord`.
-5. Discord vuelve al callback; la API redirige a `FRONTEND_URL/auth/discord?code=...` con un ticket de un solo uso (60s).
-6. El frontend intercambia el ticket con `POST /api/auth/discord/exchange`.
-
-Para vincular Discord a una cuenta ya existente (admin/password), usa `POST /api/auth/discord/link` con un JWT que ya haya pasado 2FA. El login de Discord **no** asocia cuentas solo porque el email coincida.
 
 ### Scripts
 
@@ -172,7 +170,7 @@ Para vincular Discord a una cuenta ya existente (admin/password), usa `POST /api
 | --- | --- |
 | `pnpm start:dev` | Servidor en watch |
 | `pnpm build` | Compila a `dist/` |
-| `pnpm start:prod` | Corre `dist/main` |
+| `pnpm start:prod` | Corre `dist/main.js` |
 | `pnpm lint` | Oxlint |
 | `pnpm test` | Tests unitarios (Vitest) |
 | `pnpm test:e2e` | Tests e2e |
@@ -186,6 +184,8 @@ Para vincular Discord a una cuenta ya existente (admin/password), usa `POST /api
 src/
   main.ts              bootstrap
   app.module.ts        módulo raíz
+  catalog/             cursos, categorías, tecnologías y contrato para roadmaps
+  database/migrations/ esquema versionado del catálogo
   config/
     envs.ts            variables de entorno
     typeorm.ts         DataSource
@@ -194,6 +194,13 @@ src/
 ```
 
 ---
+
+## Catálogo implementado
+
+Consulta [la guía del catálogo](docs/catalog.md) para endpoints, publicación, pruebas y contratos de integración.
+Las lecturas muestran cursos publicados. Las escrituras administrativas devuelven `403` hasta integrar
+la autenticación de Persona 2 mediante `CatalogAdminGuard`. No hay credenciales ni bypass de desarrollo.
+Usuarios, cuestionarios y generación de roadmaps siguen pendientes.
 
 ## Fechas de la misión
 

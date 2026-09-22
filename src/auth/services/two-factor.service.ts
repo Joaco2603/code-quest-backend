@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { generateSecret, generateURI, verifySync } from 'otplib';
 import * as QRCode from 'qrcode';
 import { UserService } from '../../user/user.service.js';
@@ -84,6 +84,15 @@ export class TwoFactorService {
       token: code,
       secret,
     }).valid;
+  }
+
+  async confirmEnable(userId: string, code: string) {
+    const valid = await this.verifyCode(userId, code);
+    if (!valid) {
+      throw new UnauthorizedException('Invalid 2FA code');
+    }
+
+    return this.enable(userId);
   }
 
   async enable(userId: string) {

@@ -7,6 +7,7 @@ import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { AuthUser } from '../interfaces/auth-user.type.js';
 import { JwtPayload } from '../interfaces/jwt-payload.type.js';
+import { JwtPurpose } from '../interfaces/jwt-purpose.js';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -15,7 +16,9 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     private readonly userRepository: Repository<User>,
     configService: ConfigService,
   ) {
-    const secret = configService.get<string>('JWT_SECRET');
+    const secret =
+      configService.get<string>('JWT_SECRET') ??
+      configService.get<string>('app.auth.jwtSecret');
     if (!secret) {
       throw new Error('JWT_SECRET is required');
     }
@@ -28,6 +31,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   async validate(payload: JwtPayload): Promise<AuthUser> {
     if (!payload?.sub) {
+      throw new UnauthorizedException('Invalid token payload');
+    }
+
+    if (
+      payload.purpose &&
+      !Object.values(JwtPurpose).includes(payload.purpose)
+    ) {
       throw new UnauthorizedException('Invalid token payload');
     }
 
@@ -50,6 +60,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       client_id: payload.client ?? user.client?.id,
       mustChangePassword: payload.mustChangePassword,
       isRecovery: payload.isRecovery,
+      purpose: payload.purpose,
     };
   }
 }

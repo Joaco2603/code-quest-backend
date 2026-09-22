@@ -7,7 +7,10 @@ import {
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { BcryptAdapter } from '../adapters/bcrypt.adapter.js';
+import {
+  BcryptAdapter,
+  DUMMY_PASSWORD_HASH,
+} from '../adapters/bcrypt.adapter.js';
 import {
   LoginUserDto,
   CreateUserDto,
@@ -15,6 +18,10 @@ import {
 } from '../dtos/index.js';
 import { AuthUser } from '../interfaces/auth-user.type.js';
 import { JwtPayload } from '../interfaces/jwt-payload.type.js';
+import {
+  JwtPurpose,
+  TEMP_TOKEN_EXPIRES_IN,
+} from '../interfaces/jwt-purpose.js';
 import {
   namesFromDiscordProfile,
   type DiscordProfile,
@@ -76,6 +83,7 @@ export class AuthService {
         sub: user.id,
         email: user.email,
         rol: user.role || ValidRoles.user,
+        purpose: JwtPurpose.access,
         is_two_factor_enabled: user.is_two_factor_enabled,
         is_two_factor_validated: false,
       }),
@@ -97,6 +105,7 @@ export class AuthService {
         sub: user.id,
         email: user.email,
         rol: user.role,
+        purpose: JwtPurpose.access,
         is_two_factor_enabled: user.is_two_factor_enabled,
         is_two_factor_validated: false,
       }),
@@ -106,79 +115,32 @@ export class AuthService {
   loginUser = asyncHandler(async (loginUserDto: LoginUserDto) => {
     const { email, password } = loginUserDto;
 
-    const user: User = await this.userService.findOneByEmail(email);
+    const user: User | null = await this.userService.findOneByEmailOptional(
+      email,
+      { withPassword: true },
+    );
 
-    if (!user) {
+    const passwordMatches = await this.bcryptAdapter.compareHash(
+      password,
+      user?.password || DUMMY_PASSWORD_HASH,
+    );
+    const canLogin = Boolean(
+      user?.role && user.isActive && user.password && passwordMatches,
+    );
+
+    if (!canLogin || !user) {
       await this.auditLogService.recordDomainEvent({
         statusCode: 401,
         outcome: 'error',
         eventType: 'auth.login.failed',
-        message: 'Credentials are not valid',
-        metadata: { email },
+        userId: user?.id,
+        userRole: user?.role,
+        message: 'Invalid credentials',
       });
-      throw new UnauthorizedException('Credentials are not valid');
+      throw new UnauthorizedException('Invalid credentials');
     }
 
-    if (!user.role) {
-      await this.auditLogService.recordDomainEvent({
-        statusCode: 401,
-        outcome: 'error',
-        eventType: 'auth.login.failed',
-        userId: user.id,
-        message: 'This user has no role',
-        metadata: { email: user.email },
-      });
-      throw new UnauthorizedException('This user has no role');
-    }
-
-    if (!user.isActive) {
-      await this.auditLogService.recordDomainEvent({
-        statusCode: 401,
-        outcome: 'error',
-        eventType: 'auth.login.failed',
-        userId: user.id,
-        userRole: user.role,
-        message: 'User is inactive',
-        metadata: { email: user.email },
-      });
-      throw new UnauthorizedException('User is inactive, talk with an admin');
-    }
-
-    if (!user.password) {
-      await this.auditLogService.recordDomainEvent({
-        statusCode: 401,
-        outcome: 'error',
-        eventType: 'auth.login.failed',
-        userId: user.id,
-        userRole: user.role,
-        message: 'Password login is not available for Discord accounts',
-        metadata: { email: user.email },
-      });
-      throw new UnauthorizedException('This account uses Discord login');
-    }
-
-    if (!this.bcryptAdapter.compareHash(password, user.password)) {
-      await this.auditLogService.recordDomainEvent({
-        statusCode: 401,
-        outcome: 'error',
-        eventType: 'auth.login.failed',
-        userId: user.id,
-        userRole: user.role,
-        message: 'Credentials are not valid password',
-        metadata: { email: user.email },
-      });
-      throw new UnauthorizedException('Credentials are not valid password');
-    }
-
-    const tempToken = this.jwtService.sign({
-      sub: user.id,
-      email: user.email,
-      is_two_factor_enabled: user.is_two_factor_enabled,
-      is_two_factor_validated: false,
-      rol: user.role,
-      client: user.client?.id ?? null,
-      mustChangePassword: user.mustChangePassword,
-    } satisfies JwtPayload);
+    const tempToken = this.getTempToken(user);
 
     if (user.mustChangePassword) {
       await this.auditLogService.recordDomainEvent({
@@ -264,6 +226,7 @@ export class AuthService {
         sub: user.id,
         email: user.email,
         rol: user.role,
+        purpose: JwtPurpose.access,
         is_two_factor_enabled: user.is_two_factor_enabled,
         is_two_factor_validated: user.is_two_factor_validated,
         client: user.client_id ?? null,
@@ -421,7 +384,30 @@ export class AuthService {
   }
 
   private getJwtToken(payload: JwtPayload) {
-    return this.jwtService.sign(payload);
+    return this.jwtService.sign({
+      ...payload,
+      purpose: payload.purpose ?? JwtPurpose.access,
+    });
+  }
+
+  private getTempToken(user: User) {
+    const purpose = user.mustChangePassword
+      ? JwtPurpose.passwordChange
+      : JwtPurpose.twoFactor;
+
+    return this.jwtService.sign(
+      {
+        sub: user.id,
+        email: user.email,
+        is_two_factor_enabled: user.is_two_factor_enabled,
+        is_two_factor_validated: false,
+        purpose,
+        rol: user.role,
+        client: user.client?.id ?? null,
+        mustChangePassword: user.mustChangePassword,
+      } satisfies JwtPayload,
+      { expiresIn: TEMP_TOKEN_EXPIRES_IN },
+    );
   }
 
   async verify2FA(userId: string, code: string) {
@@ -463,6 +449,7 @@ export class AuthService {
     const payload: JwtPayload = {
       sub: user.id,
       email: user.email,
+      purpose: JwtPurpose.access,
       is_two_factor_enabled: user.is_two_factor_enabled,
       is_two_factor_validated: true,
       rol: user.role,
@@ -546,15 +533,7 @@ export class AuthService {
       throw new UnauthorizedException('User is inactive, talk with an admin');
     }
 
-    const tempToken = this.jwtService.sign({
-      sub: user.id,
-      email: user.email,
-      is_two_factor_enabled: user.is_two_factor_enabled,
-      is_two_factor_validated: false,
-      rol: user.role,
-      client: user.client?.id ?? null,
-      mustChangePassword: user.mustChangePassword,
-    } satisfies JwtPayload);
+    const tempToken = this.getTempToken(user);
 
     if (user.mustChangePassword) {
       await this.auditLogService.recordDomainEvent({
@@ -650,7 +629,9 @@ export class AuthService {
   }
 
   private getJwtSecret() {
-    const secret = this.configService.get<string>('JWT_SECRET');
+    const secret =
+      this.configService.get<string>('JWT_SECRET') ??
+      this.configService.get<string>('app.auth.jwtSecret');
     if (!secret) {
       throw new ServiceUnavailableException('Discord login is not configured');
     }
@@ -670,12 +651,10 @@ export class AuthService {
   }
 
   async verify2FAForRecovery(email: string, code: string) {
-    const user = await this.userService.findOneByEmail(email);
+    const user = await this.userService.findOneByEmailOptional(email);
 
-    if (!user.is_two_factor_enabled) {
-      throw new UnauthorizedException(
-        '2FA is not enabled for this user. Please contact an admin.',
-      );
+    if (!user?.is_two_factor_enabled) {
+      throw new UnauthorizedException('Invalid credentials');
     }
 
     const valid =
@@ -688,9 +667,8 @@ export class AuthService {
         userId: user.id,
         userRole: user.role,
         message: 'Invalid 2FA recovery code',
-        metadata: { email: user.email },
       });
-      throw new UnauthorizedException('Invalid 2FA code');
+      throw new UnauthorizedException('Invalid credentials');
     }
 
     const tempToken = this.jwtService.sign(
@@ -698,10 +676,11 @@ export class AuthService {
         sub: user.id,
         email: user.email,
         rol: user.role,
+        purpose: JwtPurpose.recovery,
         mustChangePassword: true,
         isRecovery: true,
-      },
-      { expiresIn: '10m' },
+      } satisfies JwtPayload,
+      { expiresIn: TEMP_TOKEN_EXPIRES_IN },
     );
 
     await this.auditLogService.recordDomainEvent({
@@ -723,6 +702,7 @@ export class AuthService {
 
   private isMfaBypassEnabled(): boolean {
     return (
+      this.configService.get<string>('app.nodeEnv') === 'test' &&
       this.configService.get<boolean>('app.auth.mfaBypassForTests') === true
     );
   }

@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { CatalogService } from './catalog.service.js';
 import { CatalogAdminGuard } from './catalog-access.js';
 import {
@@ -9,10 +8,8 @@ import {
   LevelsController,
   TechnologiesController,
 } from './catalog.controller.js';
-import { Category, Course, Technology } from './entities.js';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Course, Category, Technology])],
   controllers: [
     CoursesController,
     AdminCoursesController,

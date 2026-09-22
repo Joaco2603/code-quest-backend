@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ForbiddenException } from '@nestjs/common';
+import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { TwoFactorService } from '../services/two-factor.service.js';
 import { UserService } from '../../user/user.service.js';
 import { ConfigService } from '@nestjs/config';
@@ -244,6 +244,39 @@ describe('TwoFactorService', () => {
           is_two_factor_pending: false,
         },
       );
+      expect(result).toEqual({ message: '2FA enabled' });
+    });
+  });
+
+  describe('confirmEnable', () => {
+    const userId = 'user-uuid-123';
+
+    it('should reject an invalid TOTP code', async () => {
+      mockUserService.findOneWithSecret.mockResolvedValue({
+        ...mockUser,
+        two_factor_secret: 'encrypted-secret',
+      });
+      mockEncryptionService.decrypt.mockReturnValue('secret');
+      (verifySync as Mock).mockReturnValue({ valid: false });
+
+      await expect(service.confirmEnable(userId, '000000')).rejects.toThrow(
+        UnauthorizedException,
+      );
+      expect(mockUserService.updateTwoFactorState).not.toHaveBeenCalled();
+    });
+
+    it('should enable 2FA after a valid TOTP code', async () => {
+      mockUserService.findOneWithSecret.mockResolvedValue({
+        ...mockUser,
+        two_factor_secret: 'encrypted-secret',
+      });
+      mockEncryptionService.decrypt.mockReturnValue('secret');
+      (verifySync as Mock).mockReturnValue({ valid: true });
+      mockUserService.updateTwoFactorState.mockResolvedValue(undefined);
+
+      const result = await service.confirmEnable(userId, '123456');
+
+      expect(mockUserService.updateTwoFactorState).toHaveBeenCalled();
       expect(result).toEqual({ message: '2FA enabled' });
     });
   });

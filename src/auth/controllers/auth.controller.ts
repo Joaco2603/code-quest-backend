@@ -79,7 +79,7 @@ export class AuthController {
   @ApiUnauthorizedResponse({
     description: 'Missing or invalid bearer token.',
   })
-  @UseGuards(AuthGuard())
+  @UseGuards(AuthGuard(), TwoFactorGuard)
   @Auth(ValidRoles.admin, ValidRoles.client)
   create(@GetUser() user: AuthUser, @Body() createUserDto: CreateUserDto) {
     if (user.role === ValidRoles.client) {
@@ -316,7 +316,7 @@ export class AuthController {
       },
     },
   })
-  @UseGuards(AuthGuard())
+  @UseGuards(AuthGuard(), TwoFactorGuard)
   checkAuthStatus(@GetUser() user: AuthUser) {
     return this.authService.checkAuthStatus(user);
   }

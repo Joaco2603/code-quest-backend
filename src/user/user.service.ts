@@ -48,7 +48,7 @@ export class UserService {
 
     const user = this.userRepository.create({
       ...userData,
-      password: this.hashPassword(password),
+      password: await this.hashPassword(password),
       role: (userData.role as ValidRoles) || ValidRoles.user,
       client: client_id ? ({ id: client_id } as User) : null,
     });
@@ -174,10 +174,28 @@ export class UserService {
     return user;
   });
 
-  async findOneByEmailOptional(email: string): Promise<User | null> {
+  async findOneByEmailOptional(
+    email: string,
+    options?: { withPassword?: boolean },
+  ): Promise<User | null> {
     return this.userRepository.findOne({
       where: { email: email.toLowerCase() },
       relations: { client: true },
+      ...(options?.withPassword
+        ? {
+            select: {
+              email: true,
+              password: true,
+              id: true,
+              isActive: true,
+              is_two_factor_enabled: true,
+              role: true,
+              client: { id: true },
+              mustChangePassword: true,
+              discordId: true,
+            },
+          }
+        : {}),
     });
   }
 
@@ -280,7 +298,7 @@ export class UserService {
       Object.assign(user, profile);
 
       if (password) {
-        user.password = this.hashPassword(password);
+        user.password = await this.hashPassword(password);
       }
 
       if (actor.role === ValidRoles.admin) {
@@ -353,7 +371,7 @@ export class UserService {
 
   async updatePassword(id: string, password: string) {
     await this.userRepository.update(id, {
-      password: this.hashPassword(password),
+      password: await this.hashPassword(password),
     });
     await this.auditLogService.recordDomainEvent({
       statusCode: 200,
