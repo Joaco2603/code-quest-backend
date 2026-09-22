@@ -86,13 +86,14 @@ export class RoadmapsService {
         }
 
         await manager.delete(RoadmapCourse, { roadmapId: roadmap.id });
+        roadmap.courses = [];
+        await manager.update(Roadmap, roadmap.id, { title: roadmap.title });
         const memberships = this.buildMemberships(
           manager,
           roadmap.id,
           dto.courseIds!,
           remaining,
         );
-        await manager.save(roadmap);
         await manager.save(memberships);
         return this.present(roadmap, memberships);
       });

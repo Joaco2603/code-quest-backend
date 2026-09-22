@@ -40,6 +40,7 @@ describe('RoadmapsService', () => {
       return { ...(value as object), id: (value as { id?: number }).id ?? 1 };
     }),
     delete: vi.fn(),
+    update: vi.fn(),
     getRepository: vi.fn(),
   };
 
@@ -148,6 +149,12 @@ describe('RoadmapsService', () => {
 
     const result = await service.update(userId, 5, { courseIds: [2, 8] });
 
+    expect(manager.delete).toHaveBeenCalledWith(RoadmapCourse, { roadmapId: 5 });
+    expect(manager.update).toHaveBeenCalledWith(Roadmap, 5, { title: 'Path' });
+    const savedRoadmap = manager.save.mock.calls.find(
+      ([value]) => !Array.isArray(value) && (value as { title?: string }).title,
+    );
+    expect(savedRoadmap).toBeUndefined();
     expect(result.courses).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ courseId: 2, progress: 10, sortOrder: 0 }),
