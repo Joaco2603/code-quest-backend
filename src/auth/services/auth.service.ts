@@ -1,3 +1,4 @@
+import { RegisterUserDto } from '../dtos/register-user.dto.js';
 import {
   ConflictException,
   ForbiddenException,
@@ -22,6 +23,7 @@ import {
   JwtPurpose,
   TEMP_TOKEN_EXPIRES_IN,
 } from '../interfaces/jwt-purpose.js';
+import { accessTokenMatchesAccount } from '../helpers/access-token-policy.js';
 import {
   namesFromDiscordProfile,
   type DiscordProfile,
@@ -63,6 +65,30 @@ export class AuthService {
     private readonly discordAdapter: DiscordAdapter,
   ) {}
 
+  async register(dto: RegisterUserDto) {
+    const user = await this.userService.create(
+      {
+        email: dto.email.trim().toLowerCase(),
+        password: dto.password,
+        first_name: dto.first_name,
+        last_name: dto.last_name,
+        address: null,
+        role: ValidRoles.user,
+        isActive: true,
+      },
+      { selfRegistered: true },
+    );
+    return this.generateToken(user);
+  }
+
+  private requiresTwoFactor(user: User): boolean {
+    return (
+      user.role === ValidRoles.admin ||
+      user.role === ValidRoles.client ||
+      user.is_two_factor_enabled
+    );
+  }
+
   create = asyncHandler(async (createUserDto: CreateUserDto) => {
     const { password, role, ...userData } = createUserDto;
     const assignedRole = (role as ValidRoles) || ValidRoles.user;
@@ -77,17 +103,7 @@ export class AuthService {
       password,
     });
 
-    return {
-      ...user,
-      token: this.getJwtToken({
-        sub: user.id,
-        email: user.email,
-        rol: user.role || ValidRoles.user,
-        purpose: JwtPurpose.access,
-        is_two_factor_enabled: user.is_two_factor_enabled,
-        is_two_factor_validated: false,
-      }),
-    };
+    return this.issueManagedAccount(user);
   });
 
   createAdmin = asyncHandler(async (createUserDto: CreateUserDto) => {
@@ -99,24 +115,26 @@ export class AuthService {
       password,
     });
 
-    return {
-      ...user,
-      token: this.getJwtToken({
-        sub: user.id,
-        email: user.email,
-        rol: user.role,
-        purpose: JwtPurpose.access,
-        is_two_factor_enabled: user.is_two_factor_enabled,
-        is_two_factor_validated: false,
-      }),
-    };
+    return this.issueManagedAccount(user);
   });
+
+  private issueManagedAccount(user: User) {
+    if (user.mustChangePassword) {
+      return {
+        requiresPasswordChange: true as const,
+        userId: user.id,
+        tempToken: this.getTempToken(user),
+      };
+    }
+
+    return this.generateToken(user);
+  }
 
   loginUser = asyncHandler(async (loginUserDto: LoginUserDto) => {
     const { email, password } = loginUserDto;
 
     const user: User | null = await this.userService.findOneByEmailOptional(
-      email,
+      email.trim().toLowerCase(),
       { withPassword: true },
     );
 
@@ -159,16 +177,32 @@ export class AuthService {
       };
     }
 
-    if (!user.is_two_factor_enabled) {
-      const data = await this.twoFA.generateSecretIfNotExists(user.id);
+    let account = user;
+    if (!this.requiresTwoFactor(account)) {
+      account = await this.userService.findOneById(user.id);
+      if (!this.requiresTwoFactor(account)) {
+        await this.auditLogService.recordDomainEvent({
+          statusCode: 200,
+          outcome: 'success',
+          eventType: 'auth.login.password.success',
+          userId: account.id,
+          userRole: account.role,
+          message: 'Password login completed',
+        });
+        return this.generateToken(account);
+      }
+    }
+
+    if (!account.is_two_factor_enabled) {
+      const data = await this.twoFA.generateSecretIfNotExists(account.id);
       await this.auditLogService.recordDomainEvent({
         statusCode: 200,
         outcome: 'warning',
         eventType: 'auth.login.2fa_setup_required',
-        userId: user.id,
-        userRole: user.role,
+        userId: account.id,
+        userRole: account.role,
         message: '2FA setup required',
-        metadata: { email: user.email },
+        metadata: { email: account.email },
       });
 
       return {
@@ -182,10 +216,10 @@ export class AuthService {
       statusCode: 200,
       outcome: 'success',
       eventType: 'auth.login.2fa_required',
-      userId: user.id,
-      userRole: user.role,
+      userId: account.id,
+      userRole: account.role,
       message: 'Login accepted, pending 2FA verification',
-      metadata: { email: user.email },
+      metadata: { email: account.email },
     });
     return {
       requires2FA: true,
@@ -220,20 +254,91 @@ export class AuthService {
   );
 
   checkAuthStatus = asyncHandler(async (user: AuthUser) => {
-    return {
-      ...user,
-      token: this.getJwtToken({
+    const account = await this.userService.findOneById(user.id);
+    if (
+      !accessTokenMatchesAccount(account, {
         sub: user.id,
-        email: user.email,
-        rol: user.role,
         purpose: JwtPurpose.access,
         is_two_factor_enabled: user.is_two_factor_enabled,
         is_two_factor_validated: user.is_two_factor_validated,
-        client: user.client_id ?? null,
-        mustChangePassword: user.mustChangePassword,
-      }),
+      })
+    ) {
+      throw new UnauthorizedException('Session is no longer valid');
+    }
+
+    const token = this.getJwtToken({
+      sub: account.id,
+      email: account.email,
+      rol: account.role,
+      purpose: JwtPurpose.access,
+      is_two_factor_enabled: account.is_two_factor_enabled,
+      is_two_factor_validated: user.is_two_factor_validated,
+      client: account.client?.id ?? user.client_id ?? null,
+      mustChangePassword: account.mustChangePassword,
+    });
+
+    return {
+      user: {
+        ...user,
+        email: account.email,
+        role: account.role,
+        is_two_factor_enabled: account.is_two_factor_enabled,
+        mustChangePassword: account.mustChangePassword,
+        client_id: account.client?.id ?? user.client_id,
+      },
+      token,
     };
   });
+
+  assertSessionReplacementAllowed(actor: AuthUser) {
+    if (
+      actor.isRecovery ||
+      actor.purpose === JwtPurpose.recovery ||
+      actor.purpose === JwtPurpose.passwordChange ||
+      actor.mustChangePassword
+    ) {
+      throw new ForbiddenException(
+        'Finish the pending challenge before opening a full session',
+      );
+    }
+
+    const purpose = actor.purpose ?? JwtPurpose.access;
+    if (purpose !== JwtPurpose.access && purpose !== JwtPurpose.twoFactor) {
+      throw new ForbiddenException(
+        'Finish the pending challenge before opening a full session',
+      );
+    }
+  }
+
+  assertAccountReadyForSessionReplacement = asyncHandler(
+    async (actor: AuthUser) => {
+      this.assertSessionReplacementAllowed(actor);
+      const user = await this.userService.findOneById(actor.id);
+      if (user.mustChangePassword) {
+        throw new ForbiddenException(
+          'Finish the pending challenge before opening a full session',
+        );
+      }
+      return user;
+    },
+  );
+
+  async issueVerifiedAccessToken(actor: AuthUser, account?: User) {
+    this.assertSessionReplacementAllowed(actor);
+
+    const user = account ?? (await this.userService.findOneById(actor.id));
+    if (user.mustChangePassword) {
+      throw new ForbiddenException(
+        'Finish the pending challenge before opening a full session',
+      );
+    }
+
+    if (this.requiresTwoFactor(user) && !user.is_two_factor_enabled) {
+      return null;
+    }
+
+    return this.generateToken(user);
+  }
 
   beginDiscordLogin(link?: { userId: string }) {
     const secret = this.getJwtSecret();
@@ -369,11 +474,15 @@ export class AuthService {
     try {
       payload = this.jwtService.verify<DiscordLoginTicketPayload>(ticket);
     } catch {
-      throw new UnauthorizedException('Invalid or expired Discord login ticket');
+      throw new UnauthorizedException(
+        'Invalid or expired Discord login ticket',
+      );
     }
 
     if (payload.purpose !== 'discord_login' || !payload.sub) {
-      throw new UnauthorizedException('Invalid or expired Discord login ticket');
+      throw new UnauthorizedException(
+        'Invalid or expired Discord login ticket',
+      );
     }
 
     const ticketId = payload.jti ?? ticket;
@@ -457,10 +566,12 @@ export class AuthService {
       mustChangePassword: user.mustChangePassword,
     };
 
-    const { password: _password, ...userWithoutPassword } = user;
+    // Raw result: the entity plus the protocol token in camelCase. The
+    // controller serializes the user explicitly, so secrets never leak even
+    // though the entity may still hold them in memory.
     return {
-      access_token: this.jwtService.sign(payload),
-      user: userWithoutPassword,
+      accessToken: this.jwtService.sign(payload),
+      user,
     };
   }
 
@@ -551,10 +662,7 @@ export class AuthService {
       };
     }
 
-    const privileged =
-      user.role === ValidRoles.admin || user.role === ValidRoles.client;
-    const mustCompleteTwoFactor =
-      privileged || Boolean(user.password) || user.is_two_factor_enabled;
+    const mustCompleteTwoFactor = this.requiresTwoFactor(user);
 
     if (mustCompleteTwoFactor && !user.is_two_factor_enabled) {
       const data = await this.twoFA.generateSecretIfNotExists(user.id);
@@ -614,7 +722,9 @@ export class AuthService {
   private consumeDiscordTicket(ticketId: string) {
     this.purgeConsumedDiscordTickets();
     if (this.consumedDiscordTickets.has(ticketId)) {
-      throw new UnauthorizedException('Invalid or expired Discord login ticket');
+      throw new UnauthorizedException(
+        'Invalid or expired Discord login ticket',
+      );
     }
     this.consumedDiscordTickets.set(ticketId, Date.now() + 60_000);
   }

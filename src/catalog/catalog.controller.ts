@@ -10,7 +10,19 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiCreatedResponse,
+  ApiNoContentResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
+import {
+  toDataResponse,
+  toPaginatedResponse,
+} from '../common/dto/api-response.dto.js';
 import { CatalogService } from './catalog.service.js';
 import { CatalogAdminGuard } from './catalog-access.js';
 import { CatalogIdPipe } from './catalog-id.pipe.js';
@@ -21,6 +33,15 @@ import {
   NameDto,
   UpdateCourseDto,
 } from './dto.js';
+import {
+  CategoryCollectionDataResponseDto,
+  CategoryDataResponseDto,
+  CourseDataResponseDto,
+  CoursePaginatedResponseDto,
+  LevelCollectionDataResponseDto,
+  TechnologyCollectionDataResponseDto,
+  TechnologyDataResponseDto,
+} from './dto/catalog-response.dto.js';
 import { CourseStatus, SkillLevel } from './entities.js';
 
 @ApiTags('Courses')
@@ -30,14 +51,25 @@ export class CoursesController {
 
   @Get()
   @ApiOperation({ summary: 'List published courses' })
-  list(@Query() query: CourseQueryDto) {
-    return this.catalog.listCourses(query);
+  @ApiOkResponse({
+    description: 'Paginated published courses.',
+    type: CoursePaginatedResponseDto,
+  })
+  async list(@Query() query: CourseQueryDto) {
+    const { items, total, limit, offset } =
+      await this.catalog.listCourses(query);
+    return toPaginatedResponse(items, { total, limit, offset });
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get a published course' })
-  get(@Param('id', CatalogIdPipe) id: number) {
-    return this.catalog.getCourse(id);
+  @ApiOkResponse({
+    description: 'Course detail.',
+    type: CourseDataResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'Course was not found.' })
+  async get(@Param('id', CatalogIdPipe) id: number) {
+    return toDataResponse(await this.catalog.getCourse(id));
   }
 }
 
@@ -48,49 +80,97 @@ export class CoursesController {
 export class AdminCoursesController {
   constructor(private readonly catalog: CatalogService) {}
 
-  @Get() list(@Query() query: AdminCourseQueryDto) {
-    return this.catalog.listCourses(query, true);
+  @Get()
+  @ApiOkResponse({
+    description: 'Paginated courses including drafts and archived.',
+    type: CoursePaginatedResponseDto,
+  })
+  async list(@Query() query: AdminCourseQueryDto) {
+    const { items, total, limit, offset } = await this.catalog.listCourses(
+      query,
+      true,
+    );
+    return toPaginatedResponse(items, { total, limit, offset });
   }
 
-  @Get(':id') get(@Param('id', CatalogIdPipe) id: number) {
-    return this.catalog.getCourse(id, true);
+  @Get(':id')
+  @ApiOkResponse({
+    description: 'Course detail.',
+    type: CourseDataResponseDto,
+  })
+  async get(@Param('id', CatalogIdPipe) id: number) {
+    return toDataResponse(await this.catalog.getCourse(id, true));
   }
 
-  @Post() create(@Body() dto: CreateCourseDto) {
-    return this.catalog.createCourse(dto);
+  @Post()
+  @ApiCreatedResponse({
+    description: 'Draft course created.',
+    type: CourseDataResponseDto,
+  })
+  async create(@Body() dto: CreateCourseDto) {
+    return toDataResponse(await this.catalog.createCourse(dto));
   }
 
-  @Patch(':id') update(
+  @Patch(':id')
+  @ApiOkResponse({
+    description: 'Updated course.',
+    type: CourseDataResponseDto,
+  })
+  async update(
     @Param('id', CatalogIdPipe) id: number,
     @Body() dto: UpdateCourseDto,
   ) {
-    return this.catalog.updateCourse(id, dto);
+    return toDataResponse(await this.catalog.updateCourse(id, dto));
   }
 
-  @Post(':id/publish') @HttpCode(200) publish(
-    @Param('id', CatalogIdPipe) id: number,
-  ) {
-    return this.catalog.changeStatus(id, CourseStatus.Published);
+  @Post(':id/publish')
+  @HttpCode(200)
+  @ApiOkResponse({
+    description: 'Published course.',
+    type: CourseDataResponseDto,
+  })
+  async publish(@Param('id', CatalogIdPipe) id: number) {
+    return toDataResponse(
+      await this.catalog.changeStatus(id, CourseStatus.Published),
+    );
   }
 
-  @Post(':id/draft') @HttpCode(200) draft(
-    @Param('id', CatalogIdPipe) id: number,
-  ) {
-    return this.catalog.changeStatus(id, CourseStatus.Draft);
+  @Post(':id/draft')
+  @HttpCode(200)
+  @ApiOkResponse({
+    description: 'Course moved to draft.',
+    type: CourseDataResponseDto,
+  })
+  async draft(@Param('id', CatalogIdPipe) id: number) {
+    return toDataResponse(
+      await this.catalog.changeStatus(id, CourseStatus.Draft),
+    );
   }
 
-  @Post(':id/archive') @HttpCode(200) archive(
-    @Param('id', CatalogIdPipe) id: number,
-  ) {
-    return this.catalog.changeStatus(id, CourseStatus.Archived);
+  @Post(':id/archive')
+  @HttpCode(200)
+  @ApiOkResponse({
+    description: 'Archived course.',
+    type: CourseDataResponseDto,
+  })
+  async archive(@Param('id', CatalogIdPipe) id: number) {
+    return toDataResponse(
+      await this.catalog.changeStatus(id, CourseStatus.Archived),
+    );
   }
 }
 
 @ApiTags('Catalog')
 @Controller('levels')
 export class LevelsController {
-  @Get() list() {
-    return Object.values(SkillLevel);
+  @Get()
+  @ApiOperation({ summary: 'List fixed skill levels' })
+  @ApiOkResponse({
+    description: 'Skill levels.',
+    type: LevelCollectionDataResponseDto,
+  })
+  list() {
+    return toDataResponse(Object.values(SkillLevel));
   }
 }
 
@@ -99,32 +179,56 @@ export class LevelsController {
 export class CategoriesController {
   constructor(private readonly catalog: CatalogService) {}
 
-  @Get() list() {
-    return this.catalog.listTaxonomy('categories');
+  @Get()
+  @ApiOkResponse({
+    description: 'Categories ordered by name.',
+    type: CategoryCollectionDataResponseDto,
+  })
+  async list() {
+    return toDataResponse(await this.catalog.listTaxonomy('categories'));
   }
 
-  @Get(':id') get(@Param('id', CatalogIdPipe) id: number) {
-    return this.catalog.getTaxonomy('categories', id);
+  @Get(':id')
+  @ApiOkResponse({
+    description: 'Category detail.',
+    type: CategoryDataResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'Catalog entry was not found.' })
+  async get(@Param('id', CatalogIdPipe) id: number) {
+    return toDataResponse(await this.catalog.getTaxonomy('categories', id));
   }
 
   @Post()
   @UseGuards(CatalogAdminGuard)
   @ApiBearerAuth('access-token')
-  create(@Body() dto: NameDto) {
-    return this.catalog.saveTaxonomy('categories', dto.name);
+  @ApiCreatedResponse({
+    description: 'Category created.',
+    type: CategoryDataResponseDto,
+  })
+  async create(@Body() dto: NameDto) {
+    return toDataResponse(
+      await this.catalog.saveTaxonomy('categories', dto.name),
+    );
   }
 
   @Patch(':id')
   @UseGuards(CatalogAdminGuard)
   @ApiBearerAuth('access-token')
-  update(@Param('id', CatalogIdPipe) id: number, @Body() dto: NameDto) {
-    return this.catalog.saveTaxonomy('categories', dto.name, id);
+  @ApiOkResponse({
+    description: 'Renamed category.',
+    type: CategoryDataResponseDto,
+  })
+  async update(@Param('id', CatalogIdPipe) id: number, @Body() dto: NameDto) {
+    return toDataResponse(
+      await this.catalog.saveTaxonomy('categories', dto.name, id),
+    );
   }
 
   @Delete(':id')
   @HttpCode(204)
   @UseGuards(CatalogAdminGuard)
   @ApiBearerAuth('access-token')
+  @ApiNoContentResponse({ description: 'Category deleted.' })
   delete(@Param('id', CatalogIdPipe) id: number) {
     return this.catalog.deleteTaxonomy('categories', id);
   }
@@ -135,32 +239,56 @@ export class CategoriesController {
 export class TechnologiesController {
   constructor(private readonly catalog: CatalogService) {}
 
-  @Get() list() {
-    return this.catalog.listTaxonomy('technologies');
+  @Get()
+  @ApiOkResponse({
+    description: 'Technologies ordered by name.',
+    type: TechnologyCollectionDataResponseDto,
+  })
+  async list() {
+    return toDataResponse(await this.catalog.listTaxonomy('technologies'));
   }
 
-  @Get(':id') get(@Param('id', CatalogIdPipe) id: number) {
-    return this.catalog.getTaxonomy('technologies', id);
+  @Get(':id')
+  @ApiOkResponse({
+    description: 'Technology detail.',
+    type: TechnologyDataResponseDto,
+  })
+  @ApiNotFoundResponse({ description: 'Catalog entry was not found.' })
+  async get(@Param('id', CatalogIdPipe) id: number) {
+    return toDataResponse(await this.catalog.getTaxonomy('technologies', id));
   }
 
   @Post()
   @UseGuards(CatalogAdminGuard)
   @ApiBearerAuth('access-token')
-  create(@Body() dto: NameDto) {
-    return this.catalog.saveTaxonomy('technologies', dto.name);
+  @ApiCreatedResponse({
+    description: 'Technology created.',
+    type: TechnologyDataResponseDto,
+  })
+  async create(@Body() dto: NameDto) {
+    return toDataResponse(
+      await this.catalog.saveTaxonomy('technologies', dto.name),
+    );
   }
 
   @Patch(':id')
   @UseGuards(CatalogAdminGuard)
   @ApiBearerAuth('access-token')
-  update(@Param('id', CatalogIdPipe) id: number, @Body() dto: NameDto) {
-    return this.catalog.saveTaxonomy('technologies', dto.name, id);
+  @ApiOkResponse({
+    description: 'Renamed technology.',
+    type: TechnologyDataResponseDto,
+  })
+  async update(@Param('id', CatalogIdPipe) id: number, @Body() dto: NameDto) {
+    return toDataResponse(
+      await this.catalog.saveTaxonomy('technologies', dto.name, id),
+    );
   }
 
   @Delete(':id')
   @HttpCode(204)
   @UseGuards(CatalogAdminGuard)
   @ApiBearerAuth('access-token')
+  @ApiNoContentResponse({ description: 'Technology deleted.' })
   delete(@Param('id', CatalogIdPipe) id: number) {
     return this.catalog.deleteTaxonomy('technologies', id);
   }

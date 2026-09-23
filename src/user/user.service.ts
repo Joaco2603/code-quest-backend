@@ -3,20 +3,29 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import {
   CreateUserDto,
   ListUsersByClientDto,
   UpdateUserDto,
+  UserDeleteResponseDto,
 } from './dtos/index.js';
 import { User } from './entities/user.entity.js';
-import { Brackets, Repository } from 'typeorm';
+import { Brackets, QueryFailedError, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { asyncHandler } from '../common/helpers/async-handler.js';
+import { resolvePagination } from '../common/helpers/pagination.js';
 import { PaginationDto } from '../common/dto/pagination.dto.js';
 import { AuthUser, ValidRoles } from '../auth/interfaces/index.js';
 import { AuditLogService } from '../common/services/audit-log.service.js';
 import { BcryptAdapter } from '../auth/adapters/bcrypt.adapter.js';
+
+const DUPLICATE_ACCOUNT_MESSAGE = 'Unable to create the account';
+
+type CreateUserInput = Omit<CreateUserDto, 'address'> & {
+  address?: string | null;
+};
 
 type TwoFactorState = {
   two_factor_secret?: string | null;
@@ -33,52 +42,68 @@ export class UserService {
     private readonly bcryptAdapter: BcryptAdapter,
   ) {}
 
-  create = asyncHandler(async (createUserDto: CreateUserDto) => {
-    const { client_id, password, ...userData } = createUserDto;
+  create = asyncHandler(
+    async (
+      createUserDto: CreateUserInput,
+      options?: { selfRegistered: boolean },
+    ) => {
+      const { client_id, password, address, ...userData } = createUserDto;
+      const passwordHash = await this.hashPassword(password);
 
-    const existingUser = await this.userRepository.findOne({
-      where: { email: userData.email },
-    });
+      const existingUser = await this.userRepository.findOne({
+        where: { email: userData.email },
+      });
 
-    if (existingUser) {
-      throw new BadRequestException(
-        `User with email ${userData.email} already exists`,
-      );
-    }
+      if (existingUser) {
+        throw new BadRequestException(DUPLICATE_ACCOUNT_MESSAGE);
+      }
 
-    const user = this.userRepository.create({
-      ...userData,
-      password: await this.hashPassword(password),
-      role: (userData.role as ValidRoles) || ValidRoles.user,
-      client: client_id ? ({ id: client_id } as User) : null,
-    });
+      const user = this.userRepository.create({
+        ...userData,
+        address: address ?? null,
+        mustChangePassword: options?.selfRegistered ? false : true,
+        password: passwordHash,
+        role: (userData.role as ValidRoles) || ValidRoles.user,
+        client: client_id ? ({ id: client_id } as User) : null,
+      });
 
-    await this.userRepository.save(user);
-    await this.auditLogService.recordDomainEvent({
-      statusCode: 201,
-      outcome: 'success',
-      eventType: 'user.created',
-      userId: user.id,
-      userRole: user.role,
-      message: 'User created successfully',
-      metadata: {
-        email: user.email,
-        clientId: client_id ?? null,
-      },
-    });
+      try {
+        await this.userRepository.save(user);
+      } catch (error) {
+        this.rethrowDuplicateAccount(error);
+        throw error;
+      }
+      await this.auditLogService.recordDomainEvent({
+        statusCode: 201,
+        outcome: 'success',
+        eventType: 'user.created',
+        userId: user.id,
+        userRole: user.role,
+        message: 'User created successfully',
+        metadata: {
+          email: user.email,
+          clientId: client_id ?? null,
+        },
+      });
 
-    return this.toPublicUser(user);
-  });
+      // Return the entity without secrets. Auth callers spread this result,
+      // so it must never carry password or two_factor_secret. The HTTP
+      // controller serializes it explicitly with serializeUserDetail.
+      this.stripSensitive(user);
+      await this.attachFullClient(user, client_id ?? null);
+      return user;
+    },
+  );
 
   findAll = asyncHandler(
     async (paginationDto: PaginationDto, actor: AuthUser) => {
-      const { limit = 1000, offset = 0, isActive = true } = paginationDto;
+      const { isActive = true } = paginationDto;
       const all = paginationDto.all;
+      const { limit, offset } = resolvePagination(paginationDto, 100);
 
       const query = this.userRepository
         .createQueryBuilder('user')
-        .leftJoinAndSelect('user.client', 'client')
-        .loadRelationCountAndMap('user.quantity_users', 'user.users');
+        .leftJoinAndSelect('user.client', 'client');
 
       if (!all) {
         query.where('user.isActive = :isActive', { isActive });
@@ -86,7 +111,34 @@ export class UserService {
 
       this.applyActorScope(query, actor);
 
-      return await query.skip(offset).take(limit).getMany();
+      // getManyAndCount keeps the total aligned with the same filters and
+      // actor scope as the items; it ignores skip/take for the count.
+      const [items, total] = await query
+        .skip(offset)
+        .take(limit)
+        .getManyAndCount();
+
+      if (items.length > 0) {
+        const counts = await this.userRepository
+          .createQueryBuilder('child')
+          .select('child.client_id', 'clientId')
+          .addSelect('COUNT(*)', 'count')
+          .where('child.client_id IN (:...ids)', {
+            ids: items.map((user) => user.id),
+          })
+          .groupBy('child.client_id')
+          .getRawMany<{ clientId: string; count: string }>();
+        const countsByClient = new Map(
+          counts.map((row) => [row.clientId, Number(row.count)]),
+        );
+        for (const user of items) {
+          Object.assign(user, {
+            quantity_users: countsByClient.get(user.id) ?? 0,
+          });
+        }
+      }
+
+      return { items, total, limit, offset };
     },
   );
 
@@ -97,7 +149,7 @@ export class UserService {
     });
 
     if (!user) {
-      throw new BadRequestException(`User with id ${id} not found`);
+      throw new NotFoundException(`User with id ${id} not found`);
     }
 
     if (actor) {
@@ -122,7 +174,7 @@ export class UserService {
         where: {
           client: { id: clientId },
         },
-        relations: ['client'],
+        relations: { client: true },
       });
     },
   );
@@ -217,9 +269,7 @@ export class UserService {
     });
 
     if (existingUser) {
-      throw new BadRequestException(
-        `User with email ${data.email} already exists`,
-      );
+      throw new BadRequestException(DUPLICATE_ACCOUNT_MESSAGE);
     }
 
     const user = this.userRepository.create({
@@ -234,7 +284,12 @@ export class UserService {
       isActive: true,
     });
 
-    await this.userRepository.save(user);
+    try {
+      await this.userRepository.save(user);
+    } catch (error) {
+      this.rethrowDuplicateAccount(error);
+      throw error;
+    }
     await this.auditLogService.recordDomainEvent({
       statusCode: 201,
       outcome: 'success',
@@ -288,7 +343,7 @@ export class UserService {
       });
 
       if (!user) {
-        throw new BadRequestException(`User with id ${id} not found`);
+        throw new NotFoundException(`User with id ${id} not found`);
       }
 
       this.assertCanAccessUser(actor, user);
@@ -327,7 +382,11 @@ export class UserService {
           updatedFields: Object.keys(updateUserDto),
         },
       });
-      return this.toPublicUser(user);
+      this.stripSensitive(user);
+      if (client_id !== undefined) {
+        await this.attachFullClient(user, client_id ?? null);
+      }
+      return user;
     },
   );
 
@@ -335,10 +394,10 @@ export class UserService {
     await this.userRepository.update(id, state);
   }
 
-  remove = asyncHandler(async (id: string) => {
+  remove = asyncHandler(async (id: string): Promise<UserDeleteResponseDto> => {
     const user = await this.userRepository.findOneBy({ id });
     if (!user) {
-      throw new BadRequestException(`User with id ${id} not found`);
+      throw new NotFoundException(`User with id ${id} not found`);
     }
     await this.userRepository.update(user.id, { isActive: false });
     await this.auditLogService.recordDomainEvent({
@@ -352,20 +411,20 @@ export class UserService {
         email: user.email,
       },
     });
-    return { message: `User with id ${id} has been deleted` };
+    return { message: `User with id ${id} has been deleted`, id };
   });
 
   findOneWithSecret = asyncHandler(async (id: string) => {
     return this.userRepository.findOne({
       where: { id },
-      select: [
-        'id',
-        'email',
-        'role',
-        'two_factor_secret',
-        'is_two_factor_enabled',
-        'is_two_factor_pending',
-      ],
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        two_factor_secret: true,
+        is_two_factor_enabled: true,
+        is_two_factor_pending: true,
+      },
     });
   });
 
@@ -390,10 +449,33 @@ export class UserService {
     return this.bcryptAdapter.hashing(password, 10);
   }
 
-  private toPublicUser(user: User) {
-    const { password: _password, two_factor_secret: _secret, ...publicUser } =
-      user;
-    return publicUser;
+  /**
+   * Remove secrets from an entity kept in memory (create/update build the
+   * password in memory even though the columns are `select: false`).
+   * Serializers also exclude them by construction; this protects internal
+   * spreaders such as AuthService (`{ ...user, token }`).
+   */
+  private stripSensitive(user: User): User {
+    delete (user as Partial<User>).password;
+    delete (user as Partial<User>).two_factor_secret;
+    return user;
+  }
+
+  /**
+   * Replace a `{ id }` client stub with the real row so the serializer can
+   * build a full one-level summary. Only runs when ownership was just set.
+   */
+  private async attachFullClient(
+    user: User,
+    clientId: string | null | undefined,
+  ): Promise<void> {
+    if (!clientId) {
+      return;
+    }
+    const client = await this.userRepository.findOneBy({ id: clientId });
+    if (client) {
+      user.client = client;
+    }
   }
 
   private assertCanAccessUser(actor: AuthUser, target: User) {
@@ -429,5 +511,16 @@ export class UserService {
     }
 
     query.andWhere('user.id = :actorId', { actorId: actor.id });
+  }
+
+  private rethrowDuplicateAccount(error: unknown): void {
+    if (!(error instanceof QueryFailedError)) {
+      return;
+    }
+
+    const code = (error.driverError as { code?: string }).code;
+    if (code === '23505') {
+      throw new BadRequestException(DUPLICATE_ACCOUNT_MESSAGE);
+    }
   }
 }

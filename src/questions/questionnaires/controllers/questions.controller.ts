@@ -15,14 +15,19 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import { Auth } from '../../auth/decorators/index.js';
-import { JwtAuthGuard } from '../../auth/guards/jwt.guard.js';
-import { TwoFactorGuard } from '../../auth/guards/two-factor.guard.js';
-import { ValidRoles } from '../../auth/interfaces/index.js';
+import { Auth } from '../../../auth/decorators/index.js';
+import { JwtAuthGuard } from '../../../auth/guards/jwt.guard.js';
+import { TwoFactorGuard } from '../../../auth/guards/two-factor.guard.js';
+import { ValidRoles } from '../../../auth/interfaces/index.js';
+import { toDataResponse } from '../../../common/dto/api-response.dto.js';
 import {
   CreateAnswerOptionDto,
   UpdateQuestionDto,
 } from '../dtos/index.js';
+import {
+  QuestionDataResponseDto,
+  QuestionDeactivationDataResponseDto,
+} from '../dtos/questionnaire-response.dto.js';
 import { QuestionsService } from '../questions.service.js';
 
 @Auth(ValidRoles.admin)
@@ -35,12 +40,15 @@ export class QuestionsController {
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update a question' })
-  @ApiOkResponse({ description: 'Updated question.' })
-  update(
+  @ApiOkResponse({
+    description: 'Updated question.',
+    type: QuestionDataResponseDto,
+  })
+  async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateQuestionDto,
   ) {
-    return this.questionsService.updateQuestion(id, dto);
+    return toDataResponse(await this.questionsService.updateQuestion(id, dto));
   }
 
   @Delete(':id')
@@ -48,18 +56,26 @@ export class QuestionsController {
     summary: 'Deactivate a question',
     description: 'Soft-deletes by setting is_active=false.',
   })
-  @ApiOkResponse({ description: 'Question deactivated.' })
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.questionsService.deactivateQuestion(id);
+  @ApiOkResponse({
+    description: 'Question deactivated.',
+    type: QuestionDeactivationDataResponseDto,
+  })
+  async remove(@Param('id', ParseIntPipe) id: number) {
+    return toDataResponse(
+      await this.questionsService.deactivateQuestion(id),
+    );
   }
 
   @Post(':id/options')
   @ApiOperation({ summary: 'Add an answer option to a question' })
-  @ApiCreatedResponse({ description: 'Option added.' })
-  addOption(
+  @ApiCreatedResponse({
+    description: 'Option added.',
+    type: QuestionDataResponseDto,
+  })
+  async addOption(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: CreateAnswerOptionDto,
   ) {
-    return this.questionsService.createOption(id, dto);
+    return toDataResponse(await this.questionsService.createOption(id, dto));
   }
 }

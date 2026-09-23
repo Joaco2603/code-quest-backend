@@ -19,22 +19,24 @@ Todos llevan el prefijo `/api`. Las respuestas usan propiedades JSON en camelCas
 
 | Método y ruta | Comportamiento |
 | --- | --- |
-| `GET /courses` | Cursos publicados; respuesta `{items, total, page, limit}` |
-| `GET /courses/:id` | Curso publicado o `404` |
-| `GET /levels` | `beginner`, `intermediate`, `advanced` |
-| `GET /categories`, `GET /technologies` | Listas ordenadas por nombre |
-| `GET /categories/:id`, `GET /technologies/:id` | Consulta individual |
-| `POST /categories`, `POST /technologies` | Crear con `{name}`; administrador |
-| `PATCH /categories/:id`, `PATCH /technologies/:id` | Renombrar con `{name}`; administrador |
+| `GET /courses` | Cursos publicados; respuesta `{data, meta:{total, limit, offset}}` |
+| `GET /courses/:id` | Curso publicado o `404`; respuesta `{data:{...}}` |
+| `GET /levels` | `{data:["beginner", "intermediate", "advanced"]}` |
+| `GET /categories`, `GET /technologies` | Listas ordenadas por nombre; respuesta `{data:[...]}` |
+| `GET /categories/:id`, `GET /technologies/:id` | Consulta individual; respuesta `{data:{id, name}}` |
+| `POST /categories`, `POST /technologies` | Crear con `{name}`; administrador; respuesta `{data:{id, name}}` |
+| `PATCH /categories/:id`, `PATCH /technologies/:id` | Renombrar con `{name}`; administrador; respuesta `{data:{id, name}}` |
 | `DELETE /categories/:id`, `DELETE /technologies/:id` | Eliminar si no se usan; administrador; `204` |
-| `GET /admin/courses`, `GET /admin/courses/:id` | Incluye borradores y archivados; administrador |
-| `POST /admin/courses` | Crear borrador; administrador; `201` |
-| `PATCH /admin/courses/:id` | Editar; administrador |
-| `POST /admin/courses/:id/publish` | Publicar; administrador |
-| `POST /admin/courses/:id/draft` | Retirar publicación o restaurar archivado a borrador; administrador |
-| `POST /admin/courses/:id/archive` | Archivar sin borrar; administrador |
+| `GET /admin/courses`, `GET /admin/courses/:id` | Incluye borradores y archivados; administrador; listado `{data, meta}`, detalle `{data:{...}}` |
+| `POST /admin/courses` | Crear borrador; administrador; `201` con `{data:{...}}` |
+| `PATCH /admin/courses/:id` | Editar; administrador; respuesta `{data:{...}}` |
+| `POST /admin/courses/:id/publish` | Publicar; administrador; respuesta `{data:{...}}` |
+| `POST /admin/courses/:id/draft` | Retirar publicación o restaurar archivado a borrador; administrador; respuesta `{data:{...}}` |
+| `POST /admin/courses/:id/archive` | Archivar sin borrar; administrador; respuesta `{data:{...}}` |
 
-Filtros: `search` busca una subcadena literal del título; `level`, `categoryId` y `technologyId` se combinan con AND. Paginación: `page=1`, `limit=20` por defecto, máximo 100 resultados por página, orden por ID. Solo el listado administrativo acepta `status`.
+Curso serializado (campos exactos, sin spreads): `id, title, description|null, url|null, imageUrl|null, durationMinutes|null, instructor|null, level|null, status, createdAt|ISO UTC, updatedAt|ISO UTC, categories:[{id, name}], technologies:[{id, name}], prerequisiteIds:number[] ordenados`. Una lista vacía devuelve `data:[]`; una página vacía conserva `meta.total`.
+
+Filtros: `search` busca una subcadena literal del título; `level`, `categoryId` y `technologyId` se combinan con AND. Paginación: entradas `page=1`, `limit=20` por defecto, máximo 100 resultados por página, orden por ID; salida `meta:{total, limit, offset}` con `offset=(page-1)*limit`. Si llegan `page` y un `offset` distinto de cero, tienen que describir la misma página (`page=1` solo coincide con `offset=0`); si no, la petición es `400`. Solo el listado administrativo acepta `status`.
 
 Ejemplo de curso completo para `POST /api/admin/courses`, una vez integrada la autenticación:
 
@@ -77,9 +79,9 @@ Importa `CatalogModule` e inyecta `CatalogService`:
 
 | Método interno | Uso |
 | --- | --- |
-| `getPublishedCatalog()` | Catálogo completo elegible para enviar al LLM, con `prerequisiteIds` |
-| `validateRoadmapSelection(ids, completedIds?)` | Rechaza IDs desconocidos/no publicados, duplicados y prerrequisitos ausentes o posteriores; devuelve cursos en el orden solicitado |
-| `getCoursesForExistingRoadmap(ids)` | Resuelve publicados y archivados conservando el orden; rechaza borradores e IDs inexistentes |
+| `getPublishedCatalog()` | Catálogo completo elegible para enviar al LLM, con `prerequisiteIds` (DTOs sin envoltura HTTP) |
+| `validateRoadmapSelection(ids, completedIds?)` | Rechaza IDs desconocidos/no publicados, duplicados y prerrequisitos ausentes o posteriores; devuelve cursos en el orden solicitado (DTOs sin envoltura HTTP) |
+| `getCoursesForExistingRoadmap(ids)` | Resuelve publicados y archivados conservando el orden; rechaza borradores e IDs inexistentes (DTOs sin envoltura HTTP) |
 
 `completedIds` debe provenir del progreso persistido y verificado del usuario, nunca de una afirmación del LLM. La validación no guarda el roadmap: Persona 2 debe crear sus relaciones y comprobar el acceso del usuario. Si necesita garantizar que no cambie el catálogo entre validación y guardado, debe hacerlo en una transacción que tome el mismo `pg_advisory_xact_lock(1789600000)` antes de validar; el catálogo no borra físicamente cursos.
 
