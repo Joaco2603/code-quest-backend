@@ -32,12 +32,15 @@ describe('RoadmapsService', () => {
 
   const manager = {
     query: vi.fn(),
-    create: vi.fn((_entity: unknown, data: unknown) => ({ ...data })),
+    create: vi.fn((_entity: unknown, data: Record<string, unknown>) => ({
+      ...data,
+    })),
     save: vi.fn(async (value: unknown) => {
       if (Array.isArray(value)) {
         return value;
       }
-      return { ...(value as object), id: (value as { id?: number }).id ?? 1 };
+      const row = value as Record<string, unknown>;
+      return { ...row, id: typeof row.id === 'number' ? row.id : 1 };
     }),
     delete: vi.fn(),
     update: vi.fn(),
@@ -45,8 +48,8 @@ describe('RoadmapsService', () => {
   };
 
   const dataSource = {
-    transaction: vi.fn(
-      async (work: (m: typeof manager) => Promise<unknown>) => work(manager),
+    transaction: vi.fn(async (work: (m: typeof manager) => Promise<unknown>) =>
+      work(manager),
     ),
   };
 
@@ -67,7 +70,7 @@ describe('RoadmapsService', () => {
       getCoursesForExistingRoadmap: vi.fn(async (ids: number[]) =>
         ids.map(catalogCourse),
       ),
-    };
+    } as unknown as typeof catalog;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -126,6 +129,31 @@ describe('RoadmapsService', () => {
     });
     expect(result).toHaveLength(1);
     expect(result[0].userId).toBe(userId);
+    expect(catalog.getCoursesForExistingRoadmap).toHaveBeenCalledTimes(1);
+  });
+
+  it('hydrates every listed roadmap in one catalog read', async () => {
+    roadmapRepo.find.mockResolvedValue([
+      {
+        id: 1,
+        title: 'Mine',
+        userId,
+        courses: [{ courseId: 3, progress: 0, sortOrder: 0, roadmapId: 1 }],
+      },
+      {
+        id: 2,
+        title: 'Also mine',
+        userId,
+        courses: [{ courseId: 4, progress: 0, sortOrder: 0, roadmapId: 2 }],
+      },
+    ]);
+
+    const result = await service.findAll(userId);
+
+    expect(catalog.getCoursesForExistingRoadmap).toHaveBeenCalledTimes(1);
+    expect(catalog.getCoursesForExistingRoadmap).toHaveBeenCalledWith([3, 4]);
+    expect(result[0].courses[0].course.id).toBe(3);
+    expect(result[1].courses[0].course.id).toBe(4);
   });
 
   it('returns 404 when another user requests a roadmap', async () => {
@@ -149,7 +177,9 @@ describe('RoadmapsService', () => {
 
     const result = await service.update(userId, 5, { courseIds: [2, 8] });
 
-    expect(manager.delete).toHaveBeenCalledWith(RoadmapCourse, { roadmapId: 5 });
+    expect(manager.delete).toHaveBeenCalledWith(RoadmapCourse, {
+      roadmapId: 5,
+    });
     expect(manager.update).toHaveBeenCalledWith(Roadmap, 5, { title: 'Path' });
     const savedRoadmap = manager.save.mock.calls.find(
       ([value]) => !Array.isArray(value) && (value as { title?: string }).title,
@@ -179,7 +209,7 @@ describe('RoadmapsService', () => {
     expect(catalog.validateRoadmapSelection).toHaveBeenCalledWith([1, 3], [1]);
   });
 
-  it('does not treat dropped completed courses as completedIds', async () => {
+  it('keeps dropped progress===100 courses as completedIds', async () => {
     roadmapRepo.findOne.mockResolvedValue({
       id: 5,
       title: 'Path',
@@ -192,7 +222,7 @@ describe('RoadmapsService', () => {
 
     await service.update(userId, 5, { courseIds: [2, 3] });
 
-    expect(catalog.validateRoadmapSelection).toHaveBeenCalledWith([2, 3], []);
+    expect(catalog.validateRoadmapSelection).toHaveBeenCalledWith([2, 3], [1]);
   });
 
   it('rejects progress outside 0-100', async () => {

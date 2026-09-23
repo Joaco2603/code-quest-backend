@@ -1,12 +1,12 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreateRoadmaps1789600003000 implements MigrationInterface {
+export class CreateRoadmaps1789600004000 implements MigrationInterface {
   async up(runner: QueryRunner): Promise<void> {
     await runner.query(`
       CREATE TABLE roadmaps (
         id SERIAL PRIMARY KEY,
         title VARCHAR(200) NOT NULL CHECK (length(trim(title)) > 0),
-        user_id UUID NOT NULL
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE
       );
       CREATE INDEX roadmaps_user_id ON roadmaps (user_id);
 

@@ -37,7 +37,7 @@ export class User {
   last_name: string | null;
 
   @Column('text', { nullable: true })
-  address: string;
+  address: string | null;
 
   @Column('bool', { default: true })
   isActive: boolean;
