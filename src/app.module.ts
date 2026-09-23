@@ -9,8 +9,7 @@ import { AuthModule } from './auth/auth.module.js';
 import { UserModule } from './user/user.module.js';
 import { CommonModule } from './common/common.module.js';
 import { QuestionsModule } from './questions/questions.module.js';
-// const { ObserveModule, ObserveInstrument } = createObserveModule();
-// export { ObserveInstrument };
+import { RoadmapsModule } from './roadmaps/roadmaps.module.js';
 
 @Module({
   imports: [
@@ -26,6 +25,7 @@ import { QuestionsModule } from './questions/questions.module.js';
     AuthModule,
     QuestionsModule,
     CatalogModule,
+    RoadmapsModule,
   ],
 })
 export class AppModule {}
