@@ -58,6 +58,9 @@ export class DiscordAdapter {
   }
 
   private getConfig(): DiscordConfig {
+    if (this.configService.get<boolean>('app.auth.discord.enabled') === false) {
+      throw new ServiceUnavailableException('Discord login is disabled');
+    }
     const clientId = this.configService.get<string>(
       'app.auth.discord.clientId',
     );

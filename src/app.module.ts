@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module.js';
 import { UserModule } from './user/user.module.js';
 import { CommonModule } from './common/common.module.js';
 import { QuestionsModule } from './questions/questions.module.js';
+import { HealthModule } from './health/health.module.js';
 import { RoadmapsModule } from './roadmaps/roadmaps.module.js';
 
 @Module({
@@ -25,6 +26,7 @@ import { RoadmapsModule } from './roadmaps/roadmaps.module.js';
     AuthModule,
     QuestionsModule,
     CatalogModule,
+    HealthModule,
     RoadmapsModule,
   ],
 })
