@@ -116,6 +116,7 @@ describe('AssessmentsService', () => {
   };
 
   const assessments = {
+    manager: { transaction: vi.fn() },
     findOne: vi.fn(),
     find: vi.fn(),
     create: vi.fn(),
@@ -137,6 +138,12 @@ describe('AssessmentsService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    assessments.manager.transaction.mockImplementation(async (work) =>
+      work({
+        getRepository: (entity: { name: string }) =>
+          entity.name === 'Assessment' ? assessments : answers,
+      }),
+    );
     questionsService.getActiveQuestionnaire.mockResolvedValue(
       buildQuestionnaire(),
     );

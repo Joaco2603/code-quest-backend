@@ -1,6 +1,8 @@
+import { QuestionnaireResponseDto } from '../../questionnaires/dtos/questionnaire-response.dto.js';
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
@@ -118,6 +120,41 @@ export class AssessmentsController {
     return this.assessmentsService.findMine(user, id);
   }
 
+  @Get(':id/questionnaire')
+  @Auth(ValidRoles.user)
+  @ApiOperation({
+    summary: 'Get the applicable questions for my current answers',
+    description:
+      'Refetch after changing or removing an answer; conditional questions appear only for selected technologies.',
+  })
+  @ApiOkResponse({
+    description: 'Questionnaire with only applicable questions.',
+    type: QuestionnaireResponseDto,
+  })
+  getQuestionnaire(
+    @GetUser() user: AuthUser,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.assessmentsService.getQuestionnaire(user, id);
+  }
+
+  @Delete(':id/answers/:questionId')
+  @Auth(ValidRoles.user)
+  @ApiOperation({
+    summary: 'Clear an answer and any levels that no longer apply',
+  })
+  @ApiOkResponse({
+    description:
+      'Assessment with remaining answers; required answers must be restored before completion.',
+  })
+  removeAnswer(
+    @GetUser() user: AuthUser,
+    @Param('id', ParseIntPipe) id: number,
+    @Param('questionId', ParseIntPipe) questionId: number,
+  ) {
+    return this.assessmentsService.removeAnswer(user, id, questionId);
+  }
+
   @Put(':id/answers')
   @Auth(ValidRoles.user)
   @ApiOperation({
@@ -141,7 +178,7 @@ export class AssessmentsController {
   @ApiOperation({
     summary: 'Complete assessment',
     description:
-      'Marks the attempt complete when every active question has a valid answer.',
+      'Marks the attempt complete when every applicable required question has a valid answer; optional questions can be omitted.',
   })
   @ApiOkResponse({ description: 'Assessment completed.' })
   @ApiNotFoundResponse({ description: 'Assessment was not found.' })

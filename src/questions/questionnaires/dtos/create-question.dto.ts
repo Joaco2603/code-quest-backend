@@ -1,3 +1,5 @@
+import { QuestionRulesDto } from './question-rules.dto.js';
+import { IsObject, ValidateIf } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import {
@@ -14,6 +16,17 @@ import { QuestionType } from '../enums/question-type.enum.js';
 import { CreateAnswerOptionDto } from './create-answer-option.dto.js';
 
 export class CreateQuestionDto {
+  @ApiPropertyOptional({
+    type: QuestionRulesDto,
+    description:
+      'Replaces the complete rules object; {} restores legacy required behavior.',
+  })
+  @ValidateIf((_o, v) => v !== undefined)
+  @IsObject()
+  @ValidateNested()
+  @Type(() => QuestionRulesDto)
+  rules?: QuestionRulesDto;
+
   @ApiProperty({ example: 'Which languages interest you?' })
   @IsString()
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))

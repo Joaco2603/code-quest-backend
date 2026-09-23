@@ -52,6 +52,7 @@ describe('questions serializers', () => {
       questions: [
         {
           id: 10,
+          rules: { required: true },
           question: 'Which languages?',
           type: QuestionType.SINGLE_CHOICE,
           isActive: true,

@@ -1,3 +1,4 @@
+import { QuestionRulesDto } from './question-rules.dto.js';
 import { ApiProperty } from '@nestjs/swagger';
 import { PaginationMetaDto } from '../../../common/dto/api-response.dto.js';
 import { QuestionType } from '../enums/question-type.enum.js';
@@ -30,6 +31,9 @@ export class AnswerOptionResponseDto {
 }
 
 export class QuestionResponseDto {
+  @ApiProperty({ type: QuestionRulesDto })
+  rules?: QuestionRulesDto;
+
   @ApiProperty({ description: 'Question id.', example: 10 })
   id: number;
 
@@ -59,7 +63,10 @@ export class QuestionnaireResponseDto {
   @ApiProperty({ description: 'Questionnaire id.', example: 1 })
   id: number;
 
-  @ApiProperty({ description: 'Questionnaire title.', example: 'Skills intake' })
+  @ApiProperty({
+    description: 'Questionnaire title.',
+    example: 'Skills intake',
+  })
   title: string;
 
   @ApiProperty({

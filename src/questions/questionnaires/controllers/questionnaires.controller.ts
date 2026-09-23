@@ -36,6 +36,7 @@ import {
   QuestionDataResponseDto,
   QuestionnaireCollectionDataResponseDto,
   QuestionnaireDataResponseDto,
+  QuestionnaireResponseDto,
   QuestionnaireDeactivationDataResponseDto,
   QuestionnairePaginatedResponseDto,
 } from '../dtos/questionnaire-response.dto.js';
@@ -57,9 +58,7 @@ export class QuestionnairesController {
     type: QuestionnaireDataResponseDto,
   })
   async create(@Body() dto: CreateQuestionnaireDto) {
-    return toDataResponse(
-      await this.questionsService.createQuestionnaire(dto),
-    );
+    return toDataResponse(await this.questionsService.createQuestionnaire(dto));
   }
 
   @Get()
@@ -88,16 +87,19 @@ export class QuestionnairesController {
   }
 
   @Get('active/:id')
-  @ApiOperation({ summary: 'Get an active questionnaire with active questions' })
+  @ApiOperation({ summary: 'Get initial questions of an active questionnaire' })
   @ApiOkResponse({
     description: 'Active questionnaire snapshot.',
     type: QuestionnaireDataResponseDto,
   })
   @ApiNotFoundResponse({ description: 'Questionnaire missing or inactive.' })
   async findActiveById(@Param('id', ParseIntPipe) id: number) {
-    return toDataResponse(
-      await this.questionsService.getActiveQuestionnaire(id),
+    const questionnaire: QuestionnaireResponseDto =
+      await this.questionsService.getActiveQuestionnaire(id);
+    questionnaire.questions = questionnaire.questions.filter(
+      (q) => !q.rules?.showWhen,
     );
+    return toDataResponse(questionnaire);
   }
 
   @Get(':id')
