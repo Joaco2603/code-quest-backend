@@ -33,7 +33,7 @@ afterAll(async () => {
   }
 });
 
-it('upgrades the existing main schema without erasing attempts or roadmaps', async () => {
+it('upgrades the existing main schema dropping legacy attempts and keeping roadmaps', async () => {
   const all = [...db.migrations];
   db.migrations.splice(
     0,
@@ -59,9 +59,10 @@ it('upgrades the existing main schema without erasing attempts or roadmaps', asy
   );
   db.migrations.splice(0, db.migrations.length, ...all);
   await db.runMigrations();
-  expect(
-    await db.query('SELECT id FROM assessments WHERE id = $1', [attempt.id]),
-  ).toHaveLength(1);
+  // Legacy attempts are dropped by design (MVP simplification); roadmaps stay.
+  await expect(
+    db.query('SELECT id FROM assessments WHERE id = $1', [attempt.id]),
+  ).rejects.toThrow();
   expect(
     (
       await db.query(
@@ -71,12 +72,14 @@ it('upgrades the existing main schema without erasing attempts or roadmaps', asy
     )[0],
   ).toMatchObject({ title: 'Existing route', assessment_id: null });
   expect(await db.query('SELECT * FROM self_assessments')).toEqual([]);
-  for (let i = 0; i < 4; i++) await db.undoLastMigration();
-  expect(
-    await db.query('SELECT id FROM assessments WHERE id = $1', [attempt.id]),
-  ).toHaveLength(1);
+  for (let i = 0; i < 5; i++) await db.undoLastMigration();
+  // Reverting recreates the empty legacy tables; dropped rows are gone.
+  expect(await db.query('SELECT * FROM assessments')).toEqual([]);
   expect(
     await db.query('SELECT id FROM roadmaps WHERE id = $1', [roadmap.id]),
   ).toHaveLength(1);
   await db.runMigrations();
+  await expect(
+    db.query('SELECT id FROM assessments WHERE id = $1', [attempt.id]),
+  ).rejects.toThrow();
 });

@@ -18,8 +18,9 @@ de la rama de IA. Los catálogos administrativos exigen JWT y rol administrador.
 ## Base de datos
 
 Las migraciones existentes de `main` se mantienen. Las nuevas evaluaciones usan
-`self_assessments` y `self_assessment_answers` para evitar colisiones con el esquema
-anterior. Las tablas antiguas permanecen como historial sin rutas HTTP registradas.
+`self_assessments` y `self_assessment_answers`. Por simplificación del MVP los
+intentos del flujo anterior no se conservan: la migración `DropLegacyAssessments`
+elimina `assessments` y `user_answers` (sus filas se pierden al actualizar).
 La migración de IA amplía `roadmaps` con columnas anulables y conserva las rutas existentes.
 
 Esta adaptación está dirigida a bases con las migraciones de `main`. Una base
@@ -33,10 +34,10 @@ no contiene comandos que borren automáticamente bases existentes.
 
 Revisar primero `src/config/database.ts`, las migraciones nuevas y los módulos
 Questions/Assessments/Roadmaps. Las pruebas verifican el upgrade desde el esquema
-de `main`, la reversión de las cuatro migraciones añadidas, la conservación de
-historial y roadmaps, y el flujo HTTP evaluación → generación → progreso.
+de `main` (intentos anteriores eliminados, roadmaps conservados), la reversión de
+las cinco migraciones añadidas y el flujo HTTP evaluación → generación → progreso.
 
 Para revertir código, revertir los commits de integración juntos. No revertir
 migraciones con evaluaciones nuevas que se quieran conservar: su `down` elimina
-las tablas nuevas y los metadatos de generación, aunque conserva el historial
-anterior y las tablas de roadmaps originales.
+las tablas nuevas y los metadatos de generación. El `down` de `DropLegacyAssessments`
+recrea las tablas anteriores vacías; las filas eliminadas no se recuperan.
