@@ -218,7 +218,8 @@
         "lessonsRaw": 156,
         "level": "advanced",
         "technologyNames": [
-          "Java"
+          "Java",
+          "IA"
         ],
         "provenance": {
           "imageUrl": "scraped",
@@ -234,7 +235,7 @@
           "Spring AI",
           "En este curso desarrollarás, paso a paso, un"
         ],
-        "notes": "Sin match en vocabulario de 11 techs; curaduria manual; Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch2).",
+        "notes": "Sin match en vocabulario de 11 techs; curaduria manual; Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch2) | Curado 2026-09-23: se agrega IA.",
         "sourceUrl": "https://cursos.devtalles.com/courses/spring-AI"
       }
     },
@@ -298,7 +299,8 @@
         "lessonsRaw": 160,
         "level": "beginner",
         "technologyNames": [
-          "PHP"
+          "PHP",
+          "IA"
         ],
         "provenance": {
           "imageUrl": "scraped",
@@ -314,7 +316,7 @@
           "Ganas de aprender y practicar escribiendo código durante el curso.",
           "Descripción del curso"
         ],
-        "notes": "Sin match en vocabulario de 11 techs; curaduria manual | Curado 2026-09-21 (batch6).",
+        "notes": "Sin match en vocabulario de 11 techs; curaduria manual | Curado 2026-09-21 (batch6) | Curado 2026-09-23: se agrega IA.",
         "sourceUrl": "https://cursos.devtalles.com/courses/laravel-ai"
       }
     },
@@ -739,7 +741,8 @@
         "lessonsRaw": 185,
         "level": "advanced",
         "technologyNames": [
-          "Java"
+          "Java",
+          "Docker"
         ],
         "provenance": {
           "imageUrl": "scraped",
@@ -755,7 +758,7 @@
           "familiaridad con controladores REST, JPA, validaciones y conceptos básicos de Spring Security. ",
           "Docker (no excluyente):"
         ],
-        "notes": "Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch4).",
+        "notes": "Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch4) | Curado 2026-09-23: se conserva Docker junto a Java.",
         "sourceUrl": "https://cursos.devtalles.com/courses/spring-boot-microservicios"
       }
     },
@@ -1019,7 +1022,8 @@
         "lessonsRaw": 95,
         "level": "intermediate",
         "technologyNames": [
-          "React Native"
+          "React Native",
+          "IA"
         ],
         "provenance": {
           "imageUrl": "scraped",
@@ -1035,7 +1039,7 @@
           "Descripción del curso",
           "Este curso te guía paso a paso en la creación de una aplicación móvil de alto rendimiento utilizando"
         ],
-        "notes": "Sin match en vocabulario de 11 techs; curaduria manual; Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch4).",
+        "notes": "Sin match en vocabulario de 11 techs; curaduria manual; Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch4) | Curado 2026-09-23: se agrega IA.",
         "sourceUrl": "https://cursos.devtalles.com/courses/expo-gemini"
       }
     },
@@ -1502,7 +1506,9 @@
         "durationHoursRaw": 10.0,
         "lessonsRaw": 128,
         "level": "beginner",
-        "technologyNames": [],
+        "technologyNames": [
+          "Dart"
+        ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
@@ -1517,7 +1523,7 @@
           "Descripción del curso",
           "Disponible al finalizar la construcción de este curso."
         ],
-        "notes": "Sin match en vocabulario de 11 techs; curaduria manual | Curado 2026-09-21 (batch6).",
+        "notes": "Sin match en vocabulario de 11 techs; curaduria manual | Curado 2026-09-21 (batch6) | Curado 2026-09-23: tecnología Dart.",
         "sourceUrl": "https://cursos.devtalles.com/courses/dart-cero-hasta-detalles"
       }
     },

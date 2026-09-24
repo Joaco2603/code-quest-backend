@@ -1,4 +1,8 @@
-import { parseCourseSource } from '../course-source.js';
+import { BadRequestException } from '@nestjs/common';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { parseCourseSource, publicationPreview } from '../course-source.js';
 const course = {
   titulo: 'TypeScript',
   descripcion: 'Fundamentos',
@@ -51,6 +55,12 @@ it('keeps enrichment null when the source has no sidecar', () => {
   const parsed = parseCourseSource({ cursos: [course] });
   expect(parsed.courses[0].enrichment).toBeNull();
 });
+const curatedProvenance = {
+  imageUrl: 'curated',
+  durationMinutes: 'curated',
+  level: 'curated',
+  technologyNames: 'curated',
+};
 it('accepts a curated enrichment sidecar and normalizes technology names', () => {
   const parsed = parseCourseSource({
     cursos: [
@@ -61,6 +71,7 @@ it('accepts a curated enrichment sidecar and normalizes technology names', () =>
           durationMinutes: 1470,
           level: 'intermediate',
           technologyNames: ['Node.js', ' node.js ', 'NestJS'],
+          provenance: curatedProvenance,
         },
       },
     ],
@@ -72,13 +83,51 @@ it('accepts a curated enrichment sidecar and normalizes technology names', () =>
     technologyNames: ['Node.js', 'NestJS'],
   });
 });
+it('drops scraped and inferred enrichment instead of copying it onto the course', () => {
+  const parsed = parseCourseSource({
+    cursos: [
+      {
+        ...course,
+        enrichment: {
+          imageUrl: 'https://cdn.example.com/img.jpg',
+          durationMinutes: 1470,
+          level: 'intermediate',
+          technologyNames: ['PHP', 'IA'],
+          provenance: {
+            imageUrl: 'scraped',
+            durationMinutes: 'scraped',
+            level: 'inferred',
+            technologyNames: 'curated',
+          },
+        },
+      },
+    ],
+  });
+  expect(parsed.courses[0].enrichment).toEqual({
+    imageUrl: null,
+    durationMinutes: null,
+    level: null,
+    technologyNames: ['PHP', 'IA'],
+  });
+  expect(publicationPreview(parsed.courses)).toEqual({
+    curatedOnCreate: {
+      imageUrl: 0,
+      durationMinutes: 0,
+      level: 0,
+      technologies: 1,
+    },
+    missingPublicationFields: ['imageUrl', 'durationMinutes', 'level'],
+  });
+});
 it.each([
   { imageUrl: 'http://cdn.example.com/img.jpg' },
+  { imageUrl: 'notaurl' },
   { durationMinutes: 0 },
   { durationMinutes: 1.5 },
   { level: 'expert' },
   { technologyNames: [''] },
   { technologyNames: 'Node.js' },
+  { provenance: { ...curatedProvenance, level: 'guessed' } },
 ])('rejects invalid enrichment %j', (enrichment) => {
   expect(() =>
     parseCourseSource({
@@ -90,10 +139,60 @@ it.each([
             durationMinutes: null,
             level: null,
             technologyNames: [],
+            provenance: curatedProvenance,
             ...enrichment,
           },
         },
       ],
     }),
-  ).toThrow();
+  ).toThrow(BadRequestException);
+});
+it('keeps scraped media out of the curated course file', () => {
+  const parsed = parseCourseSource(
+    JSON.parse(
+      readFileSync(
+        join(
+          dirname(fileURLToPath(import.meta.url)),
+          '../../../../COURSES.enriched.json',
+        ),
+        'utf8',
+      ),
+    ),
+  );
+  const byTitle = new Map(parsed.courses.map((item) => [item.title, item]));
+  expect(parsed.courses).toHaveLength(74);
+  expect(parsed.skippedWithoutDevtalles).toBe(8);
+  expect(parsed.courses.every((item) => !item.enrichment?.imageUrl)).toBe(true);
+  expect(
+    parsed.courses.every((item) => item.enrichment?.durationMinutes == null),
+  ).toBe(true);
+  expect(
+    byTitle.get('Spring AI: LLMs, Tools, RAG, Agentes y Deploy en AWS')
+      ?.enrichment,
+  ).toMatchObject({
+    level: 'advanced',
+    technologyNames: ['Java', 'IA'],
+  });
+  expect(
+    byTitle.get('Laravel 13: AI, REST, JWT, Repository Pattern')?.enrichment,
+  ).toMatchObject({
+    level: null,
+    technologyNames: ['PHP', 'IA'],
+  });
+  expect(
+    byTitle.get('RN Expo + Gemini: Aplicaciones con inteligencia artificial')
+      ?.enrichment,
+  ).toMatchObject({
+    technologyNames: ['React Native', 'IA'],
+  });
+  expect(
+    byTitle.get('Spring Boot 4: Arquitectura de Microservicios')?.enrichment,
+  ).toMatchObject({
+    technologyNames: ['Java', 'Docker'],
+  });
+  expect(
+    byTitle.get('Dart: De cero hasta los detalles')?.enrichment,
+  ).toMatchObject({
+    technologyNames: ['Dart'],
+  });
 });

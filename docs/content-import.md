@@ -1,6 +1,6 @@
 # Cargar los cursos y el cuestionario inicial
 
-El importador utiliza `COURSES.json`, proporcionado por el equipo. Conserva sus datos y crea cursos **en borrador**: ese archivo no trae imagen, duración, nivel ni tecnologías, por lo que aún no cumple los requisitos existentes de publicación.
+El importador utiliza `COURSES.json` o `COURSES.enriched.json`. Conserva los datos del curso y lo crea **en borrador**. Del bloque `enrichment` solo se copian el nivel y las tecnologías con procedencia `curated`. Imagen y duración quedan vacías: un administrador debe completarlas con información verificada antes de publicar.
 
 ## Revisar y aplicar
 
@@ -15,7 +15,7 @@ pnpm migration:run
 pnpm content:import COURSES.json --apply
 ```
 
-La importación exige que no haya migraciones pendientes. No se ejecuta al arrancar la API y no crea usuarios ni modifica roles.
+La importación exige que no haya migraciones pendientes. No se ejecuta al arrancar la API y no crea usuarios ni modifica roles. El resumen sin `--apply` incluye `curatedOnCreate` (cuántos cursos recibirán nivel o tecnologías) y `missingPublicationFields` (campos que todavía impiden publicar al menos un curso).
 
 Fuente revisada el 21 de septiembre de 2026: **82 registros, 74 con enlace de DevTalles y 8 omitidos por no tenerlo**. Se usa `plataformas.devtalles` (o `devtalles` si existe como campo directo), no el enlace a Udemy ni la página del instructor. Esta validación comprueba estructura, host y campos del archivo; no certifica la disponibilidad actual de cada enlace.
 
@@ -23,13 +23,13 @@ Fuente revisada el 21 de septiembre de 2026: **82 registros, 74 con enlace de De
 
 | Contenido | Comportamiento |
 | --- | --- |
-| Cursos | Título, descripción, instructor, enlace y categoría suministrados; estado `draft`. Si el registro trae el bloque `enrichment` curado (verificado en `COURSES.enriched.json`), también se aplican `imageUrl`, `durationMinutes`, `level` y tecnologías |
+| Cursos | Título, descripción, instructor, enlace y categoría suministrados; estado `draft`. Nivel y tecnologías se copian al crear el curso solo si su procedencia es `curated` |
 | Categorías | Se reutilizan nombres existentes sin distinguir mayúsculas ni espacios exteriores |
-| Tecnologías | Vocabulario inicial para el cuestionario: JavaScript, TypeScript, React, Angular, Vue, NestJS, Node.js, Flutter, Docker, SQL, Python, más las curadas Java, IA, CSS, Astro, React Native, .NET, Herramientas, PHP y Go. Los nombres no listados se crean al importar |
-| Cuestionario | Áreas de interés y objetivo obligatorios; tecnologías de interés y nivel declarado opcionales (una pregunta de nivel por cada tecnología del vocabulario) |
+| Tecnologías | Vocabulario inicial para el cuestionario: JavaScript, TypeScript, React, Angular, Vue, NestJS, Node.js, Flutter, Docker, SQL y Python. Las tecnologías curadas del archivo se crean para ese curso y no se agregan al cuestionario |
+| Cuestionario | Áreas de interés y objetivo obligatorios; tecnologías de interés y nivel declarado opcionales |
 | Reglas | Mapeos a IDs reales de la instalación y opciones de nivel desconocido |
 
-Las tecnologías iniciales son una selección editorial para la autoevaluación; no se asignan automáticamente a cursos ni se infieren sus niveles. Las preguntas requieren intereses y objetivo; las once preguntas de nivel permiten responder `No sé / prefiero no responder`.
+Las tecnologías iniciales son una selección editorial para la autoevaluación; no se asignan automáticamente a cursos. El nivel inferido y los datos scrapeados no se copian. Las preguntas requieren intereses y objetivo; las once preguntas de nivel permiten responder `No sé / prefiero no responder`.
 
 ## Repetición y cambios posteriores
 
@@ -44,7 +44,7 @@ La URL normalizada de DevTalles identifica cada curso en `content_imports`. El c
 
 ## Completar y publicar
 
-Un administrador con sesión completa debe revisar cada curso, asignar sus tecnologías, nivel y prerrequisitos, y completar `imageUrl` y `durationMinutes` con información verificada. Usar `PATCH /api/admin/courses/:id`; después, `POST /api/admin/courses/:id/publish`.
+Un administrador con sesión completa debe revisar cada curso. Si la importación usó `COURSES.enriched.json`, el nivel y las tecnologías curados ya pueden estar cargados; hay que completar `imageUrl` y `durationMinutes` con información verificada y asignar prerrequisitos. Usar `PATCH /api/admin/courses/:id`; después, `POST /api/admin/courses/:id/publish`.
 
 Publicar primero los prerrequisitos. El backend mantiene sus validaciones de metadatos y ciclos. No se inventan duraciones ni se publican borradores automáticamente. Hasta que se completen cursos compatibles, el generador de Persona 2 no tendrá contenido elegible aunque el perfil del usuario esté listo.
 

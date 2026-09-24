@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import { SkillLevel } from '../catalog/entities.js';
+import { SkillLevel } from '../../catalog/entities.js';
 
 export interface SourceEnrichment {
   imageUrl: string | null;
@@ -23,7 +23,12 @@ function text(value: unknown, name: string, max: number) {
 }
 function httpsUrl(value: unknown, name: string): string {
   const raw = text(value, name, 2048);
-  const url = new URL(raw);
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    throw new BadRequestException(`Invalid source field: ${name}`);
+  }
   if (url.protocol !== 'https:' || url.username || url.password || url.port)
     throw new BadRequestException(`Invalid source field: ${name}`);
   return url.toString();
@@ -33,35 +38,65 @@ function object(value: unknown): Record<string, unknown> {
     throw new BadRequestException('Invalid course source object');
   return value as Record<string, unknown>;
 }
-// The enrichment sidecar is optional so the original COURSES.json keeps
-// parsing. When present it is validated strictly: curated data must fail
-// fast here, never silently land as nulls in the database.
-function enrichment(value: unknown): SourceEnrichment | null {
-  if (value == null) return null;
-  const row = object(value);
-  const image = row.imageUrl;
-  const minutes = row.durationMinutes;
-  const level = row.level;
-  const names = row.technologyNames;
-  if (image != null && typeof image !== 'string')
-    throw new BadRequestException('Invalid source field: imageUrl');
+// The enrichment sidecar is optional so COURSES.json keeps parsing. A
+// present sidecar is validated strictly. Only fields marked curated are
+// returned; scraped and inferred values stay empty so they cannot satisfy
+// publication by themselves.
+function provenanceValue(value: unknown, name: string) {
   if (
-    minutes != null &&
-    (!Number.isInteger(minutes) ||
-      (minutes as number) <= 0 ||
-      (minutes as number) > 100000)
+    value !== 'curated' &&
+    value !== 'scraped' &&
+    value !== 'inferred' &&
+    value !== 'unknown'
+  )
+    throw new BadRequestException(`Invalid source field: ${name}`);
+  return value;
+}
+function provenance(value: unknown) {
+  if (!value || typeof value !== 'object' || Array.isArray(value))
+    throw new BadRequestException('Invalid source field: provenance');
+  const row = value as Record<string, unknown>;
+  return {
+    imageUrl: provenanceValue(row.imageUrl, 'provenance.imageUrl'),
+    durationMinutes: provenanceValue(
+      row.durationMinutes,
+      'provenance.durationMinutes',
+    ),
+    level: provenanceValue(row.level, 'provenance.level'),
+    technologyNames: provenanceValue(
+      row.technologyNames,
+      'provenance.technologyNames',
+    ),
+  };
+}
+function optionalImage(value: unknown) {
+  if (value == null) return null;
+  if (typeof value !== 'string')
+    throw new BadRequestException('Invalid source field: imageUrl');
+  return httpsUrl(value, 'imageUrl');
+}
+function optionalMinutes(value: unknown) {
+  if (value == null) return null;
+  if (
+    !Number.isInteger(value) ||
+    (value as number) <= 0 ||
+    (value as number) > 100000
   )
     throw new BadRequestException('Invalid source field: durationMinutes');
-  if (
-    level != null &&
-    !Object.values(SkillLevel).includes(level as SkillLevel)
-  )
+  return value as number;
+}
+function optionalLevel(value: unknown) {
+  if (value == null) return null;
+  if (!Object.values(SkillLevel).includes(value as SkillLevel))
     throw new BadRequestException('Invalid source field: level');
-  if (!Array.isArray(names) || names.length > 50)
+  return value as SkillLevel;
+}
+function readTechnologyNames(value: unknown) {
+  if (!Array.isArray(value) || value.length > 50)
     throw new BadRequestException('Invalid source field: technologyNames');
   const seen = new Set<string>();
   const technologyNames: string[] = [];
-  for (const name of names) {
+  for (const name of value) {
     if (typeof name !== 'string')
       throw new BadRequestException('Invalid source field: technologyNames');
     const clean = name.trim();
@@ -73,11 +108,23 @@ function enrichment(value: unknown): SourceEnrichment | null {
       technologyNames.push(clean);
     }
   }
+  return technologyNames;
+}
+function enrichment(value: unknown): SourceEnrichment | null {
+  if (value == null) return null;
+  const row = object(value);
+  const sources = provenance(row.provenance);
+  const imageUrl = optionalImage(row.imageUrl);
+  const durationMinutes = optionalMinutes(row.durationMinutes);
+  const level = optionalLevel(row.level);
+  const technologyNames = readTechnologyNames(row.technologyNames);
   return {
-    imageUrl: image == null ? null : httpsUrl(image, 'imageUrl'),
-    durationMinutes: minutes as number | null,
-    level: level as SkillLevel | null,
-    technologyNames,
+    imageUrl: sources.imageUrl === 'curated' ? imageUrl : null,
+    durationMinutes:
+      sources.durationMinutes === 'curated' ? durationMinutes : null,
+    level: sources.level === 'curated' ? level : null,
+    technologyNames:
+      sources.technologyNames === 'curated' ? technologyNames : [],
   };
 }
 export function parseCourseSource(input: unknown) {
@@ -126,4 +173,30 @@ export function parseCourseSource(input: unknown) {
     });
   }
   return { courses, skippedWithoutDevtalles };
+}
+export function publicationPreview(courses: SourceCourse[]) {
+  const curatedOnCreate = {
+    imageUrl: 0,
+    durationMinutes: 0,
+    level: 0,
+    technologies: 0,
+  };
+  for (const course of courses) {
+    const item = course.enrichment;
+    if (item?.imageUrl) curatedOnCreate.imageUrl++;
+    if (item?.durationMinutes != null) curatedOnCreate.durationMinutes++;
+    if (item?.level) curatedOnCreate.level++;
+    if (item?.technologyNames.length) curatedOnCreate.technologies++;
+  }
+  const missingPublicationFields = (
+    [
+      ['imageUrl', curatedOnCreate.imageUrl],
+      ['durationMinutes', curatedOnCreate.durationMinutes],
+      ['level', curatedOnCreate.level],
+      ['technologyIds', curatedOnCreate.technologies],
+    ] as const
+  )
+    .filter(([, count]) => count < courses.length)
+    .map(([field]) => field);
+  return { curatedOnCreate, missingPublicationFields };
 }

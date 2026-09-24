@@ -31,17 +31,6 @@ const initialTechnologies = [
   'Docker',
   'SQL',
   'Python',
-  // Added with the curated COURSES.enriched.json so published courses and
-  // the self-assessment share one vocabulary.
-  'Java',
-  'IA',
-  'CSS',
-  'Astro',
-  'React Native',
-  '.NET',
-  'Herramientas',
-  'PHP',
-  'Go',
 ];
 const questionnaireKey = 'codequest:self-assessment:v1';
 
@@ -89,12 +78,12 @@ export async function importInitialContent(
         );
       // Curated enrichment applies only to newly created courses. Already
       // imported courses keep their administrative state untouched.
-      const courseTechnologies: Technology[] = [];
-      for (const name of source.enrichment?.technologyNames ?? [])
-        courseTechnologies.push(await taxonomy(manager, Technology, name));
-      const course =
-        existing[0] ??
-        (await manager.save(
+      let course = existing[0];
+      if (!course) {
+        const courseTechnologies: Technology[] = [];
+        for (const name of source.enrichment?.technologyNames ?? [])
+          courseTechnologies.push(await taxonomy(manager, Technology, name));
+        course = await manager.save(
           Course,
           manager.create(Course, {
             title: source.title,
@@ -109,7 +98,8 @@ export async function importInitialContent(
             technologies: courseTechnologies,
             prerequisites: [],
           }),
-        ));
+        );
+      }
       await manager.query(
         'INSERT INTO content_imports(source_key, course_id) VALUES ($1, $2)',
         [source.key, course.id],
