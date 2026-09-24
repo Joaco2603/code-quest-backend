@@ -10,7 +10,7 @@ import type { Relation } from 'typeorm';
 import type { AnswerValue } from '../interfaces/index.js';
 import { Assessment } from './assessment.entity.js';
 
-@Entity('user_answers')
+@Entity('self_assessment_answers')
 @Index('UQ_user_answers_question', ['assessmentId', 'questionId'], {
   unique: true,
 })

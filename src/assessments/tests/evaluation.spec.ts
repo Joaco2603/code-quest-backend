@@ -1,7 +1,7 @@
 import { evaluate, revisionFor, validateDefinition } from '../evaluation.js';
 import type { EvaluationDefinition } from '../interfaces/index.js';
-import type { QuestionnaireResponseDto } from '../../questions/dtos/questionnaire-response.dto.js';
-import { QuestionType } from '../../questions/enums/question-type.enum.js';
+import type { QuestionnaireResponseDto } from '../../questions/questionnaires/dtos/questionnaire-response.dto.js';
+import { QuestionType } from '../../questions/questionnaires/enums/question-type.enum.js';
 
 const questionnaire: QuestionnaireResponseDto = {
   id: 1,

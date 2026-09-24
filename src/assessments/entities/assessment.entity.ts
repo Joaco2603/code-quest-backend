@@ -9,12 +9,12 @@ import {
 } from 'typeorm';
 import type { Relation } from 'typeorm';
 import { User } from '../../user/entities/user.entity.js';
-import { Questionnaire } from '../../questions/entities/questionnaire.entity.js';
+import { Questionnaire } from '../../questions/questionnaires/entities/questionnaire.entity.js';
 import type { EvaluationSnapshot, ProfileResult } from '../interfaces/index.js';
 import { UserAnswer } from './user-answer.entity.js';
 
-@Entity('assessments')
-@Index('IDX_assessments_user_id', ['userId', 'id'])
+@Entity('self_assessments')
+@Index('IDX_self_assessments_user_id', ['userId', 'id'])
 export class Assessment {
   @PrimaryGeneratedColumn() id: number;
   @Column({ name: 'user_id', type: 'uuid' }) userId: string;

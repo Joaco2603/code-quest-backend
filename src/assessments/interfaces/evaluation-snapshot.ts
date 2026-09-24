@@ -1,4 +1,4 @@
-import type { QuestionnaireResponseDto } from '../../questions/dtos/questionnaire-response.dto.js';
+import type { QuestionnaireResponseDto } from '../../questions/questionnaires/dtos/questionnaire-response.dto.js';
 import type { EvaluationDefinition } from './evaluation-definition.js';
 
 export interface EvaluationSnapshot {

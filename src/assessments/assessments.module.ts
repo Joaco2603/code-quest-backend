@@ -5,7 +5,7 @@ import {
   EvaluationController,
 } from './assessments.controller.js';
 import { AssessmentsService } from './assessments.service.js';
-import { CatalogAdminGuard } from '../catalog/catalog-access.js';
+import { CatalogAdminGuard } from '../catalog/guards/catalog-admin.guard.js';
 
 @Module({
   imports: [PassportModule.register({ defaultStrategy: 'jwt' })],

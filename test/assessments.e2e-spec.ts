@@ -1,3 +1,5 @@
+import { RoadmapsModule } from '../dist/roadmaps/roadmaps.module.js';
+import { OpenAiRoadmapClient } from '../dist/roadmaps/openai-roadmap.client.js';
 import 'reflect-metadata';
 import { randomUUID } from 'node:crypto';
 import { Test } from '@nestjs/testing';
@@ -16,7 +18,7 @@ import { AssessmentsModule } from '../dist/assessments/assessments.module.js';
 import { AssessmentsService } from '../dist/assessments/assessments.service.js';
 import { JwtStrategy } from '../dist/auth/strategies/jwt.strategy.js';
 import { User } from '../dist/user/entities/user.entity.js';
-import { Course } from '../dist/catalog/entities.js';
+import { Course } from '../dist/catalog/entities/catalog.entities.js';
 import { importInitialContent } from '../dist/seed/content/initial-content.js';
 import type { EvaluationSnapshot } from '../dist/assessments/interfaces/index.js';
 import type { SourceCourse } from '../dist/seed/content/course-source.js';
@@ -110,6 +112,7 @@ beforeAll(async () => {
       CatalogModule,
       QuestionsModule,
       AssessmentsModule,
+      RoadmapsModule,
     ],
     providers: [
       JwtStrategy,
@@ -121,7 +124,22 @@ beforeAll(async () => {
         }),
       },
     ],
-  }).compile();
+  })
+    .overrideProvider(OpenAiRoadmapClient)
+    .useValue({
+      complete: async (_system: string, user: string) => {
+        const input = JSON.parse(user);
+        return {
+          model: 'test-model',
+          content: JSON.stringify({
+            title: 'Ruta de prueba',
+            rationale: 'Cursos para tus intereses',
+            courseIds: [input.courses[0].id],
+          }),
+        };
+      },
+    })
+    .compile();
   app = module.createNestApplication();
   setupApp(app);
   setupSwagger(app, app.get(ConfigService));
@@ -227,11 +245,15 @@ it('rejects forged owners, anonymous and temporary sessions, foreign options and
     .send(body)
     .expect(400);
   expect(
-    (await db.query('SELECT count(*)::int AS count FROM assessments'))[0].count,
+    (await db.query('SELECT count(*)::int AS count FROM self_assessments'))[0]
+      .count,
   ).toBe(0);
   expect(
-    (await db.query('SELECT count(*)::int AS count FROM user_answers'))[0]
-      .count,
+    (
+      await db.query(
+        'SELECT count(*)::int AS count FROM self_assessment_answers',
+      )
+    )[0].count,
   ).toBe(0);
 });
 it('preserves historical snapshots while refusing submissions using stale forms', async () => {
@@ -301,7 +323,7 @@ it('protects configuration and historical taxonomy references', async () => {
 });
 it('rolls back the assessment if answer persistence fails', async () => {
   await db.query(
-    `ALTER TABLE user_answers ADD CONSTRAINT reject_answer_test CHECK (question_id < 0)`,
+    `ALTER TABLE self_assessment_answers ADD CONSTRAINT reject_answer_test CHECK (question_id < 0)`,
   );
   try {
     await api()
@@ -310,12 +332,12 @@ it('rolls back the assessment if answer persistence fails', async () => {
       .send(submission(await form()))
       .expect(500);
     expect(
-      (await db.query('SELECT count(*)::int AS count FROM assessments'))[0]
+      (await db.query('SELECT count(*)::int AS count FROM self_assessments'))[0]
         .count,
     ).toBe(0);
   } finally {
     await db.query(
-      'ALTER TABLE user_answers DROP CONSTRAINT reject_answer_test',
+      'ALTER TABLE self_assessment_answers DROP CONSTRAINT reject_answer_test',
     );
   }
 });
@@ -477,4 +499,42 @@ it('round-trips numeric zero, boolean false and declared skill levels through Po
       (s: { technologyId: number }) => s.technologyId === skill.technologyId,
     ),
   ).toMatchObject({ level: 'intermediate', source: 'self_reported' });
+});
+
+it('generates from the replacement assessment flow and preserves roadmap progress APIs', async () => {
+  const snapshot = await form();
+  const saved = await api()
+    .post('/api/assessments')
+    .set('Authorization', auth())
+    .send(submission(snapshot))
+    .expect(201);
+  await db.query("UPDATE courses SET status = 'published', level = 'beginner'");
+  const generated = await api()
+    .post('/api/roadmaps/generate')
+    .set('Authorization', auth())
+    .send({ assessmentId: saved.body.data.profile.assessmentId })
+    .expect(201);
+  const roadmap = generated.body.data;
+  expect(roadmap.courses).toHaveLength(1);
+  await api()
+    .get(`/api/roadmaps/${roadmap.id}`)
+    .set('Authorization', auth())
+    .expect(200);
+  await api()
+    .patch(
+      `/api/roadmaps/${roadmap.id}/courses/${roadmap.courses[0].courseId}/progress`,
+    )
+    .set('Authorization', auth())
+    .send({ progress: 50 })
+    .expect(200);
+  await api()
+    .post('/api/roadmaps/generate')
+    .set('Authorization', auth('other'))
+    .send({ assessmentId: saved.body.data.profile.assessmentId })
+    .expect(404);
+  await api()
+    .put(`/api/assessments/${saved.body.data.profile.assessmentId}/answers`)
+    .set('Authorization', auth())
+    .send({})
+    .expect(404);
 });

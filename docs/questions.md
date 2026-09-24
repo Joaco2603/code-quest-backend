@@ -1,5 +1,7 @@
 # Cuestionarios
 
+> El flujo de intentos y respuestas parciales fue reemplazado. Para integrar el frontend, usa [evaluaciones](assessments.md); ver [notas de integración](integracion-pendientes.md).
+
 El módulo `questions` administra cuestionarios y guarda los intentos del estudiante. El flujo de las 4 preguntas iniciales y las autoevaluaciones está en [cuestionario adaptativo](cuestionario-adaptativo.md). Esta guía cubre el alta administrativa y el contrato HTTP común.
 
 Todas las rutas llevan el prefijo `/api` y exigen una sesión completa.

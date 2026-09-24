@@ -23,9 +23,7 @@ export class UpdateRoadmapDto {
   @IsString()
   @MinLength(1)
   @MaxLength(200)
-  @Transform(({ value }) =>
-    typeof value === 'string' ? value.trim() : value,
-  )
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   title?: string;
 
   @ApiPropertyOptional({

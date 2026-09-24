@@ -1,3 +1,6 @@
+import { AssessmentsModule } from '../assessments/assessments.module.js';
+import { RoadmapGenerationService } from './roadmap-generation.service.js';
+import { OpenAiRoadmapClient } from './openai-roadmap.client.js';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PassportModule } from '@nestjs/passport';
@@ -12,9 +15,10 @@ import { RoadmapsService } from './roadmaps.service.js';
     TypeOrmModule.forFeature([Roadmap, RoadmapCourse]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     CatalogModule,
+    AssessmentsModule,
   ],
   controllers: [RoadmapsController],
-  providers: [RoadmapsService],
+  providers: [RoadmapsService, RoadmapGenerationService, OpenAiRoadmapClient],
   exports: [RoadmapsService],
 })
 export class RoadmapsModule {}

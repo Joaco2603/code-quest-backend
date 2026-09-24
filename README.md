@@ -256,7 +256,11 @@ Consulta [la guía del catálogo](docs/catalog.md) para endpoints, publicación,
 Las lecturas muestran cursos publicados. Las escrituras administrativas del catálogo siguen detrás de
 `CatalogAdminGuard`. Auth, usuarios, cuestionarios y roadmaps tienen guía propia en la tabla de arriba.
 
-El [módulo de autoevaluaciones](docs/assessments.md) agrega perfiles versionados para generar rutas.
+El [módulo de evaluaciones](docs/assessments.md) guarda respuestas y perfiles de autoevaluación
+para el generador con IA. Incluye historial, aislamiento por usuario y reglas versionadas.
+El [generador de rutas](docs/roadmaps.md) usa OpenAI sobre el catálogo publicado, sin base vectorial,
+y guarda la ruta después de validar los cursos. El progreso por curso conserva las operaciones actuales.
+Los cursos importados quedan como borradores hasta completar sus metadatos.
 
 ## Fechas de la misión
 

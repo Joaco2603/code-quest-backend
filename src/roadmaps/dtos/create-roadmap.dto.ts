@@ -21,9 +21,7 @@ export class CreateRoadmapDto {
   @IsString()
   @MinLength(1)
   @MaxLength(200)
-  @Transform(({ value }) =>
-    typeof value === 'string' ? value.trim() : value,
-  )
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
   title: string;
 
   @ApiProperty({

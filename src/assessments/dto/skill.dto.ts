@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { SkillLevel } from '../../catalog/entities.js';
+import { SkillLevel } from '../../catalog/entities/catalog.entities.js';
 
 export class SkillDto {
   @ApiProperty() technologyId: number;

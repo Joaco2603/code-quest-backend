@@ -9,8 +9,6 @@ import { UserAnswer } from './assessments/entities/user-answer.entity.js';
 import { AnswerOptionsController } from './questionnaires/controllers/answer-options.controller.js';
 import { QuestionnairesController } from './questionnaires/controllers/questionnaires.controller.js';
 import { QuestionsController } from './questionnaires/controllers/questions.controller.js';
-import { AssessmentsController } from './assessments/controllers/assessments.controller.js';
-import { AssessmentsService } from './assessments/assessments.service.js';
 import { QuestionsService } from './questionnaires/questions.service.js';
 
 @Module({
@@ -28,9 +26,8 @@ import { QuestionsService } from './questionnaires/questions.service.js';
     QuestionnairesController,
     QuestionsController,
     AnswerOptionsController,
-    AssessmentsController,
   ],
-  providers: [QuestionsService, AssessmentsService],
-  exports: [QuestionsService, AssessmentsService, TypeOrmModule],
+  providers: [QuestionsService],
+  exports: [QuestionsService, TypeOrmModule],
 })
 export class QuestionsModule {}

@@ -1,4 +1,4 @@
-import type { SkillLevel } from '../../catalog/entities.js';
+import type { SkillLevel } from '../../catalog/entities/catalog.entities.js';
 
 export interface ProfileResult {
   interests: { categoryIds: number[]; technologyIds: number[] };

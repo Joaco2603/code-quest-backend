@@ -1,11 +1,11 @@
 import { BadRequestException, ConflictException } from '@nestjs/common';
 import { createHash } from 'node:crypto';
-import { SkillLevel } from '../catalog/entities.js';
+import { SkillLevel } from '../catalog/entities/catalog.entities.js';
 import {
   QuestionType,
   isChoiceQuestionType,
-} from '../questions/enums/question-type.enum.js';
-import type { QuestionnaireResponseDto } from '../questions/dtos/questionnaire-response.dto.js';
+} from '../questions/questionnaires/enums/question-type.enum.js';
+import type { QuestionnaireResponseDto } from '../questions/questionnaires/dtos/questionnaire-response.dto.js';
 import type {
   AnswerValue,
   EvaluationDefinition,

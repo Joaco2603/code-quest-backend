@@ -4,9 +4,9 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { DataSource, EntityManager, In, QueryFailedError } from 'typeorm';
-import { Questionnaire } from '../questions/entities/questionnaire.entity.js';
-import { serializeQuestionnaire } from '../questions/serializers/questions.serializer.js';
-import { Category, Technology } from '../catalog/entities.js';
+import { Questionnaire } from '../questions/questionnaires/entities/questionnaire.entity.js';
+import { serializeQuestionnaire } from '../questions/questionnaires/serializers/questions.serializer.js';
+import { Category, Technology } from '../catalog/entities/catalog.entities.js';
 import { Assessment, EvaluationConfig, UserAnswer } from './entities/index.js';
 import type {
   AssessmentProfile,
@@ -68,7 +68,10 @@ export class AssessmentsService {
   async configure(questionnaireId: number, definition: EvaluationDefinition) {
     return this.write(
       async (manager) => {
-        const questionnaire = await this.questionnaire(manager, questionnaireId);
+        const questionnaire = await this.questionnaire(
+          manager,
+          questionnaireId,
+        );
         validateDefinition(questionnaire, definition);
         await this.validateReferences(manager, definition);
         const previous = await manager.findOneBy(EvaluationConfig, {

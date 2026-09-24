@@ -36,6 +36,11 @@ export function readEnvironment(env: NodeJS.ProcessEnv = process.env) {
   };
   if (boolean('DB_SYNCHRONIZE'))
     throw new Error('DB_SYNCHRONIZE is disabled; use migrations');
+  const model = (env.OPENAI_MODEL ?? 'gpt-4.1-mini').trim();
+  if (!/^[A-Za-z0-9._:-]{1,64}$/.test(model))
+    throw new Error(
+      'OPENAI_MODEL must be 1-64 characters of letters, numbers, dot, underscore, colon or hyphen',
+    );
   return {
     app: {
       port: number('PORT', 3000, 65535),
@@ -51,6 +56,11 @@ export function readEnvironment(env: NodeJS.ProcessEnv = process.env) {
       ssl: boolean('DB_SSL', production),
       migrationsRun: boolean('DB_MIGRATIONS_RUN'),
       logging: boolean('DB_LOGGING'),
+    },
+    openai: {
+      apiKey: env.OPENAI_API_KEY?.trim() || undefined,
+      model,
+      timeoutMs: number('OPENAI_TIMEOUT_MS', 25_000, 120_000),
     },
   };
 }

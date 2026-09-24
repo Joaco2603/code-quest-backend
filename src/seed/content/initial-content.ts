@@ -5,18 +5,18 @@ import {
   Course,
   CourseStatus,
   Technology,
-} from '../../catalog/entities.js';
-import { Questionnaire } from '../../questions/entities/questionnaire.entity.js';
-import { Question } from '../../questions/entities/question.entity.js';
-import { AnswerOption } from '../../questions/entities/answer-option.entity.js';
-import { QuestionType } from '../../questions/enums/question-type.enum.js';
+} from '../../catalog/entities/catalog.entities.js';
+import { Questionnaire } from '../../questions/questionnaires/entities/questionnaire.entity.js';
+import { Question } from '../../questions/questionnaires/entities/question.entity.js';
+import { AnswerOption } from '../../questions/questionnaires/entities/answer-option.entity.js';
+import { QuestionType } from '../../questions/questionnaires/enums/question-type.enum.js';
 import { EvaluationConfig } from '../../assessments/entities/index.js';
 import type {
   EvaluationDefinition,
   QuestionRule,
 } from '../../assessments/interfaces/index.js';
 import { validateDefinition } from '../../assessments/evaluation.js';
-import { serializeQuestionnaire } from '../../questions/serializers/questions.serializer.js';
+import { serializeQuestionnaire } from '../../questions/questionnaires/serializers/questions.serializer.js';
 import type { SourceCourse } from './course-source.js';
 
 const initialTechnologies = [
@@ -76,9 +76,14 @@ export async function importInitialContent(
         throw new ConflictException(
           `Multiple existing courses for ${source.url}`,
         );
-      const course =
-        existing[0] ??
-        (await manager.save(
+      // Curated enrichment applies only to newly created courses. Already
+      // imported courses keep their administrative state untouched.
+      let course = existing[0];
+      if (!course) {
+        const courseTechnologies: Technology[] = [];
+        for (const name of source.enrichment?.technologyNames ?? [])
+          courseTechnologies.push(await taxonomy(manager, Technology, name));
+        course = await manager.save(
           Course,
           manager.create(Course, {
             title: source.title,
@@ -86,14 +91,16 @@ export async function importInitialContent(
             instructor: source.instructor,
             url: source.url,
             status: CourseStatus.Draft,
+            // Image and duration stay empty on import; admins fill verified media.
             imageUrl: null,
             durationMinutes: null,
-            level: null,
+            level: source.enrichment?.level ?? null,
             categories: [categories.get(source.category)!],
-            technologies: [],
+            technologies: courseTechnologies,
             prerequisites: [],
           }),
-        ));
+        );
+      }
       await manager.query(
         'INSERT INTO content_imports(source_key, course_id) VALUES ($1, $2)',
         [source.key, course.id],

@@ -1,6 +1,6 @@
 import { Column, Entity, JoinColumn, ManyToOne, PrimaryColumn } from 'typeorm';
 import type { Relation } from 'typeorm';
-import { Questionnaire } from '../../questions/entities/questionnaire.entity.js';
+import { Questionnaire } from '../../questions/questionnaires/entities/questionnaire.entity.js';
 import type { EvaluationDefinition } from '../interfaces/index.js';
 
 @Entity('evaluation_configs')

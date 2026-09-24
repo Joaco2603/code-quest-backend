@@ -13,7 +13,10 @@ import {
 } from './catalog.controller.js';
 
 @Module({
-  imports: [TypeOrmModule.forFeature(catalogEntities), PassportModule.register({ defaultStrategy: 'jwt' })],
+  imports: [
+    TypeOrmModule.forFeature(catalogEntities),
+    PassportModule.register({ defaultStrategy: 'jwt' }),
+  ],
   controllers: [
     CoursesController,
     AdminCoursesController,

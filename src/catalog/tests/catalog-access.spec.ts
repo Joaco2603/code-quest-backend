@@ -1,3 +1,4 @@
+import { catalogEntities } from '../../../dist/catalog/entities/catalog.entities.js';
 import 'reflect-metadata';
 import { Test } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
@@ -17,6 +18,15 @@ const users = new Map([
   ['admin', { id: 'admin', role: 'admin', isActive: true }],
   ['student', { id: 'student', role: 'user', isActive: true }],
   ['inactive', { id: 'inactive', role: 'admin', isActive: false }],
+  [
+    'password-change',
+    {
+      id: 'password-change',
+      role: 'admin',
+      isActive: true,
+      mustChangePassword: true,
+    },
+  ],
 ]);
 const catalog = {
   listCourses: vi
@@ -29,7 +39,7 @@ let app: INestApplication;
 const token = (sub: string, extra = {}) =>
   jwt.sign({ sub, purpose: 'access', is_two_factor_validated: true, ...extra });
 beforeAll(async () => {
-  const module = await Test.createTestingModule({
+  const builder = Test.createTestingModule({
     imports: [CatalogModule],
     providers: [
       JwtStrategy,
@@ -47,8 +57,10 @@ beforeAll(async () => {
     ],
   })
     .overrideProvider(CatalogService)
-    .useValue(catalog)
-    .compile();
+    .useValue(catalog);
+  for (const entity of catalogEntities)
+    builder.overrideProvider(getRepositoryToken(entity)).useValue({});
+  const module = await builder.compile();
   app = module.createNestApplication();
   setupApp(app);
   await app.init();
@@ -72,11 +84,11 @@ it('keeps published catalog public and requires signed authentication for admini
 });
 it.each([
   ['student', { rol: 'admin' }, 403],
+  ['password-change', { mustChangePassword: false }, 403],
   ['inactive', {}, 401],
   ['admin', { purpose: 'two_factor', is_two_factor_validated: false }, 403],
   ['admin', { purpose: 'recovery' }, 403],
   ['admin', { purpose: 'password_change' }, 403],
-  ['admin', { mustChangePassword: true }, 403],
   ['admin', { isRecovery: true }, 403],
 ])('rejects %s session %j', async (sub, extra, status) => {
   await request(app.getHttpServer())

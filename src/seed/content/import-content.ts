@@ -3,7 +3,7 @@ import 'dotenv/config';
 import { readFile } from 'node:fs/promises';
 import { DataSource } from 'typeorm';
 import { databaseOptions } from '../../config/database.js';
-import { parseCourseSource } from './course-source.js';
+import { parseCourseSource, publicationPreview } from './course-source.js';
 import { importInitialContent } from './initial-content.js';
 
 async function main() {
@@ -23,12 +23,7 @@ async function main() {
         skippedWithoutDevtalles,
         categories: [...new Set(courses.map((c) => c.category))],
         status: 'draft',
-        missingPublicationFields: [
-          'imageUrl',
-          'durationMinutes',
-          'level',
-          'technologyIds',
-        ],
+        ...publicationPreview(courses),
       },
       null,
       2,

@@ -1,5 +1,7 @@
 # Cuestionario adaptativo
 
+> El flujo de intentos y respuestas parciales fue reemplazado. Para integrar el frontend, usa [evaluaciones](assessments.md); ver [notas de integración](integracion-pendientes.md).
+
 El cuestionario muestra **4 preguntas iniciales y hasta 3 autoevaluaciones**. El backend calcula las preguntas aplicables a partir de las respuestas guardadas. El frontend debe usar el flujo indicado abajo para que el usuario no vea todas las preguntas configuradas.
 
 ## Preguntas

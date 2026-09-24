@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { QuestionnaireResponseDto } from '../../questions/dtos/questionnaire-response.dto.js';
+import { QuestionnaireResponseDto } from '../../questions/questionnaires/dtos/questionnaire-response.dto.js';
 import { EvaluationDefinitionDto } from './evaluation-definition.dto.js';
 
 export class EvaluationSnapshotDto {

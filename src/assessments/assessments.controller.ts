@@ -18,8 +18,8 @@ import {
 import { Auth } from '../auth/decorators/auth.decorator.js';
 import { GetUser } from '../auth/decorators/get-user.decorators.js';
 import type { AuthUser } from '../auth/interfaces/auth-user.type.js';
-import { CatalogAdminGuard } from '../catalog/catalog-access.js';
-import { CatalogIdPipe } from '../catalog/catalog-id.pipe.js';
+import { CatalogAdminGuard } from '../catalog/guards/catalog-admin.guard.js';
+import { CatalogIdPipe } from '../catalog/pipes/catalog-id.pipe.js';
 import {
   toDataResponse,
   toPaginatedResponse,
