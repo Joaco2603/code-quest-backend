@@ -51,28 +51,19 @@ it('rejects duplicate canonical URLs and malformed source records before writing
   ).toThrow('titulo');
   expect(() => parseCourseSource({ cursos: null })).toThrow();
 });
-it('keeps enrichment null when the source has no sidecar', () => {
+it('keeps enrichment null when the source has no curation fields', () => {
   const parsed = parseCourseSource({ cursos: [course] });
   expect(parsed.courses[0].enrichment).toBeNull();
 });
-const curatedProvenance = {
-  imageUrl: 'curated',
-  durationMinutes: 'curated',
-  level: 'curated',
-  technologyNames: 'curated',
-};
-it('accepts curated level and technologies without copying sidecar media', () => {
+it('accepts flat level and technologies without copying media', () => {
   const parsed = parseCourseSource({
     cursos: [
       {
         ...course,
-        enrichment: {
-          imageUrl: 'https://cdn.example.com/img.jpg',
-          durationMinutes: 1470,
-          level: 'intermediate',
-          technologyNames: ['Node.js', ' node.js ', 'NestJS'],
-          provenance: curatedProvenance,
-        },
+        imageUrl: 'https://cdn.example.com/img.jpg',
+        durationMinutes: 1470,
+        level: 'intermediate',
+        technologyNames: ['Node.js', ' node.js ', 'NestJS'],
       },
     ],
   });
@@ -83,54 +74,43 @@ it('accepts curated level and technologies without copying sidecar media', () =>
     technologyNames: ['Node.js', 'NestJS'],
   });
 });
-it('drops scraped and inferred enrichment instead of copying it onto the course', () => {
+it('treats flat level and technologies as the curated truth', () => {
   const parsed = parseCourseSource({
     cursos: [
       {
         ...course,
-        enrichment: {
-          imageUrl: 'https://cdn.example.com/img.jpg',
-          durationMinutes: 1470,
-          level: 'intermediate',
-          technologyNames: ['PHP', 'IA'],
-          provenance: {
-            imageUrl: 'scraped',
-            durationMinutes: 'scraped',
-            level: 'inferred',
-            technologyNames: 'curated',
-          },
-        },
+        imageUrl: 'https://cdn.example.com/img.jpg',
+        durationMinutes: 1470,
+        level: 'intermediate',
+        technologyNames: ['PHP', 'IA'],
       },
     ],
   });
   expect(parsed.courses[0].enrichment).toEqual({
     imageUrl: null,
     durationMinutes: null,
-    level: null,
+    level: 'intermediate',
     technologyNames: ['PHP', 'IA'],
   });
   expect(publicationPreview(parsed.courses)).toEqual({
     curatedOnCreate: {
       imageUrl: 0,
       durationMinutes: 0,
-      level: 0,
+      level: 1,
       technologies: 1,
     },
-    missingPublicationFields: ['imageUrl', 'durationMinutes', 'level'],
+    missingPublicationFields: ['imageUrl', 'durationMinutes'],
   });
 });
-it('ignores unused sidecar image and duration values during import parsing', () => {
+it('ignores unused image and duration values during import parsing', () => {
   const parsed = parseCourseSource({
     cursos: [
       {
         ...course,
-        enrichment: {
-          imageUrl: 'notaurl',
-          durationMinutes: 0,
-          level: 'beginner',
-          technologyNames: ['Docker'],
-          provenance: curatedProvenance,
-        },
+        imageUrl: 'notaurl',
+        durationMinutes: 0,
+        level: 'beginner',
+        technologyNames: ['Docker'],
       },
     ],
   });
@@ -142,24 +122,16 @@ it('ignores unused sidecar image and duration values during import parsing', () 
   });
 });
 it.each([
-  { level: 'expert' },
-  { technologyNames: [''] },
-  { technologyNames: 'Node.js' },
-  { provenance: { ...curatedProvenance, level: 'guessed' } },
-])('rejects invalid enrichment %j', (enrichment) => {
+  { level: 'expert', technologyNames: [] },
+  { level: null, technologyNames: [''] },
+  { level: null, technologyNames: 'Node.js' },
+])('rejects invalid curation fields %j', (curation) => {
   expect(() =>
     parseCourseSource({
       cursos: [
         {
           ...course,
-          enrichment: {
-            imageUrl: null,
-            durationMinutes: null,
-            level: null,
-            technologyNames: [],
-            provenance: curatedProvenance,
-            ...enrichment,
-          },
+          ...curation,
         },
       ],
     }),
@@ -194,7 +166,7 @@ it('keeps scraped media out of the curated course file', () => {
   expect(
     byTitle.get('Laravel 13: AI, REST, JWT, Repository Pattern')?.enrichment,
   ).toMatchObject({
-    level: null,
+    level: 'beginner',
     technologyNames: ['PHP', 'IA'],
   });
   expect(

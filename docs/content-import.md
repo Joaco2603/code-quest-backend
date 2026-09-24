@@ -1,6 +1,6 @@
 # Cargar los cursos y el cuestionario inicial
 
-El importador utiliza `COURSES.enriched.json`. Conserva los datos del curso y lo crea **en borrador**. Del bloque `enrichment` solo se copian el nivel y las tecnologías con procedencia `curated`. `imageUrl` y `durationMinutes` nunca se copian del sidecar (ni aunque su procedencia sea `curated`): un administrador debe completarlas con información verificada antes de publicar.
+El importador utiliza `COURSES.enriched.json`. Conserva los datos del curso y lo crea **en borrador**. Los campos `level` y `technologyNames` de cada curso son la verdad curada y se copian al crearlo. `imageUrl`, `durationMinutes` y los metadatos crudos (`durationHoursRaw`, `lessonsRaw`) nunca se copian: un administrador debe completarlas con información verificada antes de publicar.
 
 ## Revisar y aplicar
 
@@ -23,13 +23,13 @@ Fuente revisada el 21 de septiembre de 2026: **82 registros, 74 con enlace de De
 
 | Contenido | Comportamiento |
 | --- | --- |
-| Cursos | Título, descripción, instructor, enlace y categoría suministrados; estado `draft`. Nivel y tecnologías se copian al crear el curso solo si su procedencia es `curated`. `imageUrl` y `durationMinutes` no se copian del enriquecido |
+| Cursos | Título, descripción, instructor, enlace y categoría suministrados; estado `draft`. Nivel y tecnologías del archivo se copian al crear el curso. `imageUrl` y `durationMinutes` no se copian del archivo |
 | Categorías | Se reutilizan nombres existentes sin distinguir mayúsculas ni espacios exteriores |
 | Tecnologías | Vocabulario inicial para el cuestionario: JavaScript, TypeScript, React, Angular, Vue, NestJS, Node.js, Flutter, Docker, SQL y Python. Las tecnologías curadas del archivo se crean para ese curso y no se agregan al cuestionario |
 | Cuestionario | Áreas de interés y objetivo obligatorios; tecnologías de interés y nivel declarado opcionales |
 | Reglas | Mapeos a IDs reales de la instalación y opciones de nivel desconocido |
 
-Las tecnologías iniciales son una selección editorial para la autoevaluación; no se asignan automáticamente a cursos. El nivel inferido y los datos scrapeados no se copian. Las preguntas requieren intereses y objetivo; las once preguntas de nivel permiten responder `No sé / prefiero no responder`.
+Las tecnologías iniciales son una selección editorial para la autoevaluación; no se asignan automáticamente a cursos. Las preguntas requieren intereses y objetivo; las once preguntas de nivel permiten responder `No sé / prefiero no responder`.
 
 ## Repetición y cambios posteriores
 

@@ -26,35 +26,21 @@ function object(value: unknown): Record<string, unknown> {
     throw new BadRequestException('Invalid course source object');
   return value as Record<string, unknown>;
 }
-// The enrichment sidecar is optional so plain course files keep parsing. A
-// present sidecar is validated strictly. Only level and technologies marked
-// curated are returned. Image and duration stay empty regardless of
-// provenance so scraped or sidecar media cannot satisfy publication checks.
-function provenanceValue(value: unknown, name: string) {
-  if (
-    value !== 'curated' &&
-    value !== 'scraped' &&
-    value !== 'inferred' &&
-    value !== 'unknown'
-  )
-    throw new BadRequestException(`Invalid source field: ${name}`);
-  return value;
-}
-function provenance(value: unknown) {
-  if (!value || typeof value !== 'object' || Array.isArray(value))
-    throw new BadRequestException('Invalid source field: provenance');
-  const row = value as Record<string, unknown>;
+// Flat curation fields live on the course itself: level and technologyNames
+// are the curated truth. Image, duration and raw scrape metadata stay on the
+// record for reference but are never copied: image and duration stay empty so
+// unverified media cannot satisfy publication checks.
+function enrichment(row: Record<string, unknown>): SourceEnrichment | null {
+  if (row.level == null && row.technologyNames == null) return null;
+  // Unused image/duration/raw values are ignored (not mapped). Invalid
+  // unused values must not block import.
+  const level = optionalLevel(row.level);
+  const technologyNames = readTechnologyNames(row.technologyNames ?? []);
   return {
-    imageUrl: provenanceValue(row.imageUrl, 'provenance.imageUrl'),
-    durationMinutes: provenanceValue(
-      row.durationMinutes,
-      'provenance.durationMinutes',
-    ),
-    level: provenanceValue(row.level, 'provenance.level'),
-    technologyNames: provenanceValue(
-      row.technologyNames,
-      'provenance.technologyNames',
-    ),
+    imageUrl: null,
+    durationMinutes: null,
+    level,
+    technologyNames,
   };
 }
 function optionalLevel(value: unknown) {
@@ -81,22 +67,6 @@ function readTechnologyNames(value: unknown) {
     }
   }
   return technologyNames;
-}
-function enrichment(value: unknown): SourceEnrichment | null {
-  if (value == null) return null;
-  const row = object(value);
-  const sources = provenance(row.provenance);
-  // Sidecar image/duration values are ignored (not mapped). Invalid unused
-  // values must not block import.
-  const level = optionalLevel(row.level);
-  const technologyNames = readTechnologyNames(row.technologyNames);
-  return {
-    imageUrl: null,
-    durationMinutes: null,
-    level: sources.level === 'curated' ? level : null,
-    technologyNames:
-      sources.technologyNames === 'curated' ? technologyNames : [],
-  };
 }
 export function parseCourseSource(input: unknown) {
   const raw = object(input).cursos;
@@ -140,7 +110,7 @@ export function parseCourseSource(input: unknown) {
       description: text(row.descripcion, 'descripcion', 10000),
       instructor: text(row.instructor, 'instructor', 150),
       category: text(row.categoria, 'categoria', 100),
-      enrichment: enrichment(row.enrichment),
+      enrichment: enrichment(row),
     });
   }
   return { courses, skippedWithoutDevtalles };
