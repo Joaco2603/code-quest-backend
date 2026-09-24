@@ -199,7 +199,7 @@ describe('AuthService', () => {
     );
   });
 
-  it('does not mint a verified session if 2FA is enabled before the session is built', async () => {
+  it('mints a verified session even when 2FA is enabled on the account', async () => {
     const password = 'Password123!';
     mockUserService.findOneByEmailOptional.mockResolvedValue({
       id: mockUser.id,
@@ -210,20 +210,22 @@ describe('AuthService', () => {
       is_two_factor_enabled: false,
       mustChangePassword: false,
     });
-    mockUserService.findOneById.mockResolvedValue({
+    const account = {
       ...mockUser,
       is_two_factor_enabled: true,
       mustChangePassword: false,
-    });
-    mockJwtService.sign.mockReturnValue('temp-token');
+    };
+    mockUserService.findOneById.mockResolvedValue(account);
+    mockJwtService.sign.mockReturnValue('access-token');
 
     const result = await service.loginUser({
       email: 'test@example.com',
       password,
     });
 
-    expect(result.requires2FA).toBe(true);
-    expect(result).not.toHaveProperty('accessToken');
+    expect(result.accessToken).toBe('access-token');
+    expect(result.user).toBe(account);
+    expect(result).not.toHaveProperty('requires2FA');
   });
 
   describe('create', () => {
@@ -408,8 +410,7 @@ describe('AuthService', () => {
       );
     });
 
-    it('should require setup for privileged accounts without 2FA', async () => {
-      // Create a proper bcrypt hash for the test password
+    it('issues a full session for privileged accounts without 2FA', async () => {
       const bcrypt = new BcryptAdapter();
       const hashedPassword = await bcrypt.hashing('Password123!', 15);
 
@@ -419,27 +420,21 @@ describe('AuthService', () => {
         password: hashedPassword,
         is_two_factor_enabled: false,
       };
-      const twoFAData = {
-        secret: 'secret123',
-        otpauthUrl: 'otpauth://...',
-        qr: 'data:image/png;base64,...',
-        pending: true,
-      };
 
       mockUserService.findOneByEmailOptional.mockResolvedValue(userWithout2FA);
-      mockJwtService.sign.mockReturnValue('temp-token');
-      mockTwoFactorService.generateSecretIfNotExists.mockResolvedValue(
-        twoFAData,
-      );
+      mockUserService.findOneById.mockResolvedValue(userWithout2FA);
+      mockJwtService.sign.mockReturnValue('access-token');
 
       const result = await service.loginUser(loginUserDto);
 
-      expect((result as any).requiresSetup).toBe(true);
-      expect((result as any).secret).toBe(twoFAData.secret);
-      expect((result as any).tempToken).toBeDefined();
+      expect(result.accessToken).toBe('access-token');
+      expect(result).not.toHaveProperty('requiresSetup');
+      expect(
+        mockTwoFactorService.generateSecretIfNotExists,
+      ).not.toHaveBeenCalled();
     });
 
-    it('should return requires2FA if 2FA is already enabled', async () => {
+    it('issues a full session when 2FA is already enabled', async () => {
       const bcrypt = new BcryptAdapter();
       const hashedPassword = await bcrypt.hashing('Password123!', 15);
 
@@ -450,12 +445,13 @@ describe('AuthService', () => {
       };
 
       mockUserService.findOneByEmailOptional.mockResolvedValue(userWith2FA);
-      mockJwtService.sign.mockReturnValue('temp-token');
+      mockUserService.findOneById.mockResolvedValue(userWith2FA);
+      mockJwtService.sign.mockReturnValue('access-token');
 
       const result = await service.loginUser(loginUserDto);
 
-      expect(result.requires2FA).toBe(true);
-      expect(result.tempToken).toBeDefined();
+      expect(result.accessToken).toBe('access-token');
+      expect(result).not.toHaveProperty('requires2FA');
     });
   });
 
@@ -465,7 +461,10 @@ describe('AuthService', () => {
       mockUserService.findOneById.mockResolvedValue(mockUser);
       mockJwtService.sign.mockReturnValue(token);
 
-      const result = await service.checkAuthStatus(mockUser as AuthUser);
+      const result = await service.checkAuthStatus({
+        ...mockUser,
+        purpose: 'access',
+      } as AuthUser);
 
       expect(result.token).toBe(token);
       expect(mockJwtService.sign).toHaveBeenCalledWith(
@@ -477,47 +476,52 @@ describe('AuthService', () => {
       mockUserService.findOneById.mockResolvedValue(mockUser);
       mockJwtService.sign.mockReturnValue('token');
 
-      await service.checkAuthStatus(mockUser as AuthUser);
+      await service.checkAuthStatus({
+        ...mockUser,
+        purpose: 'access',
+      } as AuthUser);
 
       expect(mockJwtService.sign).toHaveBeenCalledWith(
         expect.objectContaining({ sub: 'user-uuid-123' }),
       );
     });
 
-    it('returns the account password-change flag with the refreshed token', async () => {
+    it('rejects renewal when the account now requires a password change', async () => {
       mockUserService.findOneById.mockResolvedValue({
         ...mockUser,
         mustChangePassword: true,
       });
-      mockJwtService.sign.mockReturnValue('token');
-
-      const result = await service.checkAuthStatus({
-        ...(mockUser as AuthUser),
-        mustChangePassword: false,
-        is_two_factor_enabled: false,
-        is_two_factor_validated: true,
-      });
-
-      expect(result.user.mustChangePassword).toBe(true);
-      expect(mockJwtService.sign).toHaveBeenCalledWith(
-        expect.objectContaining({ mustChangePassword: true }),
-      );
+      await expect(
+        service.checkAuthStatus({ ...mockUser, purpose: 'access' } as AuthUser),
+      ).rejects.toThrow('Password change is required');
+      expect(mockJwtService.sign).not.toHaveBeenCalled();
     });
 
-    it('refuses to refresh a token after the account becomes privileged', async () => {
+    it.each(['password_change', 'recovery', 'two_factor', undefined])(
+      'refuses to upgrade a %s token to an access session',
+      async (purpose) => {
+        await expect(
+          service.checkAuthStatus({ ...mockUser, purpose } as AuthUser),
+        ).rejects.toThrow('A full access session is required');
+        expect(mockJwtService.sign).not.toHaveBeenCalled();
+      },
+    );
+
+    it('refreshes a token after the account becomes privileged', async () => {
       mockUserService.findOneById.mockResolvedValue({
         ...mockUser,
         role: ValidRoles.admin,
         is_two_factor_enabled: false,
       });
+      mockJwtService.sign.mockReturnValue('token');
 
-      await expect(
-        service.checkAuthStatus({
-          ...(mockUser as AuthUser),
-          is_two_factor_enabled: false,
-          is_two_factor_validated: true,
-        }),
-      ).rejects.toThrow('Session is no longer valid');
+      const result = await service.checkAuthStatus({
+        ...({ ...mockUser, purpose: 'access' } as AuthUser),
+        is_two_factor_enabled: false,
+        is_two_factor_validated: true,
+      });
+
+      expect(result.token).toBe('token');
     });
   });
 
@@ -808,7 +812,7 @@ describe('AuthService', () => {
       );
     });
 
-    it('should require 2FA when the Discord-linked account already has it', async () => {
+    it('issues a full session when the Discord-linked account has 2FA enabled', async () => {
       mockJwtService.verify.mockReturnValue({
         purpose: 'discord_login',
         sub: mockUser.id,
@@ -820,16 +824,14 @@ describe('AuthService', () => {
         is_two_factor_enabled: true,
         mustChangePassword: false,
       });
-      mockJwtService.sign.mockReturnValue('temp-token');
+      mockJwtService.sign.mockReturnValue('access-token');
 
       const result = await service.exchangeDiscordTicket('ticket');
 
       expect(result).toEqual(
-        expect.objectContaining({
-          requires2FA: true,
-          tempToken: 'temp-token',
-        }),
+        expect.objectContaining({ accessToken: 'access-token' }),
       );
+      expect(result).not.toHaveProperty('requires2FA');
     });
 
     it('should require a password change when the flag is set', async () => {

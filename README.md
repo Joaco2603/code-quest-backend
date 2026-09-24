@@ -185,9 +185,13 @@ sesión con `GET /api/auth/renovated`. El registro rechaza campos administrativo
 como `role`, `client_id` e `isActive`. La contraseña requiere 8–20 caracteres,
 mayúscula, minúscula y un número o carácter especial.
 
-Usuarios con 2FA activado y cuentas `admin`/`client` conservan los desafíos de
-2FA. Las cuentas con cambio de contraseña pendiente deben completarlo. Esta
-política también se aplica al login con Discord.
+El MVP no exige 2FA, incluso para cuentas `admin`/`client` o con 2FA previamente
+activado. Las rutas `/api/2fa/*`, `/api/auth/2fa/verify` y
+`/api/auth/forgot-password-2fa` no están disponibles. Los datos de 2FA existentes
+se conservan. Solo los tokens con `purpose: access` permiten usar rutas protegidas
+y renovar sesiones; los tokens temporales no otorgan acceso general. Las cuentas
+con cambio de contraseña pendiente deben completarlo. Esta política también se
+aplica al login con Discord.
 
 La creación administrativa que antes usaba `POST /api/auth/register` pasa a
 `POST /api/auth/register/managed`, con los mismos permisos. Esa alta no abre

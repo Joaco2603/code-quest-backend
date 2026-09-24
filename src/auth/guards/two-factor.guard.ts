@@ -17,12 +17,13 @@ export class TwoFactorGuard implements CanActivate {
       throw new ForbiddenException('Unauthorized');
     }
 
-    if (user.purpose && user.purpose !== JwtPurpose.access) {
-      throw new ForbiddenException('2FA is required for this resource');
-    }
-
-    if (!user.is_two_factor_validated) {
-      throw new ForbiddenException('2FA is required for this resource');
+    // MFA is disabled for the MVP, but temporary tokens remain restricted.
+    if (
+      user.purpose !== JwtPurpose.access ||
+      user.isRecovery ||
+      user.mustChangePassword
+    ) {
+      throw new ForbiddenException('A full access session is required');
     }
 
     return true;

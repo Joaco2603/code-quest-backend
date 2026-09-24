@@ -81,12 +81,9 @@ export class AuthService {
     return this.generateToken(user);
   }
 
-  private requiresTwoFactor(user: User): boolean {
-    return (
-      user.role === ValidRoles.admin ||
-      user.role === ValidRoles.client ||
-      user.is_two_factor_enabled
-    );
+  private requiresTwoFactor(_user: User): boolean {
+    // MFA challenges are disabled for the MVP.
+    return false;
   }
 
   create = asyncHandler(async (createUserDto: CreateUserDto) => {
@@ -254,7 +251,17 @@ export class AuthService {
   );
 
   checkAuthStatus = asyncHandler(async (user: AuthUser) => {
+    if (
+      user.purpose !== JwtPurpose.access ||
+      user.isRecovery ||
+      user.mustChangePassword
+    ) {
+      throw new ForbiddenException('A full access session is required');
+    }
     const account = await this.userService.findOneById(user.id);
+    if (account.mustChangePassword) {
+      throw new ForbiddenException('Password change is required');
+    }
     if (
       !accessTokenMatchesAccount(account, {
         sub: user.id,
@@ -365,7 +372,7 @@ export class AuthService {
 
   beginDiscordLink(user: AuthUser) {
     if (
-      !user.is_two_factor_validated ||
+      user.purpose !== JwtPurpose.access ||
       user.mustChangePassword ||
       user.isRecovery
     ) {

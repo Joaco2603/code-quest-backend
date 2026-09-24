@@ -10,12 +10,11 @@ import { JwtStrategy } from './strategies/jwt.strategy.js';
 import { DiscordAdapter } from './adapters/discord.adapter.js';
 import { UserModule } from '../user/user.module.js';
 import { User } from '../user/entities/user.entity.js';
-import { TwoFactorController } from './controllers/two-factor.controller.js';
 import { TwoFactorService } from './services/two-factor.service.js';
 import { CommonModule } from '../common/common.module.js';
 
 @Module({
-  controllers: [AuthController, TwoFactorController],
+  controllers: [AuthController],
   providers: [
     AuthService,
     BcryptAdapter,
