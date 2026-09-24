@@ -232,7 +232,8 @@ sesión completa y rol administrador verificado. No hay credenciales ni bypass d
 
 El [módulo de evaluaciones](docs/assessments.md) guarda respuestas y perfiles de autoevaluación
 para el generador con IA. Incluye historial, aislamiento por usuario y reglas versionadas.
-La generación con IA, las rutas guardadas y el progreso corresponden a Persona 2 y siguen pendientes.
+El [generador de rutas](docs/roadmaps.md) usa OpenAI sobre el catálogo publicado, sin base vectorial,
+y guarda la ruta después de validar los cursos. El progreso de cada curso dentro de la ruta sigue pendiente.
 Los cursos importados quedan como borradores hasta completar sus metadatos.
 
 ## Fechas de la misión
