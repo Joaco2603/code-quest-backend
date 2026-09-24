@@ -21,7 +21,10 @@ Las migraciones existentes de `main` se mantienen. Las nuevas evaluaciones usan
 `self_assessments` y `self_assessment_answers`. Por simplificación del MVP los
 intentos del flujo anterior no se conservan: la migración `DropLegacyAssessments`
 elimina `assessments` y `user_answers` (sus filas se pierden al actualizar).
+El cuestionario sembrado por la migración adaptativa queda inactivo: no tiene
+configuración de evaluación y `GET /api/questionnaires/active` no debe ofrecerlo.
 La migración de IA amplía `roadmaps` con columnas anulables y conserva las rutas existentes.
+`GET /api/roadmaps` incluye `rationale`, `assessmentId` y `createdAt`.
 
 Esta adaptación está dirigida a bases con las migraciones de `main`. Una base
 que haya ejecutado las migraciones no integradas de las ramas requiere revisión
@@ -34,8 +37,9 @@ no contiene comandos que borren automáticamente bases existentes.
 
 Revisar primero `src/config/database.ts`, las migraciones nuevas y los módulos
 Questions/Assessments/Roadmaps. Las pruebas verifican el upgrade desde el esquema
-de `main` (intentos anteriores eliminados, roadmaps conservados), la reversión de
-las cinco migraciones añadidas y el flujo HTTP evaluación → generación → progreso.
+de `main` (intentos anteriores eliminados, roadmaps conservados, cuestionario
+sembrado inactivo), la reversión de las migraciones añadidas y el flujo HTTP
+evaluación → generación → progreso.
 
 Para revertir código, revertir los commits de integración juntos. No revertir
 migraciones con evaluaciones nuevas que se quieran conservar: su `down` elimina

@@ -226,6 +226,9 @@ export class RoadmapsService {
     return {
       id: roadmap.id,
       title: roadmap.title,
+      rationale: roadmap.rationale ?? null,
+      assessmentId: roadmap.assessmentId ?? null,
+      createdAt: roadmap.createdAt.toISOString(),
       userId: roadmap.userId,
       courses: memberships.map((item, index) => ({
         courseId: item.courseId,

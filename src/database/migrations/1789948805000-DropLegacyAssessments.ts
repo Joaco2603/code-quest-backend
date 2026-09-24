@@ -3,7 +3,7 @@ import type { MigrationInterface, QueryRunner } from 'typeorm';
 // MVP simplification: legacy attempts are not kept as history. Fresh
 // databases create these tables through the old migrations and drop them
 // here; databases already carrying legacy rows lose them on upgrade.
-export class DropLegacyAssessments1789948804000 implements MigrationInterface {
+export class DropLegacyAssessments1789948805000 implements MigrationInterface {
   async up(runner: QueryRunner): Promise<void> {
     await runner.query(`DROP TABLE "user_answers"`);
     await runner.query(`DROP TABLE "assessments"`);
