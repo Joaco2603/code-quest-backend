@@ -1,6 +1,6 @@
 import type { DataSourceOptions } from 'typeorm';
 import { readEnvironment } from './envs.js';
-import { catalogEntities } from '../catalog/entities.js';
+import { catalogEntities } from '../catalog/entities/catalog.entities.js';
 import { CreateCatalog1789600000000 } from '../database/migrations/1789600000000-CreateCatalog.js';
 import { User } from '../user/entities/user.entity.js';
 import { AuditLog } from '../common/entities/audit-log.entity.js';

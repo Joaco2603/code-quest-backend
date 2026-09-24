@@ -7,24 +7,19 @@ import {
 } from '@nestjs/common';
 import { DataSource, EntityManager, In, QueryFailedError } from 'typeorm';
 import { resolvePagination } from '../common/helpers/pagination.js';
-import { Category, Course, CourseStatus, Technology } from './entities.js';
+import { Category, Course, CourseStatus, Technology } from './entities/catalog.entities.js';
 import type {
   AdminCourseQueryDto,
+  CatalogSummaryResponseDto,
+  CourseResponseDto,
   CreateCourseDto,
   UpdateCourseDto,
-} from './dto.js';
+} from './dto/catalog.dto.js';
 import {
-  serializeCategories,
-  serializeCategory,
+  serializeCatalogSummaries,
+  serializeCatalogSummary,
   serializeCourse,
-  serializeTechnologies,
-  serializeTechnology,
 } from './serializers/catalog.serializer.js';
-import type {
-  CategoryResponseDto,
-  CourseResponseDto,
-  TechnologyResponseDto,
-} from './dto/catalog-response.dto.js';
 
 const relations = { categories: true, technologies: true, prerequisites: true };
 
@@ -66,29 +61,25 @@ export class CatalogService {
     const items = await this.db
       .getRepository(taxonomyEntities[kind])
       .find({ order: { name: 'ASC', id: 'ASC' } });
-    return kind === 'categories'
-      ? serializeCategories(items as Category[])
-      : serializeTechnologies(items as Technology[]);
+    return serializeCatalogSummaries(items);
   }
 
   async getTaxonomy(
     kind: Taxonomy,
     id: number,
-  ): Promise<CategoryResponseDto | TechnologyResponseDto> {
+  ): Promise<CatalogSummaryResponseDto> {
     const item = await this.db
       .getRepository(taxonomyEntities[kind])
       .findOneBy({ id });
     if (!item) throw new NotFoundException('Catalog entry not found');
-    return kind === 'categories'
-      ? serializeCategory(item as Category)
-      : serializeTechnology(item as Technology);
+    return serializeCatalogSummary(item);
   }
 
   async saveTaxonomy(
     kind: Taxonomy,
     name: string,
     id?: number,
-  ): Promise<CategoryResponseDto | TechnologyResponseDto> {
+  ): Promise<CatalogSummaryResponseDto> {
     const saved = await this.write(async (manager) => {
       const repository = manager.getRepository(taxonomyEntities[kind]);
       if (id !== undefined && !(await repository.existsBy({ id })))
@@ -100,9 +91,7 @@ export class CatalogService {
         }),
       );
     });
-    return kind === 'categories'
-      ? serializeCategory(saved as Category)
-      : serializeTechnology(saved as Technology);
+    return serializeCatalogSummary(saved);
   }
 
   deleteTaxonomy(kind: Taxonomy, id: number) {

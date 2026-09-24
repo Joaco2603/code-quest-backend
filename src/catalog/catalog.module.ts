@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { CatalogService } from './catalog.service.js';
-import { CatalogAdminGuard } from './catalog-access.js';
+import { catalogEntities } from './entities/catalog.entities.js';
+import { CatalogAdminGuard } from './guards/catalog-admin.guard.js';
 import {
   AdminCoursesController,
   CategoriesController,
@@ -10,6 +12,7 @@ import {
 } from './catalog.controller.js';
 
 @Module({
+  imports: [TypeOrmModule.forFeature(catalogEntities)],
   controllers: [
     CoursesController,
     AdminCoursesController,
@@ -18,6 +21,6 @@ import {
     LevelsController,
   ],
   providers: [CatalogService, CatalogAdminGuard],
-  exports: [CatalogService],
+  exports: [CatalogService, TypeOrmModule],
 })
 export class CatalogModule {}

@@ -1,10 +1,9 @@
-import { CourseStatus, SkillLevel } from '../entities.js';
-import type { Course } from '../entities.js';
+import { CourseStatus, SkillLevel } from '../entities/catalog.entities.js';
+import type { Course } from '../entities/catalog.entities.js';
 import {
-  serializeCategories,
-  serializeCategory,
+  serializeCatalogSummaries,
+  serializeCatalogSummary,
   serializeCourse,
-  serializeTechnologies,
 } from '../serializers/catalog.serializer.js';
 
 function buildCourse(overrides: Partial<Course> = {}): Course {
@@ -114,21 +113,18 @@ describe('catalog serializers', () => {
   });
 
   it('serializes taxonomy summaries with exact fields', () => {
-    expect(serializeCategory({ id: 1, name: 'Backend' } as never)).toEqual({
+    expect(serializeCatalogSummary({ id: 1, name: 'Backend' })).toEqual({
       id: 1,
       name: 'Backend',
     });
     expect(
-      serializeCategories([
-        { id: 2, name: 'B', extra: true } as never,
-        { id: 1, name: 'A' } as never,
+      serializeCatalogSummaries([
+        { id: 2, name: 'B', extra: true } as { id: number; name: string },
+        { id: 1, name: 'A' },
       ]),
     ).toEqual([
       { id: 2, name: 'B' },
       { id: 1, name: 'A' },
     ]);
-    expect(
-      serializeTechnologies([{ id: 7, name: 'TS' } as never]),
-    ).toEqual([{ id: 7, name: 'TS' }]);
   });
 });

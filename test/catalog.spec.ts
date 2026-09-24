@@ -7,8 +7,8 @@ import {
   CreateCourseDto,
   UpdateCourseDto,
   CourseQueryDto,
-} from '../dist/catalog/dto.js';
-import { CatalogAdminGuard } from '../dist/catalog/catalog-access.js';
+} from '../dist/catalog/dto/catalog.dto.js';
+import { CatalogAdminGuard } from '../dist/catalog/guards/catalog-admin.guard.js';
 import type { ExecutionContext } from '@nestjs/common';
 
 describe('configuration', () => {
