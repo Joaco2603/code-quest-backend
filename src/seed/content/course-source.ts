@@ -21,27 +21,15 @@ function text(value: unknown, name: string, max: number) {
     throw new BadRequestException(`Invalid source field: ${name}`);
   return value.trim();
 }
-function httpsUrl(value: unknown, name: string): string {
-  const raw = text(value, name, 2048);
-  let url: URL;
-  try {
-    url = new URL(raw);
-  } catch {
-    throw new BadRequestException(`Invalid source field: ${name}`);
-  }
-  if (url.protocol !== 'https:' || url.username || url.password || url.port)
-    throw new BadRequestException(`Invalid source field: ${name}`);
-  return url.toString();
-}
 function object(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value))
     throw new BadRequestException('Invalid course source object');
   return value as Record<string, unknown>;
 }
 // The enrichment sidecar is optional so COURSES.json keeps parsing. A
-// present sidecar is validated strictly. Only fields marked curated are
-// returned; scraped and inferred values stay empty so they cannot satisfy
-// publication by themselves.
+// present sidecar is validated strictly. Only level and technologies marked
+// curated are returned. Image and duration stay empty regardless of
+// provenance so scraped or sidecar media cannot satisfy publication checks.
 function provenanceValue(value: unknown, name: string) {
   if (
     value !== 'curated' &&
@@ -68,22 +56,6 @@ function provenance(value: unknown) {
       'provenance.technologyNames',
     ),
   };
-}
-function optionalImage(value: unknown) {
-  if (value == null) return null;
-  if (typeof value !== 'string')
-    throw new BadRequestException('Invalid source field: imageUrl');
-  return httpsUrl(value, 'imageUrl');
-}
-function optionalMinutes(value: unknown) {
-  if (value == null) return null;
-  if (
-    !Number.isInteger(value) ||
-    (value as number) <= 0 ||
-    (value as number) > 100000
-  )
-    throw new BadRequestException('Invalid source field: durationMinutes');
-  return value as number;
 }
 function optionalLevel(value: unknown) {
   if (value == null) return null;
@@ -114,14 +86,13 @@ function enrichment(value: unknown): SourceEnrichment | null {
   if (value == null) return null;
   const row = object(value);
   const sources = provenance(row.provenance);
-  const imageUrl = optionalImage(row.imageUrl);
-  const durationMinutes = optionalMinutes(row.durationMinutes);
+  // Sidecar image/duration values are ignored (not mapped). Invalid unused
+  // values must not block import.
   const level = optionalLevel(row.level);
   const technologyNames = readTechnologyNames(row.technologyNames);
   return {
-    imageUrl: sources.imageUrl === 'curated' ? imageUrl : null,
-    durationMinutes:
-      sources.durationMinutes === 'curated' ? durationMinutes : null,
+    imageUrl: null,
+    durationMinutes: null,
     level: sources.level === 'curated' ? level : null,
     technologyNames:
       sources.technologyNames === 'curated' ? technologyNames : [],
