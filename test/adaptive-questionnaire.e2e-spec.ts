@@ -49,8 +49,8 @@ it('upgrades the existing main schema dropping legacy attempts and keeping roadm
   const [questionnaire] = await db.query(
     `SELECT id FROM questionnaires ORDER BY id LIMIT 1`,
   );
-  const [attempt] = await db.query(
-    `INSERT INTO assessments(user_id, questionnaire_id) VALUES ($1, $2) RETURNING id`,
+  await db.query(
+    `INSERT INTO assessments(user_id, questionnaire_id) VALUES ($1, $2)`,
     [user.id, questionnaire.id],
   );
   const [roadmap] = await db.query(
@@ -60,9 +60,7 @@ it('upgrades the existing main schema dropping legacy attempts and keeping roadm
   db.migrations.splice(0, db.migrations.length, ...all);
   await db.runMigrations();
   // Legacy attempts are dropped by design (MVP simplification); roadmaps stay.
-  await expect(
-    db.query('SELECT id FROM assessments WHERE id = $1', [attempt.id]),
-  ).rejects.toThrow();
+  expect(await legacyTables()).toEqual([]);
   expect(
     (
       await db.query(
@@ -74,12 +72,22 @@ it('upgrades the existing main schema dropping legacy attempts and keeping roadm
   expect(await db.query('SELECT * FROM self_assessments')).toEqual([]);
   for (let i = 0; i < 5; i++) await db.undoLastMigration();
   // Reverting recreates the empty legacy tables; dropped rows are gone.
+  expect(await legacyTables()).toEqual(['assessments', 'user_answers']);
   expect(await db.query('SELECT * FROM assessments')).toEqual([]);
+  expect(await db.query('SELECT * FROM user_answers')).toEqual([]);
   expect(
     await db.query('SELECT id FROM roadmaps WHERE id = $1', [roadmap.id]),
   ).toHaveLength(1);
   await db.runMigrations();
-  await expect(
-    db.query('SELECT id FROM assessments WHERE id = $1', [attempt.id]),
-  ).rejects.toThrow();
+  expect(await legacyTables()).toEqual([]);
 });
+
+async function legacyTables(): Promise<string[]> {
+  const rows = (await db.query(
+    `SELECT table_name FROM information_schema.tables
+     WHERE table_schema = current_schema()
+       AND table_name IN ('assessments', 'user_answers')
+     ORDER BY table_name`,
+  )) as { table_name: string }[];
+  return rows.map((row) => row.table_name);
+}
