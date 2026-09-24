@@ -26,6 +26,9 @@ export class Roadmap {
   @JoinColumn({ name: 'user_id' })
   user: User;
 
+  @Column({ type: 'int', default: 0 })
+  progress: number;
+
   @OneToMany(() => RoadmapCourse, (item) => item.roadmap, {
     cascade: true,
   })
