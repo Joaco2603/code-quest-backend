@@ -461,7 +461,10 @@ describe('AuthService', () => {
       mockUserService.findOneById.mockResolvedValue(mockUser);
       mockJwtService.sign.mockReturnValue(token);
 
-      const result = await service.checkAuthStatus(mockUser as AuthUser);
+      const result = await service.checkAuthStatus({
+        ...mockUser,
+        purpose: 'access',
+      } as AuthUser);
 
       expect(result.token).toBe(token);
       expect(mockJwtService.sign).toHaveBeenCalledWith(
@@ -473,32 +476,36 @@ describe('AuthService', () => {
       mockUserService.findOneById.mockResolvedValue(mockUser);
       mockJwtService.sign.mockReturnValue('token');
 
-      await service.checkAuthStatus(mockUser as AuthUser);
+      await service.checkAuthStatus({
+        ...mockUser,
+        purpose: 'access',
+      } as AuthUser);
 
       expect(mockJwtService.sign).toHaveBeenCalledWith(
         expect.objectContaining({ sub: 'user-uuid-123' }),
       );
     });
 
-    it('returns the account password-change flag with the refreshed token', async () => {
+    it('rejects renewal when the account now requires a password change', async () => {
       mockUserService.findOneById.mockResolvedValue({
         ...mockUser,
         mustChangePassword: true,
       });
-      mockJwtService.sign.mockReturnValue('token');
-
-      const result = await service.checkAuthStatus({
-        ...(mockUser as AuthUser),
-        mustChangePassword: false,
-        is_two_factor_enabled: false,
-        is_two_factor_validated: true,
-      });
-
-      expect(result.user.mustChangePassword).toBe(true);
-      expect(mockJwtService.sign).toHaveBeenCalledWith(
-        expect.objectContaining({ mustChangePassword: true }),
-      );
+      await expect(
+        service.checkAuthStatus({ ...mockUser, purpose: 'access' } as AuthUser),
+      ).rejects.toThrow('Password change is required');
+      expect(mockJwtService.sign).not.toHaveBeenCalled();
     });
+
+    it.each(['password_change', 'recovery', 'two_factor', undefined])(
+      'refuses to upgrade a %s token to an access session',
+      async (purpose) => {
+        await expect(
+          service.checkAuthStatus({ ...mockUser, purpose } as AuthUser),
+        ).rejects.toThrow('A full access session is required');
+        expect(mockJwtService.sign).not.toHaveBeenCalled();
+      },
+    );
 
     it('refreshes a token after the account becomes privileged', async () => {
       mockUserService.findOneById.mockResolvedValue({
@@ -509,7 +516,7 @@ describe('AuthService', () => {
       mockJwtService.sign.mockReturnValue('token');
 
       const result = await service.checkAuthStatus({
-        ...(mockUser as AuthUser),
+        ...({ ...mockUser, purpose: 'access' } as AuthUser),
         is_two_factor_enabled: false,
         is_two_factor_validated: true,
       });

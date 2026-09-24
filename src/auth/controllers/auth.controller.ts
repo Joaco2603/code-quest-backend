@@ -18,12 +18,9 @@ import {
   ChangePasswordDto,
   ExchangeDiscordDto,
   LoginPasswordChangeDataResponseDto,
-  LoginSetupDataResponseDto,
-  LoginTwoFactorDataResponseDto,
   VerifiedSessionDataResponseDto,
   AuthSessionDataResponseDto,
   PasswordChangeDataResponseDto,
-  RecoveryVerifiedDataResponseDto,
   DiscordLinkDataResponseDto,
   DiscordTicketDataResponseDto,
 } from '../dtos/index.js';
@@ -34,7 +31,6 @@ import { JwtAuthGuard } from '../guards/jwt.guard.js';
 import { ValidRoles } from '../interfaces/index.js';
 import { Auth } from '../decorators/index.js';
 import { RateLimit } from '../../common/decorators/rate-limit.decorator.js';
-import { PendingTwoFactorGuard } from '../guards/pending-two-factor.guard.js';
 import { ChangePasswordGuard } from '../guards/change-password.guard.js';
 import { TwoFactorGuard } from '../guards/two-factor.guard.js';
 import { DiscordOAuthException } from '../errors/discord-oauth.exception.js';
@@ -47,7 +43,6 @@ import type { Request, Response } from 'express';
 import {
   ApiBearerAuth,
   ApiBadRequestResponse,
-  ApiBody,
   ApiCreatedResponse,
   ApiExtraModels,
   ApiFoundResponse,
@@ -159,13 +154,11 @@ export class AuthController {
   @ApiOperation({
     summary: 'Authenticate user',
     description:
-      'Validates email and password. Returns a full session for standard users without 2FA, or a password-change / 2FA challenge when required.',
+      'Validates email and password. Returns a full session unless a password change is required. MFA is unavailable in the MVP.',
   })
   @ApiExtraModels(
     VerifiedSessionDataResponseDto,
     LoginPasswordChangeDataResponseDto,
-    LoginSetupDataResponseDto,
-    LoginTwoFactorDataResponseDto,
   )
   @ApiCreatedResponse({
     description:
@@ -174,8 +167,6 @@ export class AuthController {
       oneOf: [
         { $ref: getSchemaPath(VerifiedSessionDataResponseDto) },
         { $ref: getSchemaPath(LoginPasswordChangeDataResponseDto) },
-        { $ref: getSchemaPath(LoginSetupDataResponseDto) },
-        { $ref: getSchemaPath(LoginTwoFactorDataResponseDto) },
       ],
     },
   })
@@ -301,12 +292,10 @@ export class AuthController {
   @ApiOperation({
     summary: 'Exchange Discord login ticket',
     description:
-      'Consumes the one-time ticket from /auth/discord/callback and returns a session wrapped in `data`: either a full session with the serialized user, or the same password-change / 2FA-setup / 2FA-pending challenge used by password login. Tickets are single use.',
+      'Consumes the one-time ticket from /auth/discord/callback and returns a session wrapped in `data`: either a full session with the serialized user, or a password-change challenge. Tickets are single use.',
   })
   @ApiExtraModels(
     LoginPasswordChangeDataResponseDto,
-    LoginSetupDataResponseDto,
-    LoginTwoFactorDataResponseDto,
     VerifiedSessionDataResponseDto,
   )
   @ApiCreatedResponse({
@@ -315,8 +304,6 @@ export class AuthController {
       oneOf: [
         { $ref: getSchemaPath(VerifiedSessionDataResponseDto) },
         { $ref: getSchemaPath(LoginPasswordChangeDataResponseDto) },
-        { $ref: getSchemaPath(LoginSetupDataResponseDto) },
-        { $ref: getSchemaPath(LoginTwoFactorDataResponseDto) },
       ],
     },
   })
@@ -354,22 +341,7 @@ export class AuthController {
     return toDataResponse(serializeSessionStatus(sessionUser, token));
   }
 
-  @UseGuards(JwtAuthGuard, PendingTwoFactorGuard)
-  @Post('2fa/verify')
-  @ApiBearerAuth('access-token')
-  @ApiOperation({
-    summary: 'Verify 2FA code',
-    description:
-      'Completes login for users that have a pending two-factor authentication challenge. Returns the full session with the serialized user.',
-  })
-  @ApiCreatedResponse({
-    description: '2FA code verified and access token issued.',
-    type: VerifiedSessionDataResponseDto,
-  })
-  @ApiUnauthorizedResponse({
-    description: 'Invalid or expired temporary token/code.',
-  })
-  @RateLimit(5, 60_000)
+  // Not exposed as an HTTP endpoint while MFA is disabled for the MVP.
   async verify(@Req() req: { user: AuthUser }, @Body() dto: Verify2FADto) {
     const { accessToken, user } = (await this.authService.verify2FA(
       req.user.id,
@@ -407,34 +379,7 @@ export class AuthController {
     return toDataResponse(serializePasswordChangeResult(result));
   }
 
-  @Post('forgot-password-2fa')
-  @ApiOperation({
-    summary: 'Verify recovery 2FA code',
-    description:
-      'Validates a two-factor code during the password recovery workflow. Returns a recovery token scoped to the password change.',
-  })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      required: ['email', 'code'],
-      properties: {
-        email: {
-          type: 'string',
-          format: 'email',
-          example: 'operator@example.com',
-        },
-        code: { type: 'string', example: '123456' },
-      },
-    },
-  })
-  @ApiCreatedResponse({
-    description: 'Recovery 2FA code verified and temporary token returned.',
-    type: RecoveryVerifiedDataResponseDto,
-  })
-  @ApiBadRequestResponse({
-    description: 'Invalid email/code combination.',
-  })
-  @RateLimit(5, 60_000)
+  // Not exposed as an HTTP endpoint while MFA is disabled for the MVP.
   async forgotPassword2FA(@Body() body: { email: string; code: string }) {
     const result = (await this.authService.verify2FAForRecovery(
       body.email,
