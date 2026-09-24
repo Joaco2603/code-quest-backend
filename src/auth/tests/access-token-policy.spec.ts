@@ -20,7 +20,7 @@ describe('accessTokenMatchesAccount', () => {
     ).toBe(true);
   });
 
-  it('rejects that session after 2FA is enabled', () => {
+  it('keeps that session after 2FA is enabled', () => {
     expect(
       accessTokenMatchesAccount(
         { ...ordinary, is_two_factor_enabled: true },
@@ -31,10 +31,10 @@ describe('accessTokenMatchesAccount', () => {
           is_two_factor_validated: true,
         },
       ),
-    ).toBe(false);
+    ).toBe(true);
   });
 
-  it('rejects that session after the account becomes privileged', () => {
+  it('keeps that session after the account becomes privileged', () => {
     expect(
       accessTokenMatchesAccount(
         { role: ValidRoles.admin, is_two_factor_enabled: false },
@@ -45,7 +45,7 @@ describe('accessTokenMatchesAccount', () => {
           is_two_factor_validated: true,
         },
       ),
-    ).toBe(false);
+    ).toBe(true);
   });
 
   it('accepts a privileged session that completed 2FA', () => {

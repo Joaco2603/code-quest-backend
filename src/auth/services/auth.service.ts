@@ -81,12 +81,14 @@ export class AuthService {
     return this.generateToken(user);
   }
 
-  private requiresTwoFactor(user: User): boolean {
-    return (
-      user.role === ValidRoles.admin ||
-      user.role === ValidRoles.client ||
-      user.is_two_factor_enabled
-    );
+  private requiresTwoFactor(_user: User): boolean {
+    // Two-factor is disabled. Password and Discord login issue a full session.
+    // return (
+    //   user.role === ValidRoles.admin ||
+    //   user.role === ValidRoles.client ||
+    //   user.is_two_factor_enabled
+    // );
+    return false;
   }
 
   create = asyncHandler(async (createUserDto: CreateUserDto) => {
@@ -365,7 +367,7 @@ export class AuthService {
 
   beginDiscordLink(user: AuthUser) {
     if (
-      !user.is_two_factor_validated ||
+      // !user.is_two_factor_validated ||
       user.mustChangePassword ||
       user.isRecovery
     ) {
