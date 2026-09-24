@@ -220,8 +220,14 @@ el mismo desafío.
 src/
   main.ts              bootstrap
   app.module.ts        módulo raíz
+  auth/                sesión, Discord y cambio de contraseña
+  user/                cuentas administradas
   catalog/             cursos, categorías, tecnologías y contrato para roadmaps
-  database/migrations/ esquema versionado del catálogo
+  questions/           cuestionarios e intentos
+  roadmaps/            rutas del usuario y progreso por curso
+  common/              límite, errores, auditoría y cifrado
+  health/              GET /api/health
+  database/migrations/ esquema versionado
   config/
     envs.ts            variables de entorno
     typeorm.ts         DataSource
@@ -229,14 +235,26 @@ src/
     swagger.ts         OpenAPI + Scalar
 ```
 
+## Guías
+
+| Tema | Documento |
+| --- | --- |
+| Auth y Discord | [docs/auth.md](docs/auth.md) |
+| Usuarios | [docs/users.md](docs/users.md) |
+| Catálogo | [docs/catalog.md](docs/catalog.md) |
+| Cuestionarios | [docs/questions.md](docs/questions.md) |
+| Cuestionario adaptativo | [docs/cuestionario-adaptativo.md](docs/cuestionario-adaptativo.md) |
+| Roadmaps | [docs/roadmaps.md](docs/roadmaps.md) |
+| Límite, auditoría y salud | [docs/common.md](docs/common.md) |
+| Despliegue | [docs/vps-deploy.md](docs/vps-deploy.md) |
+
 ---
 
 ## Catálogo implementado
 
 Consulta [la guía del catálogo](docs/catalog.md) para endpoints, publicación, pruebas y contratos de integración.
-Las lecturas muestran cursos publicados. Las escrituras administrativas devuelven `403` hasta integrar
-la autenticación de Persona 2 mediante `CatalogAdminGuard`. No hay credenciales ni bypass de desarrollo.
-Usuarios, cuestionarios y generación de roadmaps siguen pendientes.
+Las lecturas muestran cursos publicados. Las escrituras administrativas del catálogo siguen detrás de
+`CatalogAdminGuard`. Auth, usuarios, cuestionarios y roadmaps tienen guía propia en la tabla de arriba.
 
 ## Fechas de la misión
 
