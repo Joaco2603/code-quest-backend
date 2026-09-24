@@ -1,3 +1,4 @@
+import { isQuestionVisible } from '../questionnaires/rules/adaptive-questions.js';
 import {
   BadRequestException,
   ConflictException,
@@ -5,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, Repository } from 'typeorm';
+import { In, IsNull, Repository } from 'typeorm';
 import { Assessment } from './entities/assessment.entity.js';
 import { UserAnswer } from './entities/user-answer.entity.js';
 import { CreateAssessmentDto, UpsertAnswerDto } from './dtos/index.js';
@@ -91,56 +92,136 @@ export class AssessmentsService {
     return this.toView(assessment, answers);
   }
 
-  /** Upsert (update + insert): delete this question's rows, then insert the new ones. */
+  async getQuestionnaire(user: AuthUser, id: number) {
+    const assessment = await this.getOwned(user, id);
+    const questionnaire = await this.loadActiveQuestionnaire(
+      assessment.questionnaireId,
+    );
+    const answers = await this.answers.find({ where: { assessmentId: id } });
+    questionnaire.questions = questionnaire.questions.filter((q) =>
+      isQuestionVisible(q, questionnaire.questions, answers),
+    );
+    return questionnaire;
+  }
+
+  // Serialize all answer mutations and completion for the same attempt. A failed
+  // replacement must leave the previous answers and conditional levels intact.
+  private async write<T>(
+    user: AuthUser,
+    id: number,
+    work: (
+      assessment: Assessment,
+      assessments: Repository<Assessment>,
+      answers: Repository<UserAnswer>,
+    ) => Promise<T>,
+  ) {
+    return this.assessments.manager.transaction(async (manager) => {
+      const assessments = manager.getRepository(Assessment);
+      const answers = manager.getRepository(UserAnswer);
+      const assessment = await assessments.findOne({
+        where: { id, userId: user.id },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!assessment) throw new NotFoundException('Assessment not found');
+      this.assertWritable(assessment);
+      return work(assessment, assessments, answers);
+    });
+  }
+
   async upsertAnswer(
     user: AuthUser,
     id: number,
     dto: UpsertAnswerDto,
   ): Promise<AssessmentView> {
-    const assessment = await this.getOwned(user, id);
-    this.assertWritable(assessment);
-
-    const questionnaire = await this.loadActiveQuestionnaire(
-      assessment.questionnaireId,
-    );
-    const question = this.findQuestion(questionnaire, dto.questionId);
-    const rows = this.buildAnswerRows(assessment.id, question, dto);
-
-    await this.answers.delete({
-      assessmentId: assessment.id,
-      questionId: question.id,
+    return this.write(user, id, async (assessment, _assessments, answers) => {
+      const questionnaire = await this.loadActiveQuestionnaire(
+        assessment.questionnaireId,
+      );
+      const stored = await answers.find({ where: { assessmentId: id } });
+      const question = this.findQuestion(questionnaire, dto.questionId);
+      if (!isQuestionVisible(question, questionnaire.questions, stored))
+        throw new BadRequestException(
+          'Question is not applicable to the selected answers',
+        );
+      const rows = this.buildAnswerRows(id, question, dto);
+      await answers.delete({ assessmentId: id, questionId: dto.questionId });
+      const saved = await answers.save(answers.create(rows));
+      const next = [
+        ...stored.filter((a) => a.questionId !== question.id),
+        ...saved,
+      ];
+      return this.toView(
+        assessment,
+        await this.removeHiddenAnswers(questionnaire, next, answers, id),
+      );
     });
-    const created = this.answers.create(rows);
-    await this.answers.save(created);
+  }
 
-    return this.findMine(user, id);
+  async removeAnswer(
+    user: AuthUser,
+    id: number,
+    questionId: number,
+  ): Promise<AssessmentView> {
+    return this.write(user, id, async (assessment, _assessments, answers) => {
+      const questionnaire = await this.loadActiveQuestionnaire(
+        assessment.questionnaireId,
+      );
+      this.findQuestion(questionnaire, questionId);
+      await answers.delete({ assessmentId: id, questionId });
+      const stored = await answers.find({ where: { assessmentId: id } });
+      return this.toView(
+        assessment,
+        await this.removeHiddenAnswers(questionnaire, stored, answers, id),
+      );
+    });
+  }
+
+  private async removeHiddenAnswers(
+    questionnaire: QuestionnaireResponseDto,
+    stored: UserAnswer[],
+    answers: Repository<UserAnswer>,
+    assessmentId: number,
+  ) {
+    const hiddenIds = questionnaire.questions
+      .filter((q) => !isQuestionVisible(q, questionnaire.questions, stored))
+      .map((q) => q.id);
+    if (
+      hiddenIds.length &&
+      stored.some((a) => hiddenIds.includes(a.questionId))
+    )
+      await answers.delete({ assessmentId, questionId: In(hiddenIds) });
+    return stored.filter((a) => !hiddenIds.includes(a.questionId));
   }
 
   async complete(user: AuthUser, id: number): Promise<AssessmentView> {
-    const assessment = await this.getOwned(user, id);
-    this.assertWritable(assessment);
-
-    const questionnaire = await this.loadActiveQuestionnaire(
-      assessment.questionnaireId,
-    );
-    const answers = await this.answers.find({
-      where: { assessmentId: assessment.id },
-    });
-
-    const unanswered = questionnaire.questions.filter(
-      (question) =>
-        question.isActive && !this.hasValidStoredAnswer(question, answers),
-    );
-
-    if (unanswered.length > 0) {
-      throw new BadRequestException(
-        'All active questions must be answered before completing the assessment',
+    return this.write(user, id, async (assessment, assessments, answers) => {
+      const questionnaire = await this.loadActiveQuestionnaire(
+        assessment.questionnaireId,
       );
-    }
-
-    assessment.completedAt = new Date();
-    const saved = await this.assessments.save(assessment);
-    return this.toView(saved, answers);
+      const stored = await answers.find({ where: { assessmentId: id } });
+      const visible = questionnaire.questions.filter((q) =>
+        isQuestionVisible(q, questionnaire.questions, stored),
+      );
+      const invalid = visible.filter((q) => {
+        const hasAnswer = stored.some((a) => a.questionId === q.id);
+        return (
+          (q.rules?.required !== false || hasAnswer) &&
+          !this.hasValidStoredAnswer(q, stored)
+        );
+      });
+      if (invalid.length)
+        throw new BadRequestException(
+          'All required applicable questions must have valid answers before completing the assessment',
+        );
+      const kept = await this.removeHiddenAnswers(
+        questionnaire,
+        stored,
+        answers,
+        id,
+      );
+      assessment.completedAt = new Date();
+      return this.toView(await assessments.save(assessment), kept);
+    });
   }
 
   private async loadActiveQuestionnaire(
@@ -208,7 +289,10 @@ export class AssessmentsService {
             assessmentId,
             questionId: question.id,
             answerOptionId: optionIds[0],
-            value: null,
+            value:
+              question.rules?.allowDetails && dto.value !== undefined
+                ? this.parseDetails(dto.value)
+                : null,
           },
         ];
       }
@@ -218,6 +302,13 @@ export class AssessmentsService {
             'multiple_choice requires at least one answer option',
           );
         }
+        if (
+          question.rules?.maxSelections !== undefined &&
+          optionIds.length > question.rules.maxSelections
+        )
+          throw new BadRequestException(
+            `Select at most ${question.rules.maxSelections} options`,
+          );
         this.assertOptionsBelong(question, optionIds);
         return optionIds.map((answerOptionId) => ({
           assessmentId,
@@ -301,6 +392,14 @@ export class AssessmentsService {
     }
   }
 
+  private parseDetails(value: unknown): string | null {
+    if (typeof value !== 'string' || value.trim().length > 1000)
+      throw new BadRequestException(
+        'Optional details must be text of at most 1000 characters',
+      );
+    return value.trim() || null;
+  }
+
   private parseTextValue(value: unknown): string {
     if (typeof value !== 'string') {
       throw new BadRequestException('value must be a non-empty string');
@@ -347,11 +446,19 @@ export class AssessmentsService {
         return (
           rows.length === 1 &&
           rows[0].answerOptionId != null &&
+          (!question.rules?.allowDetails ||
+            rows[0].value == null ||
+            rows[0].value.length <= 1000) &&
           question.options.some(
             (option) => option.id === rows[0].answerOptionId,
           )
         );
       case QuestionType.MULTIPLE_CHOICE: {
+        if (
+          question.rules?.maxSelections !== undefined &&
+          rows.length > question.rules.maxSelections
+        )
+          return false;
         const optionIds = rows.map((row) => row.answerOptionId);
         if (optionIds.some((id) => id == null)) return false;
         const unique = new Set(optionIds);

@@ -45,6 +45,21 @@ export function serializeQuestion(source: Question): QuestionResponseDto {
   return {
     id: source.id,
     question: source.question,
+    rules: {
+      required: source.rules?.required ?? true,
+      ...(source.rules?.maxSelections !== undefined
+        ? { maxSelections: source.rules.maxSelections }
+        : {}),
+      ...(source.rules?.allowDetails ? { allowDetails: true } : {}),
+      ...(source.rules?.showWhen
+        ? {
+            showWhen: {
+              questionId: source.rules.showWhen.questionId,
+              answerOptionId: source.rules.showWhen.answerOptionId,
+            },
+          }
+        : {}),
+    },
     type: source.type,
     isActive: source.isActive,
     sortOrder: source.sortOrder,

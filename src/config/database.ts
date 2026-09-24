@@ -1,3 +1,4 @@
+import { AdaptiveQuestionnaire1789600005000 } from '../database/migrations/1789600005000-AdaptiveQuestionnaire.js';
 import type { DataSourceOptions } from 'typeorm';
 import { readEnvironment } from './envs.js';
 import { catalogEntities } from '../catalog/entities/catalog.entities.js';
@@ -51,6 +52,7 @@ export function databaseOptions(
       CreateAssessments1789600002000,
       RenameUserResponsesToUserAnswers1789600003000,
       CreateRoadmaps1789600004000,
+      AdaptiveQuestionnaire1789600005000,
     ],
   };
 }

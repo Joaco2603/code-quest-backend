@@ -53,7 +53,10 @@ describe('QuestionnairesController', () => {
     mockQuestionsService.listActiveQuestionnaires.mockResolvedValue([
       { id: 1 },
     ]);
-    mockQuestionsService.getActiveQuestionnaire.mockResolvedValue({ id: 1 });
+    mockQuestionsService.getActiveQuestionnaire.mockResolvedValue({
+      id: 1,
+      questions: [],
+    });
     mockQuestionsService.getQuestionnaireForAdmin.mockResolvedValue({ id: 1 });
 
     const paginated = await controller.findAll({ offset: 0, limit: 10 });

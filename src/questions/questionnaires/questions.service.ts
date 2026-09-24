@@ -1,3 +1,4 @@
+import { validateAdaptiveQuestions } from './rules/adaptive-questions.js';
 import {
   BadRequestException,
   ConflictException,
@@ -99,6 +100,7 @@ export class QuestionsService {
       }
       const detail = serializeQuestionnaire(questionnaire, true);
       this.assertChoiceQuestionsHaveOptions(detail);
+      validateAdaptiveQuestions(detail.questions);
       return detail;
     },
   );
@@ -140,13 +142,24 @@ export class QuestionsService {
       questionnaireId: number,
       dto: CreateQuestionDto,
     ): Promise<QuestionResponseDto> => {
-      await this.loadQuestionnaire(questionnaireId);
+      const questionnaire = await this.loadQuestionnaire(questionnaireId);
+      validateAdaptiveQuestions([
+        ...(questionnaire.questions ?? []),
+        {
+          id: -1,
+          type: dto.type,
+          isActive: true,
+          options: [],
+          rules: dto.rules,
+        },
+      ]);
       this.assertOptionsAllowed(dto.type, dto.options?.length ?? 0);
 
       const question = this.questionRepository.create({
         question: dto.question,
         type: dto.type,
         sortOrder: dto.sortOrder,
+        rules: dto.rules ?? {},
         isActive: true,
         questionnaire: { id: questionnaireId } as Questionnaire,
       });
@@ -171,7 +184,10 @@ export class QuestionsService {
   );
 
   updateQuestion = asyncHandler(
-    async (id: number, dto: UpdateQuestionDto): Promise<QuestionResponseDto> => {
+    async (
+      id: number,
+      dto: UpdateQuestionDto,
+    ): Promise<QuestionResponseDto> => {
       const question = await this.loadQuestion(id);
       const nextType = dto.type ?? question.type;
 
@@ -191,6 +207,14 @@ export class QuestionsService {
       if (dto.isActive !== undefined) question.isActive = dto.isActive;
       if (dto.sortOrder !== undefined) question.sortOrder = dto.sortOrder;
 
+      if (dto.rules !== undefined) question.rules = dto.rules;
+      const questionnaire = await this.loadQuestionnaire(
+        question.questionnaire.id,
+      );
+      validateAdaptiveQuestions([
+        ...(questionnaire.questions ?? []).filter((q) => q.id !== id),
+        question,
+      ]);
       await this.questionRepository.save(question);
       return serializeQuestion(question);
     },
@@ -198,9 +222,7 @@ export class QuestionsService {
 
   deactivateQuestion = asyncHandler(
     async (id: number): Promise<QuestionDeactivationResponseDto> => {
-      const question = await this.loadQuestion(id);
-      question.isActive = false;
-      await this.questionRepository.save(question);
+      await this.updateQuestion(id, { isActive: false });
       return { message: 'Question deactivated', id };
     },
   );
@@ -242,6 +264,23 @@ export class QuestionsService {
   deleteOption = asyncHandler(
     async (id: number): Promise<AnswerOptionDeleteResponseDto> => {
       const option = await this.loadOption(id);
+      const question = await this.loadQuestion(option.question.id);
+      const questionnaire = await this.loadQuestionnaire(
+        question.questionnaire.id,
+      );
+      validateAdaptiveQuestions(
+        (questionnaire.questions ?? []).map((q) =>
+          q.id === question.id
+            ? {
+                id: q.id,
+                type: q.type,
+                isActive: q.isActive,
+                rules: q.rules,
+                options: q.options.filter((o) => o.id !== id),
+              }
+            : q,
+        ),
+      );
       await this.optionRepository.remove(option);
       return { message: 'Answer option deleted', id };
     },

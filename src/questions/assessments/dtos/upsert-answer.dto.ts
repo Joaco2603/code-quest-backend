@@ -36,7 +36,8 @@ export class UpsertAnswerDto {
   answerOptionIds?: number[];
 
   @ApiPropertyOptional({
-    description: 'Scalar answer for text, number, or boolean questions.',
+    description:
+      'Scalar answer for text, number, or boolean questions; optional details for single_choice when rules.allowDetails is true (maximum 1000 characters).',
     example: 'true',
   })
   @IsOptional()

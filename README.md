@@ -249,3 +249,7 @@ Cualquier cambio al código del repositorio público **después del corte** pued
 ## Licencia
 
 MIT. Ver [LICENSE](LICENSE).
+
+### Cuestionario adaptativo
+
+La nueva versión reduce el formulario a cuatro preguntas iniciales y hasta tres autoevaluaciones según las tecnologías seleccionadas. Ver [preguntas, integración del frontend y migración](docs/cuestionario-adaptativo.md).

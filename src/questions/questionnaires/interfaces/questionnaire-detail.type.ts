@@ -1,3 +1,4 @@
+import type { QuestionRulesDto } from '../dtos/question-rules.dto.js';
 import { QuestionType } from '../enums/question-type.enum.js';
 
 export type AnswerOptionDetail = {
@@ -8,6 +9,7 @@ export type AnswerOptionDetail = {
 };
 
 export type QuestionDetail = {
+  rules?: QuestionRulesDto;
   id: number;
   question: string;
   type: QuestionType;

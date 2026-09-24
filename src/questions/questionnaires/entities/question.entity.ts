@@ -1,3 +1,4 @@
+import type { QuestionRulesDto } from '../dtos/question-rules.dto.js';
 import {
   Column,
   Entity,
@@ -37,6 +38,9 @@ export class Question {
 
   @Column({ name: 'sort_order', type: 'int' })
   sortOrder: number;
+
+  @Column({ type: 'jsonb', default: () => "'{}'::jsonb" })
+  rules: QuestionRulesDto;
 
   @OneToMany(() => AnswerOption, (option) => option.question)
   options: AnswerOption[];
