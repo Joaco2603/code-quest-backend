@@ -11,7 +11,7 @@ import type {
   EvaluationDefinition,
   ProfileResult,
   QuestionRule,
-} from './contracts.js';
+} from './interfaces/index.js';
 
 export function revisionFor(
   questionnaire: QuestionnaireResponseDto,

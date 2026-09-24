@@ -17,9 +17,9 @@ import { AssessmentsService } from '../dist/assessments/assessments.service.js';
 import { JwtStrategy } from '../dist/auth/strategies/jwt.strategy.js';
 import { User } from '../dist/user/entities/user.entity.js';
 import { Course } from '../dist/catalog/entities.js';
-import { importInitialContent } from '../dist/content/initial-content.js';
-import type { EvaluationSnapshot } from '../dist/assessments/contracts.js';
-import type { SourceCourse } from '../dist/content/course-source.js';
+import { importInitialContent } from '../dist/seed/content/initial-content.js';
+import type { EvaluationSnapshot } from '../dist/assessments/interfaces/index.js';
+import type { SourceCourse } from '../dist/seed/content/course-source.js';
 
 const url = process.env.TEST_DATABASE_URL;
 if (!url || !new URL(url).pathname.endsWith('_test'))
@@ -230,7 +230,7 @@ it('rejects forged owners, anonymous and temporary sessions, foreign options and
     (await db.query('SELECT count(*)::int AS count FROM assessments'))[0].count,
   ).toBe(0);
   expect(
-    (await db.query('SELECT count(*)::int AS count FROM user_responses'))[0]
+    (await db.query('SELECT count(*)::int AS count FROM user_answers'))[0]
       .count,
   ).toBe(0);
 });
@@ -299,9 +299,9 @@ it('protects configuration and historical taxonomy references', async () => {
     .set('Authorization', auth('admin'))
     .expect(409);
 });
-it('rolls back the assessment if response persistence fails', async () => {
+it('rolls back the assessment if answer persistence fails', async () => {
   await db.query(
-    `ALTER TABLE user_responses ADD CONSTRAINT reject_response_test CHECK (question_id < 0)`,
+    `ALTER TABLE user_answers ADD CONSTRAINT reject_answer_test CHECK (question_id < 0)`,
   );
   try {
     await api()
@@ -315,7 +315,7 @@ it('rolls back the assessment if response persistence fails', async () => {
     ).toBe(0);
   } finally {
     await db.query(
-      'ALTER TABLE user_responses DROP CONSTRAINT reject_response_test',
+      'ALTER TABLE user_answers DROP CONSTRAINT reject_answer_test',
     );
   }
 });

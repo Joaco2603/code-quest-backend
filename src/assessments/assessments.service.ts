@@ -7,13 +7,14 @@ import { DataSource, EntityManager, In, QueryFailedError } from 'typeorm';
 import { Questionnaire } from '../questions/entities/questionnaire.entity.js';
 import { serializeQuestionnaire } from '../questions/serializers/questions.serializer.js';
 import { Category, Technology } from '../catalog/entities.js';
-import { Assessment, EvaluationConfig, UserResponse } from './entities.js';
+import { Assessment, EvaluationConfig, UserAnswer } from './entities/index.js';
 import type {
   AssessmentProfile,
   EvaluationDefinition,
   EvaluationSnapshot,
-} from './contracts.js';
-import type { AssessmentQueryDto, SubmitAssessmentDto } from './dto.js';
+  ProfileResult,
+} from './interfaces/index.js';
+import type { AssessmentQueryDto, SubmitAssessmentDto } from './dto/index.js';
 import {
   evaluate,
   revisionFor,
@@ -25,24 +26,32 @@ import {
 export class AssessmentsService {
   constructor(private readonly db: DataSource) {}
 
-  private async write<T>(work: (manager: EntityManager) => Promise<T>) {
+  private mapWriteError(error: unknown): never {
+    if (
+      error instanceof QueryFailedError &&
+      ['40001', '23503', '23505'].includes(
+        (error.driverError as { code: string }).code,
+      )
+    ) {
+      throw new ConflictException(
+        'Evaluation or catalog changed concurrently; fetch the form and retry',
+      );
+    }
+    throw error;
+  }
+
+  private async write<T>(
+    work: (manager: EntityManager) => Promise<T>,
+    { catalogLock = false }: { catalogLock?: boolean } = {},
+  ) {
     try {
       return await this.db.transaction('REPEATABLE READ', async (manager) => {
-        await manager.query('SELECT pg_advisory_xact_lock(1789600000)');
+        if (catalogLock)
+          await manager.query('SELECT pg_advisory_xact_lock(1789600000)');
         return work(manager);
       });
     } catch (error) {
-      if (
-        error instanceof QueryFailedError &&
-        ['40001', '23503', '23505'].includes(
-          (error.driverError as { code: string }).code,
-        )
-      ) {
-        throw new ConflictException(
-          'Evaluation or catalog changed concurrently; fetch the form and retry',
-        );
-      }
-      throw error;
+      this.mapWriteError(error);
     }
   }
 
@@ -57,25 +66,28 @@ export class AssessmentsService {
   }
 
   async configure(questionnaireId: number, definition: EvaluationDefinition) {
-    return this.write(async (manager) => {
-      const questionnaire = await this.questionnaire(manager, questionnaireId);
-      validateDefinition(questionnaire, definition);
-      await this.validateReferences(manager, definition);
-      const previous = await manager.findOneBy(EvaluationConfig, {
-        questionnaireId,
-      });
-      const config = await manager.save(EvaluationConfig, {
-        questionnaireId,
-        version: (previous?.version ?? 0) + 1,
-        definition,
-      });
-      await manager.query(
-        'DELETE FROM evaluation_taxonomy_refs WHERE questionnaire_id = $1',
-        [questionnaireId],
-      );
-      await this.saveReferences(manager, definition, { questionnaireId });
-      return { questionnaireId, profileVersion: config.version, definition };
-    });
+    return this.write(
+      async (manager) => {
+        const questionnaire = await this.questionnaire(manager, questionnaireId);
+        validateDefinition(questionnaire, definition);
+        await this.validateReferences(manager, definition);
+        const previous = await manager.findOneBy(EvaluationConfig, {
+          questionnaireId,
+        });
+        const config = await manager.save(EvaluationConfig, {
+          questionnaireId,
+          version: (previous?.version ?? 0) + 1,
+          definition,
+        });
+        await manager.query(
+          'DELETE FROM evaluation_taxonomy_refs WHERE questionnaire_id = $1',
+          [questionnaireId],
+        );
+        await this.saveReferences(manager, definition, { questionnaireId });
+        return { questionnaireId, profileVersion: config.version, definition };
+      },
+      { catalogLock: true },
+    );
   }
 
   private async snapshot(
@@ -123,13 +135,13 @@ export class AssessmentsService {
         profile: result.profile,
       });
       await manager.save(
-        UserResponse,
+        UserAnswer,
         result.answers.map((answer) => ({
           ...answer,
           assessmentId: assessment.id,
         })),
       );
-      await this.saveReferences(manager, snapshot.definition, {
+      await this.saveProfileReferences(manager, result.profile, {
         assessmentId: assessment.id,
       });
       return this.serialize(assessment, result.answers);
@@ -153,10 +165,10 @@ export class AssessmentsService {
     };
   }
 
-  private async owned(userId: string, id: number, responses = false) {
+  private async owned(userId: string, id: number, answers = false) {
     const assessment = await this.db
       .getRepository(Assessment)
-      .findOne({ where: { id, userId }, relations: { responses } });
+      .findOne({ where: { id, userId }, relations: { answers } });
     if (!assessment) throw new NotFoundException('Assessment not found');
     return assessment;
   }
@@ -168,7 +180,7 @@ export class AssessmentsService {
     );
     return this.serialize(
       assessment,
-      assessment.responses.sort(
+      assessment.answers.sort(
         (a, b) => order.get(a.questionId)! - order.get(b.questionId)!,
       ),
     );
@@ -234,6 +246,34 @@ export class AssessmentsService {
     owner: { questionnaireId?: number; assessmentId?: number },
   ) {
     const refs = taxonomyReferences(definition);
+    await this.insertTaxonomyRefs(manager, refs, owner);
+  }
+
+  private async saveProfileReferences(
+    manager: EntityManager,
+    profile: ProfileResult,
+    owner: { assessmentId: number },
+  ) {
+    await this.insertTaxonomyRefs(
+      manager,
+      {
+        categoryIds: profile.interests.categoryIds,
+        technologyIds: [
+          ...new Set([
+            ...profile.interests.technologyIds,
+            ...profile.skills.map((skill) => skill.technologyId),
+          ]),
+        ],
+      },
+      owner,
+    );
+  }
+
+  private async insertTaxonomyRefs(
+    manager: EntityManager,
+    refs: { categoryIds: number[]; technologyIds: number[] },
+    owner: { questionnaireId?: number; assessmentId?: number },
+  ) {
     for (const categoryId of refs.categoryIds) {
       await manager.query(
         'INSERT INTO evaluation_taxonomy_refs(questionnaire_id, assessment_id, category_id) VALUES ($1, $2, $3)',

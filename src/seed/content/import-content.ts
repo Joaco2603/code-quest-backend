@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import 'dotenv/config';
 import { readFile } from 'node:fs/promises';
 import { DataSource } from 'typeorm';
-import { databaseOptions } from '../config/database.js';
+import { databaseOptions } from '../../config/database.js';
 import { parseCourseSource } from './course-source.js';
 import { importInitialContent } from './initial-content.js';
 
