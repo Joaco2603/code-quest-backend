@@ -13,8 +13,6 @@ import { AuditLog } from '../common/entities/audit-log.entity.js';
 import { AnswerOption } from '../questions/questionnaires/entities/answer-option.entity.js';
 import { Question } from '../questions/questionnaires/entities/question.entity.js';
 import { Questionnaire } from '../questions/questionnaires/entities/questionnaire.entity.js';
-import { Assessment } from '../questions/assessments/entities/assessment.entity.js';
-import { UserAnswer } from '../questions/assessments/entities/user-answer.entity.js';
 import { CreateUsersAndAuditLogs1760000000000 } from '../database/migrations/1760000000000-CreateUsersAndAuditLogs.js';
 import { CreateQuestions1789600001000 } from '../database/migrations/1789600001000-CreateQuestions.js';
 import { CreateAssessments1789600002000 } from '../database/migrations/1789600002000-CreateAssessments.js';
@@ -46,8 +44,6 @@ export function databaseOptions(
       AnswerOption,
       Question,
       Questionnaire,
-      Assessment,
-      UserAnswer,
       Roadmap,
       RoadmapCourse,
     ],

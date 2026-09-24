@@ -274,6 +274,6 @@ Cualquier cambio al código del repositorio público **después del corte** pued
 
 MIT. Ver [LICENSE](LICENSE).
 
-### Cuestionario adaptativo
+### Evaluación del estudiante
 
-La nueva versión reduce el formulario a cuatro preguntas iniciales y hasta tres autoevaluaciones según las tecnologías seleccionadas. Ver [preguntas, integración del frontend y migración](docs/cuestionario-adaptativo.md).
+El flujo actual es el de [evaluaciones](docs/assessments.md): formulario, revisión y envío completo en una sola petición. El [cuestionario adaptativo](docs/cuestionario-adaptativo.md) anterior quedó como redirección histórica.
