@@ -71,12 +71,36 @@ it('upgrades the existing main schema without erasing attempts or roadmaps', asy
     )[0],
   ).toMatchObject({ title: 'Existing route', assessment_id: null });
   expect(await db.query('SELECT * FROM self_assessments')).toEqual([]);
-  for (let i = 0; i < 4; i++) await db.undoLastMigration();
+  expect(
+    (
+      await db.query(`SELECT is_active FROM questionnaires WHERE title = $1`, [
+        'Tu próxima ruta de aprendizaje',
+      ])
+    )[0],
+  ).toMatchObject({ is_active: false });
+  const added = all.filter(
+    (m) => Number((m.name ?? m.constructor.name).slice(-13)) >= 1789948800000,
+  );
+  for (let i = 0; i < added.length; i++) await db.undoLastMigration();
   expect(
     await db.query('SELECT id FROM assessments WHERE id = $1', [attempt.id]),
   ).toHaveLength(1);
   expect(
     await db.query('SELECT id FROM roadmaps WHERE id = $1', [roadmap.id]),
   ).toHaveLength(1);
+  expect(
+    (
+      await db.query(`SELECT is_active FROM questionnaires WHERE title = $1`, [
+        'Tu próxima ruta de aprendizaje',
+      ])
+    )[0],
+  ).toMatchObject({ is_active: true });
   await db.runMigrations();
+  expect(
+    (
+      await db.query(`SELECT is_active FROM questionnaires WHERE title = $1`, [
+        'Tu próxima ruta de aprendizaje',
+      ])
+    )[0],
+  ).toMatchObject({ is_active: false });
 });

@@ -40,7 +40,11 @@ describe('RoadmapsService', () => {
         return value;
       }
       const row = value as Record<string, unknown>;
-      return { ...row, id: typeof row.id === 'number' ? row.id : 1 };
+      return {
+        ...row,
+        id: typeof row.id === 'number' ? row.id : 1,
+        createdAt: row.createdAt ?? new Date('2026-09-24T12:00:00.000Z'),
+      };
     }),
     delete: vi.fn(),
     update: vi.fn(),
@@ -98,6 +102,9 @@ describe('RoadmapsService', () => {
     expect(manager.query).toHaveBeenCalledWith(
       'SELECT pg_advisory_xact_lock(1789600000)',
     );
+    expect(result.rationale).toBeNull();
+    expect(result.assessmentId).toBeNull();
+    expect(result.createdAt).toBe('2026-09-24T12:00:00.000Z');
     expect(result.courses.map((item) => item.sortOrder)).toEqual([0, 1]);
     expect(result.courses.map((item) => item.courseId)).toEqual([10, 20]);
     expect(result.courses.every((item) => item.progress === 0)).toBe(true);
@@ -115,6 +122,9 @@ describe('RoadmapsService', () => {
       {
         id: 1,
         title: 'Mine',
+        rationale: 'Empieza por TypeScript.',
+        assessmentId: 8,
+        createdAt: new Date('2026-09-24T12:00:00.000Z'),
         userId,
         courses: [{ courseId: 3, progress: 0, sortOrder: 0, roadmapId: 1 }],
       },
@@ -129,6 +139,9 @@ describe('RoadmapsService', () => {
     });
     expect(result).toHaveLength(1);
     expect(result[0].userId).toBe(userId);
+    expect(result[0].rationale).toBe('Empieza por TypeScript.');
+    expect(result[0].assessmentId).toBe(8);
+    expect(result[0].createdAt).toBe('2026-09-24T12:00:00.000Z');
     expect(catalog.getCoursesForExistingRoadmap).toHaveBeenCalledTimes(1);
   });
 
@@ -137,12 +150,18 @@ describe('RoadmapsService', () => {
       {
         id: 1,
         title: 'Mine',
+        rationale: null,
+        assessmentId: null,
+        createdAt: new Date('2026-09-24T12:00:00.000Z'),
         userId,
         courses: [{ courseId: 3, progress: 0, sortOrder: 0, roadmapId: 1 }],
       },
       {
         id: 2,
         title: 'Also mine',
+        rationale: null,
+        assessmentId: null,
+        createdAt: new Date('2026-09-24T12:00:00.000Z'),
         userId,
         courses: [{ courseId: 4, progress: 0, sortOrder: 0, roadmapId: 2 }],
       },
@@ -168,6 +187,9 @@ describe('RoadmapsService', () => {
     roadmapRepo.findOne.mockResolvedValue({
       id: 5,
       title: 'Path',
+      rationale: null,
+      assessmentId: null,
+      createdAt: new Date('2026-09-24T12:00:00.000Z'),
       userId,
       courses: [
         { courseId: 1, progress: 40, sortOrder: 0, roadmapId: 5 },
@@ -197,6 +219,9 @@ describe('RoadmapsService', () => {
     roadmapRepo.findOne.mockResolvedValue({
       id: 5,
       title: 'Path',
+      rationale: null,
+      assessmentId: null,
+      createdAt: new Date('2026-09-24T12:00:00.000Z'),
       userId,
       courses: [
         { courseId: 1, progress: 100, sortOrder: 0, roadmapId: 5 },
@@ -213,6 +238,9 @@ describe('RoadmapsService', () => {
     roadmapRepo.findOne.mockResolvedValue({
       id: 5,
       title: 'Path',
+      rationale: null,
+      assessmentId: null,
+      createdAt: new Date('2026-09-24T12:00:00.000Z'),
       userId,
       courses: [
         { courseId: 1, progress: 100, sortOrder: 0, roadmapId: 5 },
@@ -239,6 +267,9 @@ describe('RoadmapsService', () => {
     const existing = {
       id: 5,
       title: 'Path',
+      rationale: null,
+      assessmentId: null,
+      createdAt: new Date('2026-09-24T12:00:00.000Z'),
       userId,
       courses: [{ courseId: 2, progress: 0, sortOrder: 0, roadmapId: 5 }],
     };
@@ -256,6 +287,9 @@ describe('RoadmapsService', () => {
     roadmapRepo.findOne.mockResolvedValue({
       id: 5,
       title: 'Path',
+      rationale: null,
+      assessmentId: null,
+      createdAt: new Date('2026-09-24T12:00:00.000Z'),
       userId,
       courses: [{ courseId: 2, progress: 0, sortOrder: 0, roadmapId: 5 }],
     });
