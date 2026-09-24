@@ -1,0 +1,1719 @@
+{
+  "cursos": [
+    {
+      "titulo": "Nest: Desarrollo backend escalable con Node",
+      "categoria": "Backend",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Nest es un framework de node extensible, versátil y progresivo, el cual nos ofrece la columna vertebral de todo tipo de aplicaciones del lado del servidor.",
+      "url": "https://fernando-herrera.com/course/nest-backend-escalable",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/nest-framework",
+        "devtalles": "https://cursos.devtalles.com/courses/nest"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/T6It7zuNQPWizrBJvbaX_NEST-NEW.jpg",
+      "durationMinutes": 1470,
+      "durationHoursRaw": 24.5,
+      "lessonsRaw": 228,
+      "level": "intermediate",
+      "technologyNames": [
+        "Node.js",
+        "NestJS",
+        "TypeScript"
+      ]
+    },
+    {
+      "titulo": "Nuxt: El marco de trabajo web progresivo (Nuxt 4+)",
+      "categoria": "Desarrollo Web",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Aprende Nuxt.js, el framework basado en Vue.js para crear aplicaciones web rápidas, modernas y optimizadas para SEO, desde los fundamentos hasta temas avanzados.",
+      "url": "https://fernando-herrera.com/course/nuxt",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/nuxt-web-progresivo",
+        "devtalles": "https://cursos.devtalles.com/courses/nuxt"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/0QSiNkebRGFH4hPY25zf_NUXT-COVER-DEVTALLES.jpg",
+      "durationMinutes": 810,
+      "durationHoursRaw": 13.5,
+      "lessonsRaw": 151,
+      "level": "advanced",
+      "technologyNames": [
+        "Vue"
+      ]
+    },
+    {
+      "titulo": "Principios: SOLID y Clean Code",
+      "categoria": "Infraestructura",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Los principios S.O.L.I.D. son fundamentos clave del diseño y desarrollo de aplicaciones que todo programador debe conocer.",
+      "url": "https://fernando-herrera.com/course/pricipios-solid-cleancode",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/solid-clean",
+        "devtalles": "https://cursos.devtalles.com/courses/solid-clean-code"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/eOnxKwRKRZ2vCYGEk8Lg_SOLID.jpg",
+      "durationMinutes": 390,
+      "durationHoursRaw": 6.5,
+      "lessonsRaw": 70,
+      "level": "beginner",
+      "technologyNames": []
+    },
+    {
+      "titulo": "Docker: Guía práctica de uso para desarrolladores",
+      "categoria": "Infraestructura",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Aprende Docker y para qué te puede servir: crear imágenes, controlar el versionamiento y la construcción automática de contenedores.",
+      "url": "https://fernando-herrera.com/course/docker-guia-practica",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/docker-guia-practica",
+        "devtalles": "https://cursos.devtalles.com/courses/docker-guia-practica"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/MtehrUISVW8hP7CfCWV1_DOCKER.jpg",
+      "durationMinutes": 840,
+      "durationHoursRaw": 14.0,
+      "lessonsRaw": 134,
+      "level": "beginner",
+      "technologyNames": [
+        "Docker"
+      ]
+    },
+    {
+      "titulo": "Patrones de Diseño: Soluciones prácticas y eficientes",
+      "categoria": "Desarrollo Web",
+      "instructor": "Fernando Herrera",
+      "descripcion": "24 Patrones de Diseño para resolver problemas comunes al programar, además de escribir código más limpio y escalable.",
+      "url": "https://fernando-herrera.com/course/patrones-de-diseno",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/patrones-diseno",
+        "devtalles": "https://cursos.devtalles.com/courses/patrones-diseno"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/GAaAh0OtQAmUmEOc5qiS_COVER-PATRONES-DE-DISE%C3%91O-DEVTALLES.jpg",
+      "durationMinutes": 600,
+      "durationHoursRaw": 10.0,
+      "lessonsRaw": 116,
+      "level": "intermediate",
+      "technologyNames": []
+    },
+    {
+      "titulo": "Spring AI: LLMs, Tools, RAG, Agentes y Deploy en AWS",
+      "categoria": "Backend",
+      "instructor": "Gabriel Chaldú",
+      "descripcion": "Integra inteligencia artificial en Java con Spring AI 2.x. Construye un asistente médico educativo completo: Tool Calling, RAG, memoria persistente.",
+      "url": "https://fernando-herrera.com/course/spring-ai",
+      "gratis": false,
+      "nuevo": true,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/spring-ai-rag-y-agentes",
+        "devtalles": "https://cursos.devtalles.com/courses/spring-AI"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/is89v3RgS22dqMndJMVZ_COVER-DEVTALLES-SPRING-IA.jpg",
+      "durationMinutes": 1110,
+      "durationHoursRaw": 18.5,
+      "lessonsRaw": 156,
+      "level": "advanced",
+      "technologyNames": [
+        "Java",
+        "IA"
+      ]
+    },
+    {
+      "titulo": "GIT+GitHub: Todo un sistema de control de versiones de cero",
+      "categoria": "Infraestructura",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Domina GIT y GitHub para gestionar y colaborar en proyectos de forma eficiente. Desde lo básico hasta flujos de trabajo avanzados.",
+      "url": "https://fernando-herrera.com/course/git-github",
+      "gratis": false,
+      "nuevo": true,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/git-github",
+        "devtalles": "https://cursos.devtalles.com/courses/git-github-control-versiones-desde-cero"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/vyhm8XioTSeV0KPWLzrI_COVER-DEVTALLES-github2026.jpg",
+      "durationMinutes": 690,
+      "durationHoursRaw": 11.5,
+      "lessonsRaw": 132,
+      "level": "advanced",
+      "technologyNames": [
+        "Herramientas"
+      ]
+    },
+    {
+      "titulo": "Laravel 13: AI, REST, JWT, Repository Pattern",
+      "categoria": "Backend",
+      "instructor": "Teddy Paz",
+      "descripcion": "Construye una API REST profesional con Laravel desarrollando una Movie API completa desde cero: CRUD, JWT, Repository Pattern.",
+      "url": "https://fernando-herrera.com/course/laravel-ai",
+      "gratis": false,
+      "nuevo": true,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/laravel-ai-repository-pattern",
+        "devtalles": "https://cursos.devtalles.com/courses/laravel-ai"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/A9hqhmn1Qm6aYwAJAoL9_COVER-DEVTALLES%20LARAVEL.jpg",
+      "durationMinutes": 810,
+      "durationHoursRaw": 13.5,
+      "lessonsRaw": 160,
+      "level": "beginner",
+      "technologyNames": [
+        "PHP",
+        "IA"
+      ]
+    },
+    {
+      "titulo": "Claude Code: Guía completa para desarrolladores de software",
+      "categoria": "Desarrollo Web",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Aprende a usar Claude Code sin importar si ya lo has usado antes: instalación, flujos de trabajo diarios y personalización.",
+      "url": "https://fernando-herrera.com/course/claude-code",
+      "gratis": false,
+      "nuevo": true,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/claude-code-guia-completa",
+        "devtalles": "https://cursos.devtalles.com/courses/claude-code-guia-completa"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/hWQRull4RXmytJSqs3e4_COVER-DEVTALLES-CLAUDE-CODE.jpg",
+      "durationMinutes": 1050,
+      "durationHoursRaw": 17.5,
+      "lessonsRaw": 187,
+      "level": "beginner",
+      "technologyNames": [
+        "IA"
+      ]
+    },
+    {
+      "titulo": "Java: Spring Boot - Guía definitiva",
+      "categoria": "Backend",
+      "instructor": "Gabriel Chaldú",
+      "descripcion": "Aprende Spring Boot desde cero: inicia con Spring MVC y Thymeleaf creando un sitio web dinámico con JdbcTemplate y controladores.",
+      "url": "https://fernando-herrera.com/course/spring-boot",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/java-spring-boot-guia-definitiva",
+        "devtalles": "https://cursos.devtalles.com/courses/spring-boot"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/ueDsP3FS6aHlcy3KlSLL_SPRING5.jpg",
+      "durationMinutes": 2130,
+      "durationHoursRaw": 35.5,
+      "lessonsRaw": 314,
+      "level": "beginner",
+      "technologyNames": [
+        "Java"
+      ]
+    },
+    {
+      "titulo": "React Router: Navegación declarativa y framework",
+      "categoria": "Backend",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Aprende a trabajar con React Router tanto como librería para proyectos SPA como en modo Framework, sacándole el máximo provecho.",
+      "url": "https://fernando-herrera.com/course/react-router",
+      "gratis": true,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": null,
+        "devtalles": "https://cursos.devtalles.com/courses/react-router"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/0gGwQplTkS4tKB7oNc5K_COVER-DEVTALLES-REACT_ROUTER.jpg",
+      "durationMinutes": 450,
+      "durationHoursRaw": 7.5,
+      "lessonsRaw": 87,
+      "level": "intermediate",
+      "technologyNames": [
+        "React"
+      ]
+    },
+    {
+      "titulo": "React + Sockets: Aplicaciones en tiempo real con Bun",
+      "categoria": "Desarrollo Web",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Aprende a crear y configurar aplicaciones React en tiempo real, usando la implementación nativa de websockets junto a un backend en Bun.",
+      "url": "https://fernando-herrera.com/course/react-sockets",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/react-bun-websockets",
+        "devtalles": "https://cursos.devtalles.com/courses/react-sockets"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/ajXXN4TCTwuZ6uhDapF1_image.png",
+      "durationMinutes": 900,
+      "durationHoursRaw": 15.0,
+      "lessonsRaw": 153,
+      "level": "intermediate",
+      "technologyNames": [
+        "React"
+      ]
+    },
+    {
+      "titulo": "IA para Developers: Claude API, RAG y Agentes con Node",
+      "categoria": "Backend",
+      "instructor": "Teddy Paz",
+      "descripcion": "Construye un agente de IA desde cero con Claude API, RAG y function calling en Node.js, sin frameworks: solo Anthropic SDK y OpenAI.",
+      "url": "https://fernando-herrera.com/course/ia-para-developers",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/ia-para-developers",
+        "devtalles": "https://cursos.devtalles.com/courses/ia-para-developers"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/GqifE6ONSsOHYhVpNPRS_COVER-DEVTALLES.jpg",
+      "durationMinutes": 480,
+      "durationHoursRaw": 8.0,
+      "lessonsRaw": 114,
+      "level": "beginner",
+      "technologyNames": [
+        "Node.js"
+      ]
+    },
+    {
+      "titulo": "Python: Inteligencia artificial aplicada",
+      "categoria": "Backend",
+      "instructor": "Ricardo Cuéllar",
+      "descripcion": "Curso práctico de Python aplicado a IA: crea agentes, domina prompts, usa OpenAI, implementa RAG, orquesta con LangChain y despliega con FastAPI.",
+      "url": "https://fernando-herrera.com/course/python-ia-aplicada",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/python-inteligencia-artificial-aplicada",
+        "devtalles": "https://cursos.devtalles.com/courses/python-ia-aplicada"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/S221KTnsQESSijuA5CPO_COVER-DEVTALLES-python-ia.jpg",
+      "durationMinutes": 1110,
+      "durationHoursRaw": 18.5,
+      "lessonsRaw": 172,
+      "level": "intermediate",
+      "technologyNames": [
+        "Python"
+      ]
+    },
+    {
+      "titulo": "NestJS + Microservicios: Aplicaciones escalables y modulares",
+      "categoria": "Backend",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Crea un sistema distribuido utilizando múltiples bases de datos, transportadores y técnicas para escalar de forma independiente.",
+      "url": "https://fernando-herrera.com/course/nest-microservicios",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/nestjs-microservicios",
+        "devtalles": "https://cursos.devtalles.com/courses/nestjs-microservicios"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/vOOZ5j1Qta2gvaiOlMqE_MICROSERVICIOS.jpg",
+      "durationMinutes": 1260,
+      "durationHoursRaw": 21.0,
+      "lessonsRaw": 199,
+      "level": "advanced",
+      "technologyNames": [
+        "NestJS",
+        "Node.js"
+      ]
+    },
+    {
+      "titulo": "OpenCode: Guía completa para desarrolladores",
+      "categoria": "Desarrollo Web",
+      "instructor": "Fernando Herrera",
+      "descripcion": "OpenCode, el agente de IA open source para programar desde la terminal: instalación, CLI, configuración, agentes personalizados y MCP.",
+      "url": "https://fernando-herrera.com/course/opencode-guia-completa",
+      "gratis": false,
+      "nuevo": true,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/opencode-guia-completa",
+        "devtalles": "https://cursos.devtalles.com/courses/open-code-guia-completa"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/5VQqSJ32SE6MgrM6fHPv_COVER-DEVTALLES-OPENCODE.jpg",
+      "durationMinutes": 840,
+      "durationHoursRaw": 14.0,
+      "lessonsRaw": 153,
+      "level": "beginner",
+      "technologyNames": [
+        "IA"
+      ]
+    },
+    {
+      "titulo": "Vibe Coding: De forma responsable",
+      "categoria": "Desarrollo Web",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Crea aplicaciones reales usando IA como desarrollador, pero con criterio profesional: autenticación, carga de archivos e integraciones.",
+      "url": "https://fernando-herrera.com/course/vibe-coding-responsable",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/vibe-coding-responsable",
+        "devtalles": "https://cursos.devtalles.com/courses/vibe-coding"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/QerNZaF2SpWnZLFLnxvR_VIBE%20CODING%20COVER%20DEVTALLES.png",
+      "durationMinutes": 270,
+      "durationHoursRaw": 4.5,
+      "lessonsRaw": 63,
+      "level": "beginner",
+      "technologyNames": [
+        "IA"
+      ]
+    },
+    {
+      "titulo": "Golang: Backend Profesional",
+      "categoria": "Backend",
+      "instructor": "Ricardo Cuéllar",
+      "descripcion": "Construye APIs REST profesionales en Go desde cero: HTTP nativo, Clean Architecture, PostgreSQL, JWT y manejo de errores, sin frameworks.",
+      "url": "https://fernando-herrera.com/course/golang-backend-profesional",
+      "gratis": false,
+      "nuevo": true,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/golang-backend-profesional",
+        "devtalles": "https://cursos.devtalles.com/courses/golang-backend-profesional"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/ChXFDCgeRKjOyfa2ppDQ_COVER-DEVTALLES-GO-BACKEND.jpg",
+      "durationMinutes": 1530,
+      "durationHoursRaw": 25.5,
+      "lessonsRaw": 257,
+      "level": "beginner",
+      "technologyNames": [
+        "SQL"
+      ]
+    },
+    {
+      "titulo": "Spring Boot 4: Arquitectura de Microservicios",
+      "categoria": "Backend",
+      "instructor": "Gabriel Chaldú",
+      "descripcion": "Domina microservicios con Spring Boot 4 y RabbitMQ: arquitectura de capas, MongoDB, Docker, Kubernetes y comunicación entre servicios.",
+      "url": "https://fernando-herrera.com/course/spring-boot-microservicios",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/spring-boot-arquitectura-microservicios",
+        "devtalles": "https://cursos.devtalles.com/courses/spring-boot-microservicios"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/eajq3CPwT1ovajpqVu2O_image.png",
+      "durationMinutes": 1260,
+      "durationHoursRaw": 21.0,
+      "lessonsRaw": 185,
+      "level": "advanced",
+      "technologyNames": [
+        "Java",
+        "Docker"
+      ]
+    },
+    {
+      "titulo": "TailwindCSS: Para desarrolladores de software",
+      "categoria": "Desarrollo Web",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Aprende a usar Tailwind CSS orientado a desarrolladores, para crear diseños responsivos y modernos evitando usar JavaScript para esto.",
+      "url": "https://fernando-herrera.com/course/tailwindcss-para-desarrolladores",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": null,
+        "devtalles": "https://cursos.devtalles.com/courses/tailwindcss-para-desarrolladores"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/8w7MKPqvQtaLpLNVTgq6_TAILWIND1.jpg",
+      "durationMinutes": 240,
+      "durationHoursRaw": 4.0,
+      "lessonsRaw": 51,
+      "level": "beginner",
+      "technologyNames": [
+        "CSS"
+      ]
+    },
+    {
+      "titulo": "Spring Boot 4: Patrones de arquitectura",
+      "categoria": "Backend",
+      "instructor": "Gabriel Chaldú",
+      "descripcion": "Lleva tu nivel de Spring Boot de CRUD a arquitectura profesional. Construye Atlas-Bank aplicando SOLID, patrones GoF y DDD.",
+      "url": "https://fernando-herrera.com/course/spring-boot-patrones-arquitectura",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/spring-boot-patrones-de-arquitectura",
+        "devtalles": "https://cursos.devtalles.com/courses/spring-boot-patrones-arquitectura"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/50BIjVSQ6m0KbI6hAzlA_COVER-DEVTALLES2.jpg",
+      "durationMinutes": 1230,
+      "durationHoursRaw": 20.5,
+      "lessonsRaw": 180,
+      "level": "advanced",
+      "technologyNames": [
+        "Java"
+      ]
+    },
+    {
+      "titulo": "SQL de cero: Tu guía práctica con PostgreSQL",
+      "categoria": "Base de datos",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Te lleva de cero conocimiento sobre bases de datos hasta un punto competitivo, diseñando y utilizando bases de datos con PostgreSQL.",
+      "url": "https://fernando-herrera.com/course/sql-de-cero",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/sql-de-cero",
+        "devtalles": "https://cursos.devtalles.com/courses/sql-con-postgres"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/k6V4tlGTXmUQS8CGxGID_SQL.jpg",
+      "durationMinutes": 960,
+      "durationHoursRaw": 16.0,
+      "lessonsRaw": 184,
+      "level": "beginner",
+      "technologyNames": [
+        "SQL"
+      ]
+    },
+    {
+      "titulo": "Java: Explora el lenguaje desde cero",
+      "categoria": "Backend",
+      "instructor": "Gabriel Chaldú",
+      "descripcion": "Aprende Java desde cero, dominando la sintaxis, POO, estructuras de datos y manejo de excepciones.",
+      "url": "https://fernando-herrera.com/course/java",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/devtalles-java",
+        "devtalles": "https://cursos.devtalles.com/courses/Java"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/eGxuDHajSO2qp1HxEbvL_JAVA-COVER3.jpg",
+      "durationMinutes": 900,
+      "durationHoursRaw": 15.0,
+      "lessonsRaw": 145,
+      "level": "beginner",
+      "technologyNames": [
+        "Java"
+      ]
+    },
+    {
+      "titulo": "Zustand: Gestor de estado para React",
+      "categoria": "Desarrollo Web",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Zustand apunta a ser un reemplazo directo a Redux, Redux Toolkit y el ContextAPI de React.",
+      "url": "https://fernando-herrera.com/course/zustand",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/react-zustand",
+        "devtalles": "https://cursos.devtalles.com/courses/zustand-gestor-de-estado-para-react"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/OqBxBndxTD6gtxlKMoWV_ZUSTAND.jpg",
+      "durationMinutes": 360,
+      "durationHoursRaw": 6.0,
+      "lessonsRaw": 78,
+      "level": "intermediate",
+      "technologyNames": [
+        "React"
+      ]
+    },
+    {
+      "titulo": "React Pro: Lleva tus bases al siguiente nivel",
+      "categoria": "Desarrollo Web",
+      "instructor": "Fernando Herrera",
+      "descripcion": "El objetivo principal es mejorar tus habilidades existentes de React. No es un curso para quienes recién empiezan con esta librería.",
+      "url": "https://fernando-herrera.com/course/react-pro",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/react-pro",
+        "devtalles": "https://cursos.devtalles.com/courses/react-pro"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/sHm63uuSkiPxQqbElhTQ_REACT-PRO-NEW.jpg",
+      "durationMinutes": 1470,
+      "durationHoursRaw": 24.5,
+      "lessonsRaw": 226,
+      "level": "intermediate",
+      "technologyNames": [
+        "React"
+      ]
+    },
+    {
+      "titulo": "RN Expo + Gemini: Aplicaciones con inteligencia artificial",
+      "categoria": "Móvil",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Integra la Inteligencia Artificial de Google Gemini usando la librería oficial, conectándola a través de un backend.",
+      "url": "https://fernando-herrera.com/course/expo-gemini",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/expo-gemini",
+        "devtalles": "https://cursos.devtalles.com/courses/expo-gemini"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/hVinmMVNQq6v8R7Was0K_COVER-DEVTALLES2.jpg",
+      "durationMinutes": 420,
+      "durationHoursRaw": 7.0,
+      "lessonsRaw": 95,
+      "level": "intermediate",
+      "technologyNames": [
+        "React Native",
+        "IA"
+      ]
+    },
+    {
+      "titulo": "PHP moderno: Empieza tu camino en el lenguaje",
+      "categoria": "Backend",
+      "instructor": "Teddy Paz",
+      "descripcion": "Aprende PHP moderno desde cero y con buenas prácticas: fundamentos, control de flujo, funciones, POO, Composer, APIs y bases de datos.",
+      "url": "https://fernando-herrera.com/course/php-moderno",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/php-moderno",
+        "devtalles": "https://cursos.devtalles.com/courses/PHP-moderno"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/eQFwBD7MQhivG5bVLTx1_php.png",
+      "durationMinutes": 600,
+      "durationHoursRaw": 10.0,
+      "lessonsRaw": 131,
+      "level": "beginner",
+      "technologyNames": [
+        "PHP"
+      ]
+    },
+    {
+      "titulo": "Nest + GraphQL: Evoluciona tus APIs",
+      "categoria": "Backend",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Aprende a implementar GraphQL en tu backend con Nest.js (Code First Approach) para hacer APIs flexibles, dinámicas y personalizadas.",
+      "url": "https://fernando-herrera.com/course/nest-graphql",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/nest-graphql",
+        "devtalles": "https://cursos.devtalles.com/courses/nest-graphql"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/DYTo4ghhS2c799ZISyNu_NEST-GRAPHQL-NEW.jpg",
+      "durationMinutes": 1080,
+      "durationHoursRaw": 18.0,
+      "lessonsRaw": 164,
+      "level": "advanced",
+      "technologyNames": [
+        "NestJS"
+      ]
+    },
+    {
+      "titulo": "Blazor: Desde cero con arquitectura limpia",
+      "categoria": "Backend",
+      "instructor": "Teddy Paz",
+      "descripcion": "Aprende desarrollo web Fullstack con C# y .NET Core: domina Clean Architecture, Blazor Server y más.",
+      "url": "https://fernando-herrera.com/course/netfullstack",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/net-fullstack",
+        "devtalles": "https://cursos.devtalles.com/courses/netfullstack"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/LcwHwtf1Q0WlRGiv9VY3_COVER-DEVTALLES%20(1).jpg",
+      "durationMinutes": 840,
+      "durationHoursRaw": 14.0,
+      "lessonsRaw": 183,
+      "level": "beginner",
+      "technologyNames": [
+        ".NET"
+      ]
+    },
+    {
+      "titulo": "Java avanzado: reactividad, concurrencia y patrones",
+      "categoria": "Backend",
+      "instructor": "Gabriel Chaldú",
+      "descripcion": "Lleva tus bases de Java al siguiente nivel con código limpio, funcional y concurrente: Streams, RxJava, bases de datos y patrones.",
+      "url": "https://fernando-herrera.com/course/java-avanzado",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/java-avanzado",
+        "devtalles": "https://cursos.devtalles.com/courses/java-avanzado"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/rJCXtKQUQSmgJSQbArul_java-avanzado-devtalles.jpg",
+      "durationMinutes": 1500,
+      "durationHoursRaw": 25.0,
+      "lessonsRaw": 209,
+      "level": "advanced",
+      "technologyNames": [
+        "Java"
+      ]
+    },
+    {
+      "titulo": "Flutter + Gemini: Aplicaciones con inteligencia artificial",
+      "categoria": "Móvil",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Trabaja con la inteligencia artificial de Google Gemini y su SDK nativo, siguiendo buenas prácticas y recomendaciones de la documentación.",
+      "url": "https://fernando-herrera.com/course/flutter-gemini",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/flutter-gemini",
+        "devtalles": "https://cursos.devtalles.com/courses/Flutter-Gemini"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/dMU9FLDmQETZktVFX7gX_COVER-DEVTALLES3.jpg",
+      "durationMinutes": 510,
+      "durationHoursRaw": 8.5,
+      "lessonsRaw": 105,
+      "level": "intermediate",
+      "technologyNames": [
+        "Flutter",
+        "IA"
+      ]
+    },
+    {
+      "titulo": "Flutter móvil: Recursos Nativos - Nivel intermedio",
+      "categoria": "Dart Flutter",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Se enfoca en la utilización de recursos nativos del dispositivo móvil: sensores, ads y su interacción, biométricos y más.",
+      "url": "https://fernando-herrera.com/course/flutter-recursos-nativos",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/flutter-movil-recursos-nativos",
+        "devtalles": "https://cursos.devtalles.com/courses/flutter-movil-intermedio"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/1KaCF2nnTI2eoV6HYpum_FLUTTER-MOVIL-RECURSOS-NATIVOS.jpg",
+      "durationMinutes": 960,
+      "durationHoursRaw": 16.0,
+      "lessonsRaw": 180,
+      "level": "intermediate",
+      "technologyNames": [
+        "Flutter"
+      ]
+    },
+    {
+      "titulo": "OpenAI: Ejercicios y asistentes con Angular + NestJS",
+      "categoria": "Backend",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Curso práctico de OpenAI: usa la librería de OpenAI en Node para consumir desde un frontend en Angular y consultar información.",
+      "url": "https://fernando-herrera.com/course/openai-angular",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/angular-nest-openai",
+        "devtalles": "https://cursos.devtalles.com/courses/openai-angular-nestjs"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/XUcRyW81RJS3xgf1CRNf_OPENAI-ANGULAR.jpg",
+      "durationMinutes": 660,
+      "durationHoursRaw": 11.0,
+      "lessonsRaw": 154,
+      "level": "intermediate",
+      "technologyNames": [
+        "Angular",
+        "NestJS",
+        "Node.js",
+        "IA"
+      ]
+    },
+    {
+      "titulo": "React Native Expo: Aplicaciones nativas para iOS y Android",
+      "categoria": "Móvil",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Curso completo de React Native con Expo: bases sólidas del framework, con más de 25 horas de contenido en video y despliegue.",
+      "url": "https://fernando-herrera.com/course/react-native-expo",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/react-native-expo",
+        "devtalles": "https://cursos.devtalles.com/courses/react-native-expo"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/1NsQU7EaRiG7xLnvaHvc_COVER-DEVTALLES.jpg",
+      "durationMinutes": 1530,
+      "durationHoursRaw": 25.5,
+      "lessonsRaw": 271,
+      "level": "beginner",
+      "technologyNames": [
+        "React Native"
+      ]
+    },
+    {
+      "titulo": ".NET: Pruebas completas para minimal API",
+      "categoria": "Backend",
+      "instructor": "Teddy Paz",
+      "descripcion": "Enseña a crear pruebas automatizadas para Minimal APIs en .NET de forma práctica y directa, validando comportamientos.",
+      "url": "https://fernando-herrera.com/course/net-pruebascompletas",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": null,
+        "devtalles": "https://cursos.devtalles.com/courses/net-pruebascompletas"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/h80J6Pb5SHeRvZM6pdz5_NET-PRUEBAS-MINIMAL-API.jpg",
+      "durationMinutes": 360,
+      "durationHoursRaw": 6.0,
+      "lessonsRaw": 98,
+      "level": "advanced",
+      "technologyNames": [
+        ".NET"
+      ]
+    },
+    {
+      "titulo": "Spring Boot: De MVC a Hexagonal",
+      "categoria": "Desarrollo Web",
+      "instructor": "Gabriel Chaldú",
+      "descripcion": "Programa intensivo de Diseño de Software: crea apps modulares y resilientes con Arquitectura Hexagonal, usando una migración práctica.",
+      "url": "https://fernando-herrera.com/course/springboot-mvc-hexagonal",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": null,
+        "devtalles": "https://cursos.devtalles.com/courses/springboot-mvc-hexagonal"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/onRaVfSdR56WUL2jXpQz_COVER-DEVTALLES-MINI-CURSO-SPRING-BOOT.jpg",
+      "durationMinutes": 510,
+      "durationHoursRaw": 8.5,
+      "lessonsRaw": 75,
+      "level": "advanced",
+      "technologyNames": [
+        "Java"
+      ]
+    },
+    {
+      "titulo": "Python + n8n: Automatiza rutinas cotidianas",
+      "categoria": "Desarrollo Web",
+      "instructor": "Ricardo Cuéllar",
+      "descripcion": "Utiliza Python para tus proyectos de automatización cotidiana o personales, aprendiendo conceptos de n8n y creando scripts.",
+      "url": "https://fernando-herrera.com/course/python-n8n-automatiza-rutinas",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": null,
+        "devtalles": "https://cursos.devtalles.com/courses/python-n8n-automatiza-rutinas"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/ZEyBqiQ2S8KjhgvA87t2_PYTHON-N8N.jpg",
+      "durationMinutes": 540,
+      "durationHoursRaw": 9.0,
+      "lessonsRaw": 90,
+      "level": "beginner",
+      "technologyNames": [
+        "Python"
+      ]
+    },
+    {
+      "titulo": "Dart: De cero hasta los detalles",
+      "categoria": "Dart Flutter",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Desde lo más básico de Dart hasta temas más complejos y necesarios para trabajar con cualquier tecnología que utilice Dart.",
+      "url": "https://fernando-herrera.com/course/dart-cero-detalles",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/dart-de-cero-hasta-los-detalles",
+        "devtalles": "https://cursos.devtalles.com/courses/dart-cero-hasta-detalles"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/zCw5CYnStGlg2IlblHjd_DART-NEW.jpg",
+      "durationMinutes": 600,
+      "durationHoursRaw": 10.0,
+      "lessonsRaw": 128,
+      "level": "beginner",
+      "technologyNames": [
+        "Dart"
+      ]
+    },
+    {
+      "titulo": "ReactiveX - RxJs: De cero hasta los detalles",
+      "categoria": "Desarrollo Web",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Orientado a enseñarte desde los fundamentos e interioridades de las extensiones reactivas hasta los detalles más avanzados.",
+      "url": "https://fernando-herrera.com/course/rxjs-reactive-x",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/rxjs-de-cero-hasta-los-detalles",
+        "devtalles": "https://cursos.devtalles.com/courses/reactivex-rxjs"
+      },
+      "devtalles": null,
+      "imageUrl": "https://import.cdn.thinkific.com/643563/n80W0M1gSpizBJEEgGff_LEGACY-REACTIVE.jpg",
+      "durationMinutes": 570,
+      "durationHoursRaw": 9.5,
+      "lessonsRaw": 107,
+      "level": "advanced",
+      "technologyNames": [
+        "JavaScript"
+      ]
+    },
+    {
+      "titulo": "Astro: El framework para sitios web orientados al contenido",
+      "categoria": "Desarrollo Web",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Aprende a usar este framework de desarrollo web diseñado para construir sitios rápidos y eficientes con tecnologías conocidas.",
+      "url": "https://fernando-herrera.com/course/astro",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/astro-guia-completa",
+        "devtalles": "https://cursos.devtalles.com/courses/Astro"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/8b0gaETkTXeL6iB3f1Pn_ASTRO.jpg",
+      "durationMinutes": 1530,
+      "durationHoursRaw": 25.5,
+      "lessonsRaw": 263,
+      "level": "beginner",
+      "technologyNames": [
+        "Astro"
+      ]
+    },
+    {
+      "titulo": "React: De cero a experto",
+      "categoria": "Desarrollo Web",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Desde los fundamentos de la librería hasta aspectos técnicos avanzados y despliegues, incorporando librerías del ecosistema.",
+      "url": "https://fernando-herrera.com/course/react-cero-experto",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/react-cero-experto",
+        "devtalles": "https://cursos.devtalles.com/courses/react-de-cero"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/TTTUJiUVTvGC5cy5Z3UW_COVER-DEVTALLES-REACT.jpg",
+      "durationMinutes": 2760,
+      "durationHoursRaw": 46.0,
+      "lessonsRaw": 452,
+      "level": "advanced",
+      "technologyNames": [
+        "React"
+      ]
+    },
+    {
+      "titulo": "Angular: Aplicaciones en tiempo real con sockets y rest",
+      "categoria": "Desarrollo Web",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Aprende a crear tu propio servidor REST e integrarle comunicación de sockets en tiempo real con Angular.",
+      "url": "https://fernando-herrera.com/course/angular-con-websockets",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/angular-aplicaciones-en-tiempo-real",
+        "devtalles": null
+      },
+      "devtalles": null,
+      "imageUrl": null,
+      "durationMinutes": null,
+      "level": null,
+      "technologyNames": []
+    },
+    {
+      "titulo": "Vue + TS: Lleva tus bases al siguiente nivel - Intermedio",
+      "categoria": "Desarrollo Web",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Orientado a personas con cierta base sobre el framework de Vue.js; todo el contenido está escrito en TypeScript.",
+      "url": "https://fernando-herrera.com/course/vue-typescript-intermedio",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/vue-intermedio",
+        "devtalles": "https://cursos.devtalles.com/courses/Vue-intermedio"
+      },
+      "devtalles": null,
+      "imageUrl": "https://import.cdn.thinkific.com/643563/Mecj0WPdQyOMPKxtYqG1_vue_ts2.jpg",
+      "durationMinutes": 810,
+      "durationHoursRaw": 13.5,
+      "lessonsRaw": 141,
+      "level": "intermediate",
+      "technologyNames": [
+        "TypeScript",
+        "Vue"
+      ]
+    },
+    {
+      "titulo": "C#: Empieza tu camino en el lenguaje",
+      "categoria": "Backend",
+      "instructor": "Teddy Paz",
+      "descripcion": "Aprende C# desde cero: sintaxis básica, estructuras de control y POO, manejo de excepciones y más.",
+      "url": "https://fernando-herrera.com/course/c-sharp",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/devtalles-csharp",
+        "devtalles": "https://cursos.devtalles.com/courses/csharp"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/ZQiNIKAJR4upzwEpMIVt_C-SHARP-COVER%20(1).jpg",
+      "durationMinutes": 690,
+      "durationHoursRaw": 11.5,
+      "lessonsRaw": 120,
+      "level": "beginner",
+      "technologyNames": [
+        ".NET"
+      ]
+    },
+    {
+      "titulo": "FastAPI: Crea APIs eficientes con Python",
+      "categoria": "Backend",
+      "instructor": "Ricardo Cuéllar",
+      "descripcion": "Crea APIs modernas, seguras y rápidas con Python, Pydantic, JWT, WebSockets, Webhooks, bases de datos y despliegue.",
+      "url": "https://fernando-herrera.com/course/fastapi",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/fastapi-apis-eficientes",
+        "devtalles": "https://cursos.devtalles.com/courses/fastapi"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/7yccvWpWRC669uDvMnqd_FASTAPICOVER-DEVTALLES.jpg",
+      "durationMinutes": 2160,
+      "durationHoursRaw": 36.0,
+      "lessonsRaw": 336,
+      "level": "intermediate",
+      "technologyNames": [
+        "Python"
+      ]
+    },
+    {
+      "titulo": "n8n + MCP: Automatización y agentes de IA inteligentes",
+      "categoria": "Desarrollo Web",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Crea automatizaciones poderosas con n8n: desde flujos simples con Google Sheets y correos, hasta proyectos avanzados con lógica y agentes.",
+      "url": "https://fernando-herrera.com/course/n8n-mcp",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/n8n-mcp-agentes",
+        "devtalles": "https://cursos.devtalles.com/courses/n8n-mcp"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/V4CDk5iUSKCh2Xw4MfX2_COVER-DEVTALLES-n8n-2.jpg",
+      "durationMinutes": 1050,
+      "durationHoursRaw": 17.5,
+      "lessonsRaw": 230,
+      "level": "advanced",
+      "technologyNames": [
+        "IA"
+      ]
+    },
+    {
+      "titulo": "Angular: De cero a experto",
+      "categoria": "Desarrollo Web",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Aprende Angular en profundidad con el nuevo paradigma Zoneless basado en señales, desde cero con ejercicios prácticos.",
+      "url": "https://fernando-herrera.com/course/angular-cero-experto",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/angular-fernando-herrera",
+        "devtalles": "https://cursos.devtalles.com/courses/angular-moderno"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/LeaTjvBRI6cldshD59jw_angular-de-cero.jpg",
+      "durationMinutes": 2010,
+      "durationHoursRaw": 33.5,
+      "lessonsRaw": 347,
+      "level": "advanced",
+      "technologyNames": [
+        "Angular"
+      ]
+    },
+    {
+      "titulo": "JavaScript Moderno: Guía para dominar el lenguaje",
+      "categoria": "Desarrollo Web",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Enseña JavaScript actual, empezando de cero conocimiento hasta llevarte a un nivel avanzado.",
+      "url": "https://fernando-herrera.com/course/javascript-moderno",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/javascript-fernando-herrera",
+        "devtalles": "https://cursos.devtalles.com/courses/javascript-moderno"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/rfX8tJ4ZRHi6L4WFj2sW_JAVASCRIPT.jpg",
+      "durationMinutes": 1710,
+      "durationHoursRaw": 28.5,
+      "lessonsRaw": 229,
+      "level": "advanced",
+      "technologyNames": [
+        "JavaScript"
+      ]
+    },
+    {
+      "titulo": ".NET Backend: .NET Core, SQL Server y seguridad JWT",
+      "categoria": "Backend",
+      "instructor": "Teddy Paz",
+      "descripcion": "Construye desde cero una API RESTful profesional en .NET para un e-commerce real: JWT, Entity Framework y control de acceso.",
+      "url": "https://fernando-herrera.com/course/net-backend",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/backend-net-core",
+        "devtalles": "https://cursos.devtalles.com/courses/NET-Backend"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/7c18RVDvTFezQ4VL9JeM_NET-DEVTALLES.jpg",
+      "durationMinutes": 660,
+      "durationHoursRaw": 11.0,
+      "lessonsRaw": 159,
+      "level": "beginner",
+      "technologyNames": [
+        "SQL"
+      ]
+    },
+    {
+      "titulo": "Flutter Móvil: De cero a experto",
+      "categoria": "Dart Flutter",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Cubre todo lo necesario de Flutter para crear aplicaciones móviles para iOS y Android hasta su despliegue en las tiendas siguiendo DDD.",
+      "url": "https://fernando-herrera.com/course/flutter-cero-experto",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/flutter-cero-a-experto",
+        "devtalles": "https://cursos.devtalles.com/courses/flutter-movil-cero-a-experto"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/61TYzXMSTaKdnKUemoIn_FLUTTER-MOVIL-DE-CERO-A-EXPERTO.jpg",
+      "durationMinutes": 3000,
+      "durationHoursRaw": 50.0,
+      "lessonsRaw": 463,
+      "level": "advanced",
+      "technologyNames": [
+        "Flutter"
+      ]
+    },
+    {
+      "titulo": "NestJS + Testing: Pruebas unitarias y end to end (E2E)",
+      "categoria": "Backend",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Aprende a realizar pruebas unitarias, de integración y end to end (E2E) de aplicaciones NestJS utilizando Jest.",
+      "url": "https://fernando-herrera.com/course/nest-testing",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/nestjs-testing-e2e",
+        "devtalles": "https://cursos.devtalles.com/courses/NestJS-Testing"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/ay0QQ3qaTkiHRwytCLnt_COVER-DEVTALLES-TESTING.jpg",
+      "durationMinutes": 750,
+      "durationHoursRaw": 12.5,
+      "lessonsRaw": 123,
+      "level": "advanced",
+      "technologyNames": [
+        "NestJS"
+      ]
+    },
+    {
+      "titulo": "React: Aplicaciones en tiempo real con socket-io",
+      "categoria": "Desarrollo Web",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Enfocado en el manejo de React con Socket.io para crear aplicaciones que interactúen entre sí de manera simultánea.",
+      "url": "https://fernando-herrera.com/course/react-con-websockets",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/react-socket-io-fernando",
+        "devtalles": "https://cursos.devtalles.com/courses/React-con-Socket-io"
+      },
+      "devtalles": null,
+      "imageUrl": "https://import.cdn.thinkific.com/643563/dVBO1HUrTzKEzo3Om03j_LEGACY-REACT-CON-SOCKET-IO.jpg",
+      "durationMinutes": 960,
+      "durationHoursRaw": 16.0,
+      "lessonsRaw": 172,
+      "level": "intermediate",
+      "technologyNames": [
+        "React"
+      ]
+    },
+    {
+      "titulo": "Flutter Intermedio: Diseños profesionales y animaciones",
+      "categoria": "Dart Flutter",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Enseña a crear animaciones personalizadas y diseños atractivos para aplicaciones móviles.",
+      "url": "https://fernando-herrera.com/course/flutter-disenos-intermedio",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/flutter-disenos-y-animaciones",
+        "devtalles": "https://cursos.devtalles.com/courses/flutter-Intermedio"
+      },
+      "devtalles": null,
+      "imageUrl": "https://import.cdn.thinkific.com/643563/WFox0um0SWqPahhHvvsg_LEGACY-FLUTTER-INTERMEDIO.jpg",
+      "durationMinutes": 900,
+      "durationHoursRaw": 15.0,
+      "lessonsRaw": 188,
+      "level": "intermediate",
+      "technologyNames": [
+        "Flutter"
+      ]
+    },
+    {
+      "titulo": "Vue.js - de Cero a Experto: Composition Api",
+      "categoria": "Desarrollo Web",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Vue.js es un framework de JavaScript famoso por su facilidad de integración, versatilidad y performance; entrega renovada con Composition API.",
+      "url": "https://fernando-herrera.com/course/vuejs-cero-experto-compositionapi",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/vuejs-fh",
+        "devtalles": "https://cursos.devtalles.com/courses/vue-cero-a-experto"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/fGtdD0wpSv2VEXdrM6vn_VUE-COMPOSITION-API.jpg",
+      "durationMinutes": 2250,
+      "durationHoursRaw": 37.5,
+      "lessonsRaw": 340,
+      "level": "advanced",
+      "technologyNames": [
+        "JavaScript",
+        "Vue"
+      ]
+    },
+    {
+      "titulo": "Ingeniería de prompts: Para la vida real",
+      "categoria": "Desarrollo Web",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Aprende Prompt Engineering de forma simple, práctica y sin tecnicismos, para escribir mejores prompts.",
+      "url": "https://fernando-herrera.com/course/prompt-engineering",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/ingenieria-de-prompts-para-la-vida-real",
+        "devtalles": "https://cursos.devtalles.com/courses/Ingenier%C3%ADa-de-prompts"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/p5tNOanKQAeu2lWSccuA_COVER-DEVTALLES.jpg",
+      "durationMinutes": 150,
+      "durationHoursRaw": 2.5,
+      "lessonsRaw": 42,
+      "level": "beginner",
+      "technologyNames": [
+        "IA"
+      ]
+    },
+    {
+      "titulo": "Angular + Sockets: Aplicaciones en tiempo real con Bun",
+      "categoria": "Desarrollo Web",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Aprende a crear y configurar aplicaciones Angular en tiempo real, usando websockets nativos junto a un backend en Bun.",
+      "url": "https://fernando-herrera.com/course/angular-sockets-bun",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/angular-bun-sockets",
+        "devtalles": "https://cursos.devtalles.com/courses/Angular_socket_bun"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/abdhTcCTQCmySk3eb8Ma_ANGULAR_WEBSOCKET_BUN_DEVTALLES.png",
+      "durationMinutes": 870,
+      "durationHoursRaw": 14.5,
+      "lessonsRaw": 148,
+      "level": "intermediate",
+      "technologyNames": [
+        "Angular"
+      ]
+    },
+    {
+      "titulo": "GoLang: Fundamentos del lenguaje",
+      "categoria": "Backend",
+      "instructor": "Ricardo Cuéllar",
+      "descripcion": "Aprende Golang desde cero, profesional y con buenas prácticas: tipado estático, paquetes, funciones, structs, interfaces y concurrencia.",
+      "url": "https://fernando-herrera.com/course/golang-fundamentos-lenguaje",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/golang-fundamentos",
+        "devtalles": "https://cursos.devtalles.com/courses/golang-fundamentos-lenguaje"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/Jp4CugOyRxOPbI0IERhE_COVER_DEVTALLES_GO.png",
+      "durationMinutes": 1380,
+      "durationHoursRaw": 23.0,
+      "lessonsRaw": 221,
+      "level": "beginner",
+      "technologyNames": [
+        "Go"
+      ]
+    },
+    {
+      "titulo": "PWA - Aplicaciones Web Progresivas: De cero a experto",
+      "categoria": "Desarrollo Web",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Las PWAs son el siguiente paso en las aplicaciones web tradicionales, permitiendo usarlas incluso sin conexión.",
+      "url": "https://fernando-herrera.com/course/pwa-web-progresiva",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/aplicaciones-web-progresivas",
+        "devtalles": "https://cursos.devtalles.com/courses/PWA"
+      },
+      "devtalles": null,
+      "imageUrl": "https://import.cdn.thinkific.com/643563/tgqmXHGnQDOQaAzbiWQe_LEGACY-PWA.jpg",
+      "durationMinutes": 870,
+      "durationHoursRaw": 14.5,
+      "lessonsRaw": 160,
+      "level": "advanced",
+      "technologyNames": [
+        "JavaScript"
+      ]
+    },
+    {
+      "titulo": "Django: Crea aplicaciones web robustas con Python",
+      "categoria": "Backend",
+      "instructor": "Ricardo Cuéllar",
+      "descripcion": "Aprende Django desde las bases: crea sitios web, conecta bases de datos, desarrolla APIs REST y publica tu proyecto.",
+      "url": "https://fernando-herrera.com/course/django",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/django-aplicaciones-robustas-con-python",
+        "devtalles": "https://cursos.devtalles.com/courses/django"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/aA89gxXgTQGtRR7YojXB_DJANGO1.jpg",
+      "durationMinutes": 2640,
+      "durationHoursRaw": 44.0,
+      "lessonsRaw": 418,
+      "level": "intermediate",
+      "technologyNames": [
+        "Python"
+      ]
+    },
+    {
+      "titulo": "Python: Fundamentos hasta los detalles",
+      "categoria": "Backend",
+      "instructor": "Ricardo Cuéllar",
+      "descripcion": "Aprende las bases de Python: variables, estructuras de control, ciclos y funciones.",
+      "url": "https://fernando-herrera.com/course/python",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/devtalles-python",
+        "devtalles": "https://cursos.devtalles.com/courses/python"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/gG1fvaYXRNmKMJTaMHYP_PYTHON-COVER%20(1).jpg",
+      "durationMinutes": 930,
+      "durationHoursRaw": 15.5,
+      "lessonsRaw": 184,
+      "level": "beginner",
+      "technologyNames": [
+        "Python"
+      ]
+    },
+    {
+      "titulo": "NodeJS: De cero a experto",
+      "categoria": "Backend",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Te ayuda a empezar a trabajar con Node en el backend y usarlo a tu voluntad.",
+      "url": "https://fernando-herrera.com/course/node-ts-cero-experto",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/nodejs-de-cero-a-experto",
+        "devtalles": "https://cursos.devtalles.com/courses/nodejs-de-cero-a-experto"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/w47TVfD0T6OFrOPDxYlQ_NODE%20JS%20DE%20CERO%20A%20EXPERTO.jpg",
+      "durationMinutes": 2250,
+      "durationHoursRaw": 37.5,
+      "lessonsRaw": 390,
+      "level": "advanced",
+      "technologyNames": [
+        "Node.js"
+      ]
+    },
+    {
+      "titulo": "Shadcn/ui: Componentes accesibles y personalizables",
+      "categoria": "Desarrollo Web",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Aprende a usar y configurar una librería de componentes diferente para React, con control absoluto sobre cada pieza importada.",
+      "url": "https://fernando-herrera.com/course/shadcn-ui",
+      "gratis": true,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/shadcnui-components/",
+        "devtalles": "https://cursos.devtalles.com/courses/shadcn-ui"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/UnSGHDPtQKKGytbP0iBP_SHADCN.jpg",
+      "durationMinutes": 360,
+      "durationHoursRaw": 6.0,
+      "lessonsRaw": 74,
+      "level": "intermediate",
+      "technologyNames": [
+        "React"
+      ]
+    },
+    {
+      "titulo": "JavaScript: de cero hasta los detalles",
+      "categoria": "Desarrollo Web",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Te da la base sólida de JavaScript que necesitas y su comprensión total, mediante ejercicios prácticos y explicaciones.",
+      "url": "https://fernando-herrera.com/course/javascript-cero-detalles",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/javascript-de-cero-hasta-los-detalles",
+        "devtalles": null
+      },
+      "devtalles": null,
+      "imageUrl": null,
+      "durationMinutes": null,
+      "level": null,
+      "technologyNames": []
+    },
+    {
+      "titulo": "Programación para principiantes",
+      "categoria": "Desarrollo Web",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Brinda una base para comenzar tu camino en el desarrollo de aplicaciones desde cero.",
+      "url": "https://fernando-herrera.com/course/programacion-principiantes",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/programacion-para-principiantes",
+        "devtalles": "https://cursos.devtalles.com/courses/programacion-para-principiantes"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/slRm7OvQRZySnHeaaw0w_PROGRAMACION%20PARA%20PRINCIPIANTES.jpg",
+      "durationMinutes": 480,
+      "durationHoursRaw": 8.0,
+      "lessonsRaw": 99,
+      "level": "beginner",
+      "technologyNames": []
+    },
+    {
+      "titulo": "TypeScript: tu completa guía y manual de mano.",
+      "categoria": "Desarrollo Web",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Al finalizar sabremos cómo funciona a detalle TypeScript, habiendo hecho más de 50 scripts prácticos.",
+      "url": "https://fernando-herrera.com/course/typescript-guia-manual",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/typescript-guia-completa",
+        "devtalles": "https://cursos.devtalles.com/courses/typescript-guia-completa"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/0jbP7pcMSAWjijc04uhG_TYPESCRIPT-NEW.jpg",
+      "durationMinutes": 510,
+      "durationHoursRaw": 8.5,
+      "lessonsRaw": 115,
+      "level": "beginner",
+      "technologyNames": [
+        "TypeScript"
+      ]
+    },
+    {
+      "titulo": "JavaScript: ECMAScript 6 y todos sus detalles",
+      "categoria": "Desarrollo Web",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Al finalizar, estaremos preparados para usar JavaScript con más potencia y crear mejores programas y aplicaciones web.",
+      "url": "https://fernando-herrera.com/course/javascript-ecmascript-6",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/ecmascript-6-es2015",
+        "devtalles": null
+      },
+      "devtalles": null,
+      "imageUrl": null,
+      "durationMinutes": null,
+      "level": null,
+      "technologyNames": []
+    },
+    {
+      "titulo": "Mini-Curso: Riverpod providers con anotaciones",
+      "categoria": "Dart Flutter",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Diseñado para enseñarte Riverpod con anotaciones y generación de código.",
+      "url": "https://fernando-herrera.com/course/riverpod",
+      "gratis": true,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": null,
+        "devtalles": "https://cursos.devtalles.com/courses/riverpod-con-anotaciones"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/e2j5kc42TaKb8O9QQDSm_RIVERPOD.jpg",
+      "durationMinutes": 120,
+      "durationHoursRaw": 2.0,
+      "lessonsRaw": 22,
+      "level": "advanced",
+      "technologyNames": [
+        "Flutter"
+      ]
+    },
+    {
+      "titulo": "Node: Autenticación Rest con Clean Architecture",
+      "categoria": "Backend",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Orientado a programadores en Node que deseen aprender a estructurar sus proyectos aplicando arquitectura limpia.",
+      "url": "https://fernando-herrera.com/course/node-clean",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": null,
+        "devtalles": "https://cursos.devtalles.com/courses/node-clean-architecture"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/QbFhQhHcRBCapBIpm9nf_NODE-AUTENTICATION-REST.jpg",
+      "durationMinutes": 240,
+      "durationHoursRaw": 4.0,
+      "lessonsRaw": 44,
+      "level": "advanced",
+      "technologyNames": [
+        "Node.js"
+      ]
+    },
+    {
+      "titulo": "REDUX en Angular con NGRX: Desde las bases hasta la práctica",
+      "categoria": "Desarrollo Web",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Al finalizar podrás implementar exitosamente el patrón redux en tus proyectos de Angular y controlar el flujo de información.",
+      "url": "https://fernando-herrera.com/course/redux-ngrx-angular",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/redux-ngrx-angular",
+        "devtalles": null
+      },
+      "devtalles": null,
+      "imageUrl": null,
+      "durationMinutes": null,
+      "level": null,
+      "technologyNames": []
+    },
+    {
+      "titulo": "Angular PRO: Lleva tus bases al siguiente nivel",
+      "categoria": "Desarrollo Web",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Lleva tu conocimiento al siguiente nivel con SSR, SSG, Testing, Zoneless, TanStack y optimizaciones.",
+      "url": "https://fernando-herrera.com/course/angular-pro",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/angular-pro-siguiente-nivel",
+        "devtalles": "https://cursos.devtalles.com/courses/angular-pro"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/EWRrDzSVRybXmB6yJMHU_Angular%20pro%20COVER-DEVTALLES-ANGULAR-PRO.jpg",
+      "durationMinutes": 1290,
+      "durationHoursRaw": 21.5,
+      "lessonsRaw": 220,
+      "level": "intermediate",
+      "technologyNames": [
+        "Angular"
+      ]
+    },
+    {
+      "titulo": "Flutter Avanzado: Lleva tu conocimiento al siguiente nivel",
+      "categoria": "Dart Flutter",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Cargado de información importante que ayuda a crear mejores aplicaciones con el SDK de Google.",
+      "url": "https://fernando-herrera.com/course/flutter-avanzado",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/flutter-avanzado-fernando-herrera",
+        "devtalles": "https://cursos.devtalles.com/courses/flutter-avanzado"
+      },
+      "devtalles": null,
+      "imageUrl": "https://import.cdn.thinkific.com/643563/txry7kQ0TCViYkwWhMCH_LEGACY-FLUTTER-AVANZADO.jpg",
+      "durationMinutes": 2070,
+      "durationHoursRaw": 34.5,
+      "lessonsRaw": 347,
+      "level": "advanced",
+      "technologyNames": [
+        "Flutter"
+      ]
+    },
+    {
+      "titulo": "OpenAI: Ejercicios prácticos y asistentes con React + NestJS",
+      "categoria": "Backend",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Curso práctico de OpenAI: usa la librería de OpenAI en Node para consumir desde un frontend en React y consultar información.",
+      "url": "https://fernando-herrera.com/course/openai-react",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/react-nest-openai",
+        "devtalles": "https://cursos.devtalles.com/courses/openai"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/fc1kmF7dS2SQojvt7q02_OPENAI-REACT.jpg",
+      "durationMinutes": 600,
+      "durationHoursRaw": 10.0,
+      "lessonsRaw": 148,
+      "level": "intermediate",
+      "technologyNames": [
+        "React",
+        "NestJS",
+        "Node.js",
+        "IA"
+      ]
+    },
+    {
+      "titulo": "jQuery Avanzado - 100 trucos profesionales",
+      "categoria": "Desarrollo Web",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Refuerza tus conocimientos de jQuery mediante 100 ejercicios prácticos de alto nivel.",
+      "url": "https://fernando-herrera.com/course/jquery-100-trucos",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/jquery-avanzado-100-trucos-profesionales",
+        "devtalles": null
+      },
+      "devtalles": null,
+      "imageUrl": null,
+      "durationMinutes": null,
+      "level": null,
+      "technologyNames": []
+    },
+    {
+      "titulo": "jQuery: De cero a avanzado mediante ejercicios prácticos",
+      "categoria": "Desarrollo Web",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Adquiere el conocimiento necesario para crear cosas dinámicas y manipular la página web desde JavaScript con jQuery.",
+      "url": "https://fernando-herrera.com/course/jquery-cero-avanzado",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/jquery-de-cero-a-avanzado-mediante-ejercicios-practicos",
+        "devtalles": null
+      },
+      "devtalles": null,
+      "imageUrl": null,
+      "durationMinutes": null,
+      "level": null,
+      "technologyNames": []
+    },
+    {
+      "titulo": "Visual Studio Code: Mejora tu velocidad para codificar",
+      "categoria": "Infraestructura",
+      "instructor": "Fernando Herrera",
+      "descripcion": "VS Code es un editor de texto poderoso con muchos atajos y formas de editar código; se enfoca en dos áreas principales.",
+      "url": "https://fernando-herrera.com/course/visual-studio-code",
+      "gratis": true,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/vscode-mejora-tu-velocidad-para-codificar/",
+        "devtalles": "https://cursos.devtalles.com/courses/visual-studio-code"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/ozPWxfNjQBKugksdaogB_VSCODE.jpg",
+      "durationMinutes": 120,
+      "durationHoursRaw": 2.0,
+      "lessonsRaw": 51,
+      "level": "beginner",
+      "technologyNames": [
+        "Herramientas"
+      ]
+    },
+    {
+      "titulo": "NestJs + Reportes: Genera PDFs desde Node",
+      "categoria": "Backend",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Crea reportes en PDF utilizando NestJS: integra y utiliza Pdfmake y ChartJS para generar reportes profesionales.",
+      "url": "https://fernando-herrera.com/course/nestjs-reportes",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/nestjs-reportes",
+        "devtalles": "https://cursos.devtalles.com/courses/nestjs-reportes"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/wceGycQdRnSJGdIFdaO3_NEST-JS-REPORTES.jpg",
+      "durationMinutes": 390,
+      "durationHoursRaw": 6.5,
+      "lessonsRaw": 83,
+      "level": "intermediate",
+      "technologyNames": [
+        "NestJS",
+        "Node.js"
+      ]
+    },
+    {
+      "titulo": "PL/SQL de ORACLE en Español",
+      "categoria": "Base de datos",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Aprende a crear tus propios scripts, métodos y funciones almacenados en base de datos para ser más eficiente.",
+      "url": "https://fernando-herrera.com/course/pl-sql-oracle",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/plsql-de-oracle",
+        "devtalles": null
+      },
+      "devtalles": null,
+      "imageUrl": null,
+      "durationMinutes": null,
+      "level": null,
+      "technologyNames": []
+    },
+    {
+      "titulo": "Next.js: El framework de React para producción",
+      "categoria": "Desarrollo Web",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Next.js brinda una excelente experiencia de desarrollo con todo lo necesario para producción: renderizado híbrido estático y dinámico.",
+      "url": "https://fernando-herrera.com/course/nextjs-framework-react",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/course/nextjs-fh",
+        "devtalles": "https://cursos.devtalles.com/courses/nextjs"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/j1fWunR0QJa9diyy2e1t_NEXT-APP-ROUTER2.jpg",
+      "durationMinutes": 2340,
+      "durationHoursRaw": 39.0,
+      "lessonsRaw": 423,
+      "level": "intermediate",
+      "technologyNames": [
+        "React"
+      ]
+    },
+    {
+      "titulo": "qwik: Introducción al Framework",
+      "categoria": "Desarrollo Web",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Brinda una entrada robusta al framework qwik: creación, despliegue, rutas y estados.",
+      "url": "https://fernando-herrera.com/course/qwi-introduccion",
+      "gratis": true,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": null,
+        "devtalles": "https://cursos.devtalles.com/courses/qwik-introduccion"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/rK74DwtRSZabgmUHhIdK_QWIK.jpg",
+      "durationMinutes": 480,
+      "durationHoursRaw": 8.0,
+      "lessonsRaw": 96,
+      "level": "beginner",
+      "technologyNames": [
+        "JavaScript"
+      ]
+    },
+    {
+      "titulo": "Flutter BLoC: Mini-Curso",
+      "categoria": "Base de datos",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Enseña a utilizar este gestor de estado de forma organizada, pasando desde cubits hasta blocs simples.",
+      "url": "https://fernando-herrera.com/course/flutter-bloc",
+      "gratis": false,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": null,
+        "devtalles": "https://cursos.devtalles.com/courses/flutter-bloc"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/If0EvY5HQpiOEvnnISAN_FLUTTER-BLOC.jpg",
+      "durationMinutes": 210,
+      "durationHoursRaw": 3.5,
+      "lessonsRaw": 34,
+      "level": "intermediate",
+      "technologyNames": [
+        "Flutter"
+      ]
+    },
+    {
+      "titulo": "TanStack Query: Un poderoso gestor de estado asíncrono",
+      "categoria": "Desarrollo Web",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Aprende a mejorar la experiencia de usuario y simplificar las tareas relacionadas con peticiones HTTP.",
+      "url": "https://fernando-herrera.com/course/react-query",
+      "gratis": true,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": null,
+        "devtalles": "https://cursos.devtalles.com/courses/tanstack-query"
+      },
+      "imageUrl": "https://import.cdn.thinkific.com/643563/flpkTdo2TwGhr9wfvr33_COVER.jpg",
+      "durationMinutes": 360,
+      "durationHoursRaw": 6.0,
+      "lessonsRaw": 83,
+      "level": "intermediate",
+      "technologyNames": [
+        "React"
+      ]
+    },
+    {
+      "titulo": "Angular: Convierte cualquier template HTML en una WebAPP",
+      "categoria": "Desarrollo Web",
+      "instructor": "Fernando Herrera",
+      "descripcion": "Curso básico y gratuito de Angular: toma un template HTML y transfórmalo en una WebApp utilizando Angular.",
+      "url": "https://fernando-herrera.com/course/angular-html",
+      "gratis": true,
+      "nuevo": false,
+      "plataformas": {
+        "udemy": "https://www.udemy.com/html-hacia-angular/",
+        "devtalles": null
+      },
+      "devtalles": null,
+      "imageUrl": null,
+      "durationMinutes": null,
+      "level": null,
+      "technologyNames": []
+    }
+  ]
+}

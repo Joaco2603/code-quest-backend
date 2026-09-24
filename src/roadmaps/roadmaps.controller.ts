@@ -1,3 +1,7 @@
+import { RoadmapDataDto } from './dto/index.js';
+import { RoadmapGenerationService } from './roadmap-generation.service.js';
+import { GenerateRoadmapDto } from './dto/generate-roadmap.dto.js';
+import { toDataResponse } from '../common/dto/api-response.dto.js';
 import {
   Body,
   Controller,
@@ -35,7 +39,19 @@ import { RoadmapsService } from './roadmaps.service.js';
 @ApiBearerAuth('access-token')
 @Controller('roadmaps')
 export class RoadmapsController {
-  constructor(private readonly roadmapsService: RoadmapsService) {}
+  constructor(
+    private readonly roadmapsService: RoadmapsService,
+    private readonly generation: RoadmapGenerationService,
+  ) {}
+
+  @Post('generate')
+  @ApiCreatedResponse({ type: RoadmapDataDto })
+  @ApiOperation({ summary: 'Generate a roadmap from an owned self-assessment' })
+  async generate(@GetUser() user: AuthUser, @Body() dto: GenerateRoadmapDto) {
+    return toDataResponse(
+      await this.generation.generate(user.id, dto.assessmentId),
+    );
+  }
 
   @Post()
   @ApiOperation({ summary: 'Create a learning roadmap for the current user' })
@@ -55,10 +71,7 @@ export class RoadmapsController {
   @ApiOperation({ summary: 'Get one owned roadmap' })
   @ApiOkResponse({ description: 'Hydrated roadmap.' })
   @ApiNotFoundResponse({ description: 'Roadmap was not found.' })
-  findOne(
-    @GetUser() user: AuthUser,
-    @Param('id', ParseIntPipe) id: number,
-  ) {
+  findOne(@GetUser() user: AuthUser, @Param('id', ParseIntPipe) id: number) {
     return this.roadmapsService.findOne(user.id, id);
   }
 

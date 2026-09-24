@@ -53,6 +53,9 @@ lerna-debug.log*
 .temp
 .tmp
 
+# Orchestrator scratch (task docs, recovery mirrors)
+/odd/
+
 # Runtime data
 pids
 *.pid

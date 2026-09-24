@@ -1,3 +1,4 @@
+import { RoadmapGenerationService } from '../roadmap-generation.service.js';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PassportModule } from '@nestjs/passport';
 import { vi, type Mocked } from 'vitest';
@@ -11,12 +12,7 @@ describe('RoadmapsController', () => {
   let service: Mocked<
     Pick<
       RoadmapsService,
-      | 'create'
-      | 'findAll'
-      | 'findOne'
-      | 'update'
-      | 'updateProgress'
-      | 'remove'
+      'create' | 'findAll' | 'findOne' | 'update' | 'updateProgress' | 'remove'
     >
   >;
 
@@ -41,7 +37,10 @@ describe('RoadmapsController', () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [PassportModule.register({ defaultStrategy: 'jwt' })],
       controllers: [RoadmapsController],
-      providers: [{ provide: RoadmapsService, useValue: service }],
+      providers: [
+        { provide: RoadmapsService, useValue: service },
+        { provide: RoadmapGenerationService, useValue: { generate: vi.fn() } },
+      ],
     }).compile();
 
     controller = module.get(RoadmapsController);

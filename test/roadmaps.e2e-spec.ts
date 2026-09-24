@@ -1,15 +1,11 @@
+import { databaseOptions } from '../dist/config/database.js';
 import 'reflect-metadata';
 import { randomUUID } from 'node:crypto';
 import { DataSource } from 'typeorm';
 import { CatalogService } from '../dist/catalog/catalog.service.js';
-import { catalogEntities } from '../dist/catalog/entities/catalog.entities.js';
-import { CreateCatalog1789600000000 } from '../dist/database/migrations/1789600000000-CreateCatalog.js';
-import { CreateRoadmaps1789600004000 } from '../dist/database/migrations/1789600004000-CreateRoadmaps.js';
-import { CreateUsersAndAuditLogs1760000000000 } from '../dist/database/migrations/1760000000000-CreateUsersAndAuditLogs.js';
 import { RoadmapCourse } from '../dist/roadmaps/entities/roadmap-course.entity.js';
 import { Roadmap } from '../dist/roadmaps/entities/roadmap.entity.js';
 import { RoadmapsService } from '../dist/roadmaps/roadmaps.service.js';
-import { User } from '../dist/user/entities/user.entity.js';
 
 const url = process.env.TEST_DATABASE_URL;
 if (!url || !new URL(url).pathname.endsWith('_test')) {
@@ -33,12 +29,8 @@ describe('roadmaps persistence', () => {
       url,
       schema,
       extra: { options: `-c search_path=${schema}` },
-      entities: [...catalogEntities, User, Roadmap, RoadmapCourse],
-      migrations: [
-        CreateUsersAndAuditLogs1760000000000,
-        CreateCatalog1789600000000,
-        CreateRoadmaps1789600004000,
-      ],
+      entities: databaseOptions({ NODE_ENV: 'test' }).entities,
+      migrations: databaseOptions({ NODE_ENV: 'test' }).migrations,
       synchronize: false,
     };
     const migrationDb = await new DataSource(options).initialize();

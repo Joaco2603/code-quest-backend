@@ -49,6 +49,9 @@ El valor es un entero de 0 a 100. Un `courseId` que no pertenece a la ruta respo
 {
   "id": 3,
   "title": "NestJS desde cero",
+  "rationale": null,
+  "assessmentId": null,
+  "createdAt": "2026-09-24T12:00:00.000Z",
   "userId": "43566ec8-22af-41d3-933a-918b536fe99f",
   "courses": [
     {
@@ -62,3 +65,20 @@ El valor es un entero de 0 a 100. Un `courseId` que no pertenece a la ruta respo
 ```
 
 `course` es el DTO actual del catálogo, publicado o archivado, en el mismo orden que `sortOrder`. El servicio no guarda una copia histórica del título: si el catálogo cambia, la siguiente lectura muestra los metadatos vigentes. Borrar un roadmap elimina la fila; no archiva.
+
+`rationale` y `assessmentId` son `null` en una ruta creada a mano. `createdAt` es la fecha de alta. Una ruta generada conserva la explicación y el id de la evaluación en estas mismas lecturas.
+
+## Generación con IA
+
+`POST /api/roadmaps/generate` recibe `{ "assessmentId": 123 }`. El ID debe
+pertenecer a una evaluación del usuario autenticado enviada al nuevo
+`POST /api/assessments`. Devuelve `{ data: { id, title, rationale, assessmentId,
+createdAt, courses } }`. El CRUD y el progreso por curso conservan sus rutas y,
+en la lectura, los mismos `rationale`, `assessmentId` y `createdAt`.
+
+Configura `OPENAI_API_KEY` y, opcionalmente, `OPENAI_MODEL` y
+`OPENAI_TIMEOUT_MS`. Sin clave, la generación devuelve 503. El backend valida
+que la selección use cursos publicados y respete sus prerrequisitos antes de
+persistirla. La prueba de integración usa un cliente simulado; no consume la API.
+
+Ver [el flujo de evaluaciones](assessments.md) y [la integración de ramas](integracion-pendientes.md).

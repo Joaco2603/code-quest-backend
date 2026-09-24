@@ -1,3 +1,4 @@
+import { AssessmentsModule } from './assessments/assessments.module.js';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -25,6 +26,7 @@ import { RoadmapsModule } from './roadmaps/roadmaps.module.js';
     UserModule,
     AuthModule,
     QuestionsModule,
+    AssessmentsModule,
     CatalogModule,
     HealthModule,
     RoadmapsModule,
