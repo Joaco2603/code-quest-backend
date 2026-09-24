@@ -18,15 +18,17 @@
         "durationMinutes": 1470,
         "durationHoursRaw": 24.5,
         "lessonsRaw": 228,
-        "level": null,
+        "level": "intermediate",
         "technologyNames": [
-          "Node.js"
+          "Node.js",
+          "NestJS",
+          "TypeScript"
         ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
-          "technologyNames": "inferred"
+          "level": "curated",
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -36,7 +38,7 @@
           "Tener una idea de programación orientada a objetos es recomendada pero no necesaria",
           "Descripción del curso"
         ],
-        "notes": "Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch1).",
         "sourceUrl": "https://cursos.devtalles.com/courses/nest"
       }
     },
@@ -104,7 +106,7 @@
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
           "level": "inferred",
-          "technologyNames": "unknown"
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -114,7 +116,7 @@
           "Poder realizar instalaciones y descomprimir archivos",
           "Descripción del curso"
         ],
-        "notes": "Sin match en vocabulario de 11 techs; curaduria manual",
+        "notes": "Sin match en vocabulario de 11 techs; curaduria manual | Curado 2026-09-21 (batch6).",
         "sourceUrl": "https://cursos.devtalles.com/courses/solid-clean-code"
       }
     },
@@ -136,14 +138,14 @@
         "durationMinutes": 840,
         "durationHoursRaw": 14.0,
         "lessonsRaw": 134,
-        "level": null,
+        "level": "beginner",
         "technologyNames": [
           "Docker"
         ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
+          "level": "curated",
           "technologyNames": "inferred"
         },
         "prerequisites_text": [
@@ -154,7 +156,7 @@
           "Descripción del curso",
           "Bienvenido al curso donde aprenderás"
         ],
-        "notes": "Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch1).",
         "sourceUrl": "https://cursos.devtalles.com/courses/docker-guia-practica"
       }
     },
@@ -176,13 +178,13 @@
         "durationMinutes": 600,
         "durationHoursRaw": 10.0,
         "lessonsRaw": 116,
-        "level": null,
+        "level": "intermediate",
         "technologyNames": [],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
-          "technologyNames": "unknown"
+          "level": "curated",
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -192,7 +194,7 @@
           "Descripción del curso",
           "El curso, aunque es con TypeScript, se desarrolla de forma agnóstica, lo que te ayudará a poder aplicar los conocimientos en cualquier otro lenguaje que aplique programación basada en objetos."
         ],
-        "notes": "Sin match en vocabulario de 11 techs; curaduria manual; Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Sin match en vocabulario de 11 techs; curaduria manual; Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch1). | Curado 2026-09-21 (batch6).",
         "sourceUrl": "https://cursos.devtalles.com/courses/patrones-diseno"
       }
     },
@@ -214,13 +216,16 @@
         "durationMinutes": 1110,
         "durationHoursRaw": 18.5,
         "lessonsRaw": 156,
-        "level": null,
-        "technologyNames": [],
+        "level": "advanced",
+        "technologyNames": [
+          "Java",
+          "IA"
+        ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
-          "technologyNames": "unknown"
+          "level": "curated",
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -230,7 +235,7 @@
           "Spring AI",
           "En este curso desarrollarás, paso a paso, un"
         ],
-        "notes": "Sin match en vocabulario de 11 techs; curaduria manual; Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Sin match en vocabulario de 11 techs; curaduria manual; Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch2) | Curado 2026-09-23: se agrega IA.",
         "sourceUrl": "https://cursos.devtalles.com/courses/spring-AI"
       }
     },
@@ -253,12 +258,14 @@
         "durationHoursRaw": 11.5,
         "lessonsRaw": 132,
         "level": "advanced",
-        "technologyNames": [],
+        "technologyNames": [
+          "Herramientas"
+        ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
           "level": "inferred",
-          "technologyNames": "unknown"
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -268,7 +275,7 @@
           "Se puede seguir el curso en Windows, OSX o Linux sin problemas",
           "Descripción del curso"
         ],
-        "notes": "Sin match en vocabulario de 11 techs; curaduria manual",
+        "notes": "Sin match en vocabulario de 11 techs; curaduria manual | Curado 2026-09-21 (batch6).",
         "sourceUrl": "https://cursos.devtalles.com/courses/git-github-control-versiones-desde-cero"
       }
     },
@@ -291,12 +298,15 @@
         "durationHoursRaw": 13.5,
         "lessonsRaw": 160,
         "level": "beginner",
-        "technologyNames": [],
+        "technologyNames": [
+          "PHP",
+          "IA"
+        ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
           "level": "inferred",
-          "technologyNames": "unknown"
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -306,7 +316,7 @@
           "Ganas de aprender y practicar escribiendo código durante el curso.",
           "Descripción del curso"
         ],
-        "notes": "Sin match en vocabulario de 11 techs; curaduria manual",
+        "notes": "Sin match en vocabulario de 11 techs; curaduria manual | Curado 2026-09-21 (batch6) | Curado 2026-09-23: se agrega IA.",
         "sourceUrl": "https://cursos.devtalles.com/courses/laravel-ai"
       }
     },
@@ -328,13 +338,15 @@
         "durationMinutes": 1050,
         "durationHoursRaw": 17.5,
         "lessonsRaw": 187,
-        "level": null,
-        "technologyNames": [],
+        "level": "beginner",
+        "technologyNames": [
+          "IA"
+        ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
-          "technologyNames": "unknown"
+          "level": "curated",
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -344,7 +356,7 @@
           "Descripción del curso",
           "Aprende a programar con un agente real, no con un autocompletado. De la instalación a producción, construyendo proyectos de verdad."
         ],
-        "notes": "Sin match en vocabulario de 11 techs; curaduria manual; Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Sin match en vocabulario de 11 techs; curaduria manual; Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch2).",
         "sourceUrl": "https://cursos.devtalles.com/courses/claude-code-guia-completa"
       }
     },
@@ -367,12 +379,14 @@
         "durationHoursRaw": 35.5,
         "lessonsRaw": 314,
         "level": "beginner",
-        "technologyNames": [],
+        "technologyNames": [
+          "Java"
+        ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
           "level": "inferred",
-          "technologyNames": "unknown"
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -382,7 +396,7 @@
           "Java inicial y fundamentos de programación funcional.",
           "De lo contrario, el curso podría resultar muy desafiante."
         ],
-        "notes": "Sin match en vocabulario de 11 techs; curaduria manual",
+        "notes": "Sin match en vocabulario de 11 techs; curaduria manual | Curado 2026-09-21 (batch6).",
         "sourceUrl": "https://cursos.devtalles.com/courses/spring-boot"
       }
     },
@@ -404,14 +418,14 @@
         "durationMinutes": 450,
         "durationHoursRaw": 7.5,
         "lessonsRaw": 87,
-        "level": null,
+        "level": "intermediate",
         "technologyNames": [
           "React"
         ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
+          "level": "curated",
           "technologyNames": "inferred"
         },
         "prerequisites_text": [
@@ -422,7 +436,7 @@
           "Entender conceptos como funciones flecha, async/await y módulos ES6. ",
           "Familiaridad con HTML, CSS y herramientas como Vite o npm:"
         ],
-        "notes": "Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch2).",
         "sourceUrl": "https://cursos.devtalles.com/courses/react-router"
       }
     },
@@ -444,14 +458,14 @@
         "durationMinutes": 900,
         "durationHoursRaw": 15.0,
         "lessonsRaw": 153,
-        "level": null,
+        "level": "intermediate",
         "technologyNames": [
           "React"
         ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
+          "level": "curated",
           "technologyNames": "inferred"
         },
         "prerequisites_text": [
@@ -462,7 +476,7 @@
           "Ganas de practicar: vamos a construir varios proyectos y probar con múltiples navegadores.",
           "No necesitas experiencia previa con WebSockets ni con Bun."
         ],
-        "notes": "Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch2).",
         "sourceUrl": "https://cursos.devtalles.com/courses/react-sockets"
       }
     },
@@ -524,14 +538,14 @@
         "durationMinutes": 1110,
         "durationHoursRaw": 18.5,
         "lessonsRaw": 172,
-        "level": null,
+        "level": "intermediate",
         "technologyNames": [
           "Python"
         ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
+          "level": "curated",
           "technologyNames": "inferred"
         },
         "prerequisites_text": [
@@ -542,7 +556,7 @@
           "Descripción del curso",
           "Bienvenidos al curso de"
         ],
-        "notes": "Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch2).",
         "sourceUrl": "https://cursos.devtalles.com/courses/python-ia-aplicada"
       }
     },
@@ -564,15 +578,16 @@
         "durationMinutes": 1260,
         "durationHoursRaw": 21.0,
         "lessonsRaw": 199,
-        "level": null,
+        "level": "advanced",
         "technologyNames": [
-          "NestJS"
+          "NestJS",
+          "Node.js"
         ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
-          "technologyNames": "inferred"
+          "level": "curated",
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -582,7 +597,7 @@
           "Descripción del curso",
           "Bienvenido al curso donde aprenderás a construir arquitecturas de microservicios con NestJS, comprendiendo desde los fundamentos hasta la implementación de soluciones escalables utilizadas en entornos profesionales."
         ],
-        "notes": "Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch2).",
         "sourceUrl": "https://cursos.devtalles.com/courses/nestjs-microservicios"
       }
     },
@@ -604,13 +619,15 @@
         "durationMinutes": 840,
         "durationHoursRaw": 14.0,
         "lessonsRaw": 153,
-        "level": null,
-        "technologyNames": [],
+        "level": "beginner",
+        "technologyNames": [
+          "IA"
+        ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
-          "technologyNames": "unknown"
+          "level": "curated",
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -620,7 +637,7 @@
           "Manejo básico de la terminal y comandos de Git.",
           "Descripción del curso"
         ],
-        "notes": "Sin match en vocabulario de 11 techs; curaduria manual; Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Sin match en vocabulario de 11 techs; curaduria manual; Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch2).",
         "sourceUrl": "https://cursos.devtalles.com/courses/open-code-guia-completa"
       }
     },
@@ -642,13 +659,15 @@
         "durationMinutes": 270,
         "durationHoursRaw": 4.5,
         "lessonsRaw": 63,
-        "level": null,
-        "technologyNames": [],
+        "level": "beginner",
+        "technologyNames": [
+          "IA"
+        ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
-          "technologyNames": "unknown"
+          "level": "curated",
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -658,7 +677,7 @@
           "La inteligencia artificial puede escribir código en segundos, pero",
           "la responsabilidad sigue siendo del desarrollador"
         ],
-        "notes": "Sin match en vocabulario de 11 techs; curaduria manual; Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Sin match en vocabulario de 11 techs; curaduria manual; Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch2).",
         "sourceUrl": "https://cursos.devtalles.com/courses/vibe-coding"
       }
     },
@@ -720,15 +739,16 @@
         "durationMinutes": 1260,
         "durationHoursRaw": 21.0,
         "lessonsRaw": 185,
-        "level": null,
+        "level": "advanced",
         "technologyNames": [
+          "Java",
           "Docker"
         ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
-          "technologyNames": "inferred"
+          "level": "curated",
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -738,7 +758,7 @@
           "familiaridad con controladores REST, JPA, validaciones y conceptos básicos de Spring Security. ",
           "Docker (no excluyente):"
         ],
-        "notes": "Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch4) | Curado 2026-09-23: se conserva Docker junto a Java.",
         "sourceUrl": "https://cursos.devtalles.com/courses/spring-boot-microservicios"
       }
     },
@@ -760,15 +780,15 @@
         "durationMinutes": 240,
         "durationHoursRaw": 4.0,
         "lessonsRaw": 51,
-        "level": null,
+        "level": "beginner",
         "technologyNames": [
-          "JavaScript"
+          "CSS"
         ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
-          "technologyNames": "inferred"
+          "level": "curated",
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -778,7 +798,7 @@
           "TailwindCSS",
           "y cómo utilizar su enfoque"
         ],
-        "notes": "Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch3).",
         "sourceUrl": "https://cursos.devtalles.com/courses/tailwindcss-para-desarrolladores"
       }
     },
@@ -800,13 +820,15 @@
         "durationMinutes": 1230,
         "durationHoursRaw": 20.5,
         "lessonsRaw": 180,
-        "level": null,
-        "technologyNames": [],
+        "level": "advanced",
+        "technologyNames": [
+          "Java"
+        ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
-          "technologyNames": "unknown"
+          "level": "curated",
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -816,7 +838,7 @@
           "Spring Boot",
           "a nivel CRUD pero sientes que tu código no escala, este curso es el siguiente paso lógico en tu carrera."
         ],
-        "notes": "Sin match en vocabulario de 11 techs; curaduria manual; Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Sin match en vocabulario de 11 techs; curaduria manual; Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch4).",
         "sourceUrl": "https://cursos.devtalles.com/courses/spring-boot-patrones-arquitectura"
       }
     },
@@ -879,12 +901,14 @@
         "durationHoursRaw": 15.0,
         "lessonsRaw": 145,
         "level": "beginner",
-        "technologyNames": [],
+        "technologyNames": [
+          "Java"
+        ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
           "level": "inferred",
-          "technologyNames": "unknown"
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -894,7 +918,7 @@
           "Nociones básicas de programación estructurada ",
           "Descripción del curso"
         ],
-        "notes": "Sin match en vocabulario de 11 techs; curaduria manual",
+        "notes": "Sin match en vocabulario de 11 techs; curaduria manual | Curado 2026-09-21 (batch6).",
         "sourceUrl": "https://cursos.devtalles.com/courses/Java"
       }
     },
@@ -916,14 +940,14 @@
         "durationMinutes": 360,
         "durationHoursRaw": 6.0,
         "lessonsRaw": 78,
-        "level": null,
+        "level": "intermediate",
         "technologyNames": [
           "React"
         ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
+          "level": "curated",
           "technologyNames": "inferred"
         },
         "prerequisites_text": [
@@ -934,7 +958,7 @@
           "No es necesario saber Tailwind, React Router, Dom o Docker",
           "Descripción del curso"
         ],
-        "notes": "Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch3).",
         "sourceUrl": "https://cursos.devtalles.com/courses/zustand-gestor-de-estado-para-react"
       }
     },
@@ -956,14 +980,14 @@
         "durationMinutes": 1470,
         "durationHoursRaw": 24.5,
         "lessonsRaw": 226,
-        "level": null,
+        "level": "intermediate",
         "technologyNames": [
           "React"
         ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
+          "level": "curated",
           "technologyNames": "inferred"
         },
         "prerequisites_text": [
@@ -974,7 +998,7 @@
           "Descripción del curso",
           "Bienvenido al curso donde llevarás tus conocimientos de"
         ],
-        "notes": "Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch1).",
         "sourceUrl": "https://cursos.devtalles.com/courses/react-pro"
       }
     },
@@ -996,13 +1020,16 @@
         "durationMinutes": 420,
         "durationHoursRaw": 7.0,
         "lessonsRaw": 95,
-        "level": null,
-        "technologyNames": [],
+        "level": "intermediate",
+        "technologyNames": [
+          "React Native",
+          "IA"
+        ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
-          "technologyNames": "unknown"
+          "level": "curated",
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -1012,7 +1039,7 @@
           "Descripción del curso",
           "Este curso te guía paso a paso en la creación de una aplicación móvil de alto rendimiento utilizando"
         ],
-        "notes": "Sin match en vocabulario de 11 techs; curaduria manual; Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Sin match en vocabulario de 11 techs; curaduria manual; Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch4) | Curado 2026-09-23: se agrega IA.",
         "sourceUrl": "https://cursos.devtalles.com/courses/expo-gemini"
       }
     },
@@ -1035,12 +1062,14 @@
         "durationHoursRaw": 10.0,
         "lessonsRaw": 131,
         "level": "beginner",
-        "technologyNames": [],
+        "technologyNames": [
+          "PHP"
+        ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
           "level": "inferred",
-          "technologyNames": "unknown"
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -1050,7 +1079,7 @@
           "Tener instalado un editor de código, preferiblemente",
           "Visual Studio Code."
         ],
-        "notes": "Sin match en vocabulario de 11 techs; curaduria manual",
+        "notes": "Sin match en vocabulario de 11 techs; curaduria manual | Curado 2026-09-21 (batch6).",
         "sourceUrl": "https://cursos.devtalles.com/courses/PHP-moderno"
       }
     },
@@ -1072,13 +1101,15 @@
         "durationMinutes": 1080,
         "durationHoursRaw": 18.0,
         "lessonsRaw": 164,
-        "level": null,
-        "technologyNames": [],
+        "level": "advanced",
+        "technologyNames": [
+          "NestJS"
+        ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
-          "technologyNames": "unknown"
+          "level": "curated",
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -1088,7 +1119,7 @@
           "Este NO es un curso para aprender Nest puro, es para aprender Nest con GraphQL",
           "Descripción del curso"
         ],
-        "notes": "Sin match en vocabulario de 11 techs; curaduria manual; Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Sin match en vocabulario de 11 techs; curaduria manual; Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch4).",
         "sourceUrl": "https://cursos.devtalles.com/courses/nest-graphql"
       }
     },
@@ -1111,12 +1142,14 @@
         "durationHoursRaw": 14.0,
         "lessonsRaw": 183,
         "level": "beginner",
-        "technologyNames": [],
+        "technologyNames": [
+          ".NET"
+        ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
           "level": "inferred",
-          "technologyNames": "unknown"
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -1126,7 +1159,7 @@
           "te dará la base ideal para avanzar de forma más cómoda y aprovechar al máximo este curso.",
           "Descripción del curso"
         ],
-        "notes": "Sin match en vocabulario de 11 techs; curaduria manual",
+        "notes": "Sin match en vocabulario de 11 techs; curaduria manual | Curado 2026-09-21 (batch6).",
         "sourceUrl": "https://cursos.devtalles.com/courses/netfullstack"
       }
     },
@@ -1149,12 +1182,14 @@
         "durationHoursRaw": 25.0,
         "lessonsRaw": 209,
         "level": "advanced",
-        "technologyNames": [],
+        "technologyNames": [
+          "Java"
+        ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
           "level": "inferred",
-          "technologyNames": "unknown"
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -1164,7 +1199,7 @@
           "Acceso a internet para descargar recursos y librerías externas.",
           "Descripción del curso"
         ],
-        "notes": "Sin match en vocabulario de 11 techs; curaduria manual",
+        "notes": "Sin match en vocabulario de 11 techs; curaduria manual | Curado 2026-09-21 (batch6).",
         "sourceUrl": "https://cursos.devtalles.com/courses/java-avanzado"
       }
     },
@@ -1186,15 +1221,16 @@
         "durationMinutes": 510,
         "durationHoursRaw": 8.5,
         "lessonsRaw": 105,
-        "level": null,
+        "level": "intermediate",
         "technologyNames": [
-          "Flutter"
+          "Flutter",
+          "IA"
         ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
-          "technologyNames": "inferred"
+          "level": "curated",
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -1204,7 +1240,7 @@
           "Conocimientos básicos de HTTP y consumo de APIs REST.",
           "Se recomienda, pero no es obligatorio, experiencia previa trabajando con algún gestor de estado de Flutter."
         ],
-        "notes": "Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch4).",
         "sourceUrl": "https://cursos.devtalles.com/courses/Flutter-Gemini"
       }
     },
@@ -1266,17 +1302,18 @@
         "durationMinutes": 660,
         "durationHoursRaw": 11.0,
         "lessonsRaw": 154,
-        "level": null,
+        "level": "intermediate",
         "technologyNames": [
           "Angular",
           "NestJS",
-          "Node.js"
+          "Node.js",
+          "IA"
         ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
-          "technologyNames": "inferred"
+          "level": "curated",
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -1286,7 +1323,7 @@
           "Conocimiento de Nest es recomendado pero no obligatorio",
           "Conocer sobre la sintaxis de Angular"
         ],
-        "notes": "Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch4).",
         "sourceUrl": "https://cursos.devtalles.com/courses/openai-angular-nestjs"
       }
     },
@@ -1308,15 +1345,15 @@
         "durationMinutes": 1530,
         "durationHoursRaw": 25.5,
         "lessonsRaw": 271,
-        "level": null,
+        "level": "beginner",
         "technologyNames": [
-          "React"
+          "React Native"
         ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
-          "technologyNames": "inferred"
+          "level": "curated",
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -1326,7 +1363,7 @@
           "Es necesario poder realizar instalaciones como administrador",
           "No es necesario Mac o un equipo especial"
         ],
-        "notes": "Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch4).",
         "sourceUrl": "https://cursos.devtalles.com/courses/react-native-expo"
       }
     },
@@ -1348,13 +1385,15 @@
         "durationMinutes": 360,
         "durationHoursRaw": 6.0,
         "lessonsRaw": 98,
-        "level": null,
-        "technologyNames": [],
+        "level": "advanced",
+        "technologyNames": [
+          ".NET"
+        ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
-          "technologyNames": "unknown"
+          "level": "curated",
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -1364,7 +1403,7 @@
           "Interés en aprender pruebas automatizadas y buenas prácticas, con disposición para practicar y aplicar los conceptos en ejemplos reales.",
           "Descripción del curso"
         ],
-        "notes": "Sin match en vocabulario de 11 techs; curaduria manual; Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Sin match en vocabulario de 11 techs; curaduria manual; Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch4).",
         "sourceUrl": "https://cursos.devtalles.com/courses/net-pruebascompletas"
       }
     },
@@ -1386,13 +1425,15 @@
         "durationMinutes": 510,
         "durationHoursRaw": 8.5,
         "lessonsRaw": 75,
-        "level": null,
-        "technologyNames": [],
+        "level": "advanced",
+        "technologyNames": [
+          "Java"
+        ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
-          "technologyNames": "unknown"
+          "level": "curated",
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -1402,7 +1443,7 @@
           "Uso básico de programación funcional (lambdas, streams, Optional)",
           "Experiencia previa construyendo APIs REST"
         ],
-        "notes": "Sin match en vocabulario de 11 techs; curaduria manual; Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Sin match en vocabulario de 11 techs; curaduria manual; Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch5).",
         "sourceUrl": "https://cursos.devtalles.com/courses/springboot-mvc-hexagonal"
       }
     },
@@ -1424,14 +1465,14 @@
         "durationMinutes": 540,
         "durationHoursRaw": 9.0,
         "lessonsRaw": 90,
-        "level": null,
+        "level": "beginner",
         "technologyNames": [
           "Python"
         ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
+          "level": "curated",
           "technologyNames": "inferred"
         },
         "prerequisites_text": [
@@ -1442,7 +1483,7 @@
           "Descripción del curso",
           "Bienvenido al curso donde aprenderás a"
         ],
-        "notes": "Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch5).",
         "sourceUrl": "https://cursos.devtalles.com/courses/python-n8n-automatiza-rutinas"
       }
     },
@@ -1465,12 +1506,14 @@
         "durationHoursRaw": 10.0,
         "lessonsRaw": 128,
         "level": "beginner",
-        "technologyNames": [],
+        "technologyNames": [
+          "Dart"
+        ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
           "level": "inferred",
-          "technologyNames": "unknown"
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -1480,7 +1523,7 @@
           "Descripción del curso",
           "Disponible al finalizar la construcción de este curso."
         ],
-        "notes": "Sin match en vocabulario de 11 techs; curaduria manual",
+        "notes": "Sin match en vocabulario de 11 techs; curaduria manual | Curado 2026-09-21 (batch6) | Curado 2026-09-23: tecnología Dart.",
         "sourceUrl": "https://cursos.devtalles.com/courses/dart-cero-hasta-detalles"
       }
     },
@@ -1504,15 +1547,17 @@
         "durationHoursRaw": 9.5,
         "lessonsRaw": 107,
         "level": "advanced",
-        "technologyNames": [],
+        "technologyNames": [
+          "JavaScript"
+        ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
           "level": "inferred",
-          "technologyNames": "unknown"
+          "technologyNames": "curated"
         },
         "prerequisites_text": [],
-        "notes": "Sin match en vocabulario de 11 techs; curaduria manual",
+        "notes": "Sin match en vocabulario de 11 techs; curaduria manual | Curado 2026-09-21 (batch6).",
         "sourceUrl": "https://cursos.devtalles.com/courses/reactivex-rxjs"
       }
     },
@@ -1534,13 +1579,15 @@
         "durationMinutes": 1530,
         "durationHoursRaw": 25.5,
         "lessonsRaw": 263,
-        "level": null,
-        "technologyNames": [],
+        "level": "beginner",
+        "technologyNames": [
+          "Astro"
+        ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
-          "technologyNames": "unknown"
+          "level": "curated",
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -1550,7 +1597,7 @@
           "Descripción del curso",
           "Aquí vamos a explorar"
         ],
-        "notes": "Sin match en vocabulario de 11 techs; curaduria manual; Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Sin match en vocabulario de 11 techs; curaduria manual; Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch3).",
         "sourceUrl": "https://cursos.devtalles.com/courses/Astro"
       }
     },
@@ -1684,12 +1731,14 @@
         "durationHoursRaw": 11.5,
         "lessonsRaw": 120,
         "level": "beginner",
-        "technologyNames": [],
+        "technologyNames": [
+          ".NET"
+        ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
           "level": "inferred",
-          "technologyNames": "unknown"
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -1699,7 +1748,7 @@
           "Ganas de aprender con ejercicios prácticos y construir proyectos reales",
           "Descripción del curso"
         ],
-        "notes": "Sin match en vocabulario de 11 techs; curaduria manual",
+        "notes": "Sin match en vocabulario de 11 techs; curaduria manual | Curado 2026-09-21 (batch6).",
         "sourceUrl": "https://cursos.devtalles.com/courses/csharp"
       }
     },
@@ -1721,14 +1770,14 @@
         "durationMinutes": 2160,
         "durationHoursRaw": 36.0,
         "lessonsRaw": 336,
-        "level": null,
+        "level": "intermediate",
         "technologyNames": [
           "Python"
         ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
+          "level": "curated",
           "technologyNames": "inferred"
         },
         "prerequisites_text": [
@@ -1739,7 +1788,7 @@
           "Descripción del curso",
           "¡Bienvenidos al curso de"
         ],
-        "notes": "Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch3).",
         "sourceUrl": "https://cursos.devtalles.com/courses/fastapi"
       }
     },
@@ -1762,12 +1811,14 @@
         "durationHoursRaw": 17.5,
         "lessonsRaw": 230,
         "level": "advanced",
-        "technologyNames": [],
+        "technologyNames": [
+          "IA"
+        ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
           "level": "inferred",
-          "technologyNames": "unknown"
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -1777,7 +1828,7 @@
           "Descripción del curso",
           "En este curso aprenderás a automatizar procesos complejos, integrar servicios de terceros y construir agentes de inteligencia artificial de última generación utilizando"
         ],
-        "notes": "Sin match en vocabulario de 11 techs; curaduria manual",
+        "notes": "Sin match en vocabulario de 11 techs; curaduria manual | Curado 2026-09-21 (batch6).",
         "sourceUrl": "https://cursos.devtalles.com/courses/n8n-mcp"
       }
     },
@@ -1959,14 +2010,14 @@
         "durationMinutes": 750,
         "durationHoursRaw": 12.5,
         "lessonsRaw": 123,
-        "level": null,
+        "level": "advanced",
         "technologyNames": [
           "NestJS"
         ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
+          "level": "curated",
           "technologyNames": "inferred"
         },
         "prerequisites_text": [
@@ -1977,7 +2028,7 @@
           "No es necesario saber sobre pruebas automáticas o Jest",
           "Conocimiento de TypeScript sería ideal"
         ],
-        "notes": "Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch5).",
         "sourceUrl": "https://cursos.devtalles.com/courses/NestJS-Testing"
       }
     },
@@ -2000,18 +2051,18 @@
         "durationMinutes": 960,
         "durationHoursRaw": 16.0,
         "lessonsRaw": 172,
-        "level": null,
+        "level": "intermediate",
         "technologyNames": [
           "React"
         ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
+          "level": "curated",
           "technologyNames": "inferred"
         },
         "prerequisites_text": [],
-        "notes": "Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch5).",
         "sourceUrl": "https://cursos.devtalles.com/courses/React-con-Socket-io"
       }
     },
@@ -2108,13 +2159,15 @@
         "durationMinutes": 150,
         "durationHoursRaw": 2.5,
         "lessonsRaw": 42,
-        "level": null,
-        "technologyNames": [],
+        "level": "beginner",
+        "technologyNames": [
+          "IA"
+        ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
-          "technologyNames": "unknown"
+          "level": "curated",
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -2124,7 +2177,7 @@
           "Descripción del curso",
           "¿Te ha pasado que usas inteligencia artificial y sientes que a veces responde increíble… pero otras veces te da resultados vagos, confusos o inútiles?"
         ],
-        "notes": "Sin match en vocabulario de 11 techs; curaduria manual; Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Sin match en vocabulario de 11 techs; curaduria manual; Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch3).",
         "sourceUrl": "https://cursos.devtalles.com/courses/Ingenier%C3%ADa-de-prompts"
       }
     },
@@ -2146,14 +2199,14 @@
         "durationMinutes": 870,
         "durationHoursRaw": 14.5,
         "lessonsRaw": 148,
-        "level": null,
+        "level": "intermediate",
         "technologyNames": [
           "Angular"
         ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
+          "level": "curated",
           "technologyNames": "inferred"
         },
         "prerequisites_text": [
@@ -2164,7 +2217,7 @@
           "Ganas de practicar: vamos a construir varios proyectos y probar con múltiples navegadores.",
           "No necesitas experiencia previa con WebSockets ni con Bun."
         ],
-        "notes": "Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch5).",
         "sourceUrl": "https://cursos.devtalles.com/courses/Angular_socket_bun"
       }
     },
@@ -2187,12 +2240,14 @@
         "durationHoursRaw": 23.0,
         "lessonsRaw": 221,
         "level": "beginner",
-        "technologyNames": [],
+        "technologyNames": [
+          "Go"
+        ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
           "level": "inferred",
-          "technologyNames": "unknown"
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -2202,7 +2257,7 @@
           "Descripción del curso",
           "¡Bienvenidos! Este curso tiene como objetivo mostrarte cómo se estructura un programa en"
         ],
-        "notes": "Sin match en vocabulario de 11 techs; curaduria manual",
+        "notes": "Sin match en vocabulario de 11 techs; curaduria manual | Curado 2026-09-21 (batch6).",
         "sourceUrl": "https://cursos.devtalles.com/courses/golang-fundamentos-lenguaje"
       }
     },
@@ -2226,15 +2281,17 @@
         "durationHoursRaw": 14.5,
         "lessonsRaw": 160,
         "level": "advanced",
-        "technologyNames": [],
+        "technologyNames": [
+          "JavaScript"
+        ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
           "level": "inferred",
-          "technologyNames": "unknown"
+          "technologyNames": "curated"
         },
         "prerequisites_text": [],
-        "notes": "Sin match en vocabulario de 11 techs; curaduria manual",
+        "notes": "Sin match en vocabulario de 11 techs; curaduria manual | Curado 2026-09-21 (batch6).",
         "sourceUrl": "https://cursos.devtalles.com/courses/PWA"
       }
     },
@@ -2256,14 +2313,14 @@
         "durationMinutes": 2640,
         "durationHoursRaw": 44.0,
         "lessonsRaw": 418,
-        "level": null,
+        "level": "intermediate",
         "technologyNames": [
           "Python"
         ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
+          "level": "curated",
           "technologyNames": "inferred"
         },
         "prerequisites_text": [
@@ -2274,7 +2331,7 @@
           " Poder realizar instalaciones en el equipo como administrador",
           " Usar sistema operativo Mac (OSx), Windows o Linux"
         ],
-        "notes": "Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch3).",
         "sourceUrl": "https://cursos.devtalles.com/courses/django"
       }
     },
@@ -2376,14 +2433,14 @@
         "durationMinutes": 360,
         "durationHoursRaw": 6.0,
         "lessonsRaw": 74,
-        "level": null,
+        "level": "intermediate",
         "technologyNames": [
           "React"
         ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
+          "level": "curated",
           "technologyNames": "inferred"
         },
         "prerequisites_text": [
@@ -2394,7 +2451,7 @@
           "Haber trabajado con clases utilitarias para estilos. ",
           "Entorno de desarrollo configurado (Node.js + npm/yarn):"
         ],
-        "notes": "Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch3).",
         "sourceUrl": "https://cursos.devtalles.com/courses/shadcn-ui"
       }
     },
@@ -2451,7 +2508,7 @@
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
           "level": "inferred",
-          "technologyNames": "unknown"
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -2461,7 +2518,7 @@
           "Descripción del curso",
           "Bienvenido al curso donde aprenderás"
         ],
-        "notes": "Sin match en vocabulario de 11 techs; curaduria manual",
+        "notes": "Sin match en vocabulario de 11 techs; curaduria manual | Curado 2026-09-21 (batch6).",
         "sourceUrl": "https://cursos.devtalles.com/courses/programacion-para-principiantes"
       }
     },
@@ -2483,14 +2540,14 @@
         "durationMinutes": 510,
         "durationHoursRaw": 8.5,
         "lessonsRaw": 115,
-        "level": null,
+        "level": "beginner",
         "technologyNames": [
           "TypeScript"
         ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
+          "level": "curated",
           "technologyNames": "inferred"
         },
         "prerequisites_text": [
@@ -2501,7 +2558,7 @@
           "Posibilidad de instalar programas como administrador en su equipo",
           "Descripción del curso"
         ],
-        "notes": "Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch1).",
         "sourceUrl": "https://cursos.devtalles.com/courses/typescript-guia-completa"
       }
     },
@@ -2552,13 +2609,15 @@
         "durationMinutes": 120,
         "durationHoursRaw": 2.0,
         "lessonsRaw": 22,
-        "level": null,
-        "technologyNames": [],
+        "level": "advanced",
+        "technologyNames": [
+          "Flutter"
+        ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
-          "technologyNames": "unknown"
+          "level": "curated",
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -2568,7 +2627,7 @@
           "Haber trabajado con Provider, Bloc, o alguna solución similar. ",
           "Entorno de desarrollo Flutter funcional:"
         ],
-        "notes": "Sin match en vocabulario de 11 techs; curaduria manual; Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Sin match en vocabulario de 11 techs; curaduria manual; Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch1).",
         "sourceUrl": "https://cursos.devtalles.com/courses/riverpod-con-anotaciones"
       }
     },
@@ -2590,14 +2649,14 @@
         "durationMinutes": 240,
         "durationHoursRaw": 4.0,
         "lessonsRaw": 44,
-        "level": null,
+        "level": "advanced",
         "technologyNames": [
           "Node.js"
         ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
+          "level": "curated",
           "technologyNames": "inferred"
         },
         "prerequisites_text": [
@@ -2608,7 +2667,7 @@
           "Haber creado rutas y manejado peticiones HTTP.",
           "Experiencia básica con bases de datos:"
         ],
-        "notes": "Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch5).",
         "sourceUrl": "https://cursos.devtalles.com/courses/node-clean-architecture"
       }
     },
@@ -2659,14 +2718,14 @@
         "durationMinutes": 1290,
         "durationHoursRaw": 21.5,
         "lessonsRaw": 220,
-        "level": null,
+        "level": "intermediate",
         "technologyNames": [
           "Angular"
         ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
+          "level": "curated",
           "technologyNames": "inferred"
         },
         "prerequisites_text": [
@@ -2677,7 +2736,7 @@
           "Descripción del curso",
           "Este curso está diseñado para desarrolladores que ya tienen experiencia en Angular y desean perfeccionar su conocimiento."
         ],
-        "notes": "Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch1).",
         "sourceUrl": "https://cursos.devtalles.com/courses/angular-pro"
       }
     },
@@ -2733,17 +2792,18 @@
         "durationMinutes": 600,
         "durationHoursRaw": 10.0,
         "lessonsRaw": 148,
-        "level": null,
+        "level": "intermediate",
         "technologyNames": [
           "React",
           "NestJS",
-          "Node.js"
+          "Node.js",
+          "IA"
         ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
-          "technologyNames": "inferred"
+          "level": "curated",
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -2753,7 +2813,7 @@
           "Conocimiento de Nest es recomendado pero no obligatorio",
           "Haber trabajado con React con Hooks"
         ],
-        "notes": "Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch5).",
         "sourceUrl": "https://cursos.devtalles.com/courses/openai"
       }
     },
@@ -2833,13 +2893,15 @@
         "durationMinutes": 120,
         "durationHoursRaw": 2.0,
         "lessonsRaw": 51,
-        "level": null,
-        "technologyNames": [],
+        "level": "beginner",
+        "technologyNames": [
+          "Herramientas"
+        ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
-          "technologyNames": "unknown"
+          "level": "curated",
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -2849,7 +2911,7 @@
           "aprovechar al máximo Visual Studio Code",
           ", descubriendo los atajos, herramientas y técnicas que te permitirán"
         ],
-        "notes": "Sin match en vocabulario de 11 techs; curaduria manual; Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Sin match en vocabulario de 11 techs; curaduria manual; Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch5).",
         "sourceUrl": "https://cursos.devtalles.com/courses/visual-studio-code"
       }
     },
@@ -2871,7 +2933,7 @@
         "durationMinutes": 390,
         "durationHoursRaw": 6.5,
         "lessonsRaw": 83,
-        "level": null,
+        "level": "intermediate",
         "technologyNames": [
           "NestJS",
           "Node.js"
@@ -2879,7 +2941,7 @@
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
+          "level": "curated",
           "technologyNames": "inferred"
         },
         "prerequisites_text": [
@@ -2890,7 +2952,7 @@
           "Domina la creación de reportes en PDF utilizando",
           ", el potente framework de Node.js. En este curso, aprenderás a integrar y utilizar herramientas como"
         ],
-        "notes": "Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch5).",
         "sourceUrl": "https://cursos.devtalles.com/courses/nestjs-reportes"
       }
     },
@@ -2941,14 +3003,14 @@
         "durationMinutes": 2340,
         "durationHoursRaw": 39.0,
         "lessonsRaw": 423,
-        "level": null,
+        "level": "intermediate",
         "technologyNames": [
           "React"
         ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
+          "level": "curated",
           "technologyNames": "inferred"
         },
         "prerequisites_text": [
@@ -2959,7 +3021,7 @@
           "NO es necesario saber Next para empezar este curso",
           "Descripción del curso"
         ],
-        "notes": "Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch1).",
         "sourceUrl": "https://cursos.devtalles.com/courses/nextjs"
       }
     },
@@ -2982,12 +3044,14 @@
         "durationHoursRaw": 8.0,
         "lessonsRaw": 96,
         "level": "beginner",
-        "technologyNames": [],
+        "technologyNames": [
+          "JavaScript"
+        ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
           "level": "inferred",
-          "technologyNames": "unknown"
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -2997,7 +3061,7 @@
           "Entender conceptos como componentes, props y manejo de estado. ",
           "Conocimientos básicos de HTML y CSS:"
         ],
-        "notes": "Sin match en vocabulario de 11 techs; curaduria manual",
+        "notes": "Sin match en vocabulario de 11 techs; curaduria manual | Curado 2026-09-21 (batch6).",
         "sourceUrl": "https://cursos.devtalles.com/courses/qwik-introduccion"
       }
     },
@@ -3019,14 +3083,14 @@
         "durationMinutes": 210,
         "durationHoursRaw": 3.5,
         "lessonsRaw": 34,
-        "level": null,
+        "level": "intermediate",
         "technologyNames": [
           "Flutter"
         ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
+          "level": "curated",
           "technologyNames": "inferred"
         },
         "prerequisites_text": [
@@ -3037,7 +3101,7 @@
           "Haber usado alguna solución como Provider, Riverpod, o setState de los stateful widgets. ",
           "Instalación funcional de Flutter en tu entorno local: "
         ],
-        "notes": "Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch5).",
         "sourceUrl": "https://cursos.devtalles.com/courses/flutter-bloc"
       }
     },
@@ -3059,13 +3123,15 @@
         "durationMinutes": 360,
         "durationHoursRaw": 6.0,
         "lessonsRaw": 83,
-        "level": null,
-        "technologyNames": [],
+        "level": "intermediate",
+        "technologyNames": [
+          "React"
+        ],
         "provenance": {
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
-          "level": "unknown",
-          "technologyNames": "unknown"
+          "level": "curated",
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -3075,7 +3141,7 @@
           "curso gratuito de TanStack Query",
           ", donde aprenderás a utilizar una de las librerías más populares para la gestión de datos remotos y caché en aplicaciones React."
         ],
-        "notes": "Sin match en vocabulario de 11 techs; curaduria manual; Nivel sin marcadores explicitos; curaduria manual",
+        "notes": "Sin match en vocabulario de 11 techs; curaduria manual; Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch3). | Curado 2026-09-21 (batch6).",
         "sourceUrl": "https://cursos.devtalles.com/courses/tanstack-query"
       }
     },
