@@ -5,8 +5,8 @@ El usuario responde un cuestionario completo y obtiene un perfil persistido para
 ## Puesta en marcha
 
 1. Aplicar las migraciones con `pnpm migration:run` en la base configurada para el entorno.
-2. Revisar la importación: `pnpm content:import COURSES.json` no abre una conexión ni escribe datos.
-3. Cargar el contenido explícitamente: `pnpm content:import COURSES.json --apply`.
+2. Revisar la importación: `pnpm content:import COURSES.enriched.json` no abre una conexión ni escribe datos.
+3. Cargar el contenido explícitamente: `pnpm content:import COURSES.enriched.json --apply`.
 4. Iniciar la API, ingresar y consultar `GET /api/questionnaires/active`.
 5. Obtener el formulario de evaluación, responderlo y enviar su `revision` junto con las respuestas.
 

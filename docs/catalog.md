@@ -1,6 +1,6 @@
 # Catálogo de cursos
 
-El catálogo permite preparar cursos como borradores, publicarlos cuando están completos y archivarlos sin perder sus IDs. Las categorías son administrables; los niveles son fijos. La [carga explícita de `COURSES.json`](content-import.md) crea borradores sin inventar datos faltantes.
+El catálogo permite preparar cursos como borradores, publicarlos cuando están completos y archivarlos sin perder sus IDs. Las categorías son administrables; los niveles son fijos. La [carga explícita de `COURSES.enriched.json`](content-import.md) crea borradores sin inventar datos faltantes.
 
 ## Ejecutar
 

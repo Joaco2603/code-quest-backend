@@ -143,7 +143,7 @@ CREATE DATABASE code_quest;
 pnpm migration:run
 ```
 
-La configuración completa está en [`.env.example`](.env.example). No se cargan cursos automáticamente. Para importar `COURSES.json` y el cuestionario inicial, consulta [la guía de carga](docs/content-import.md).
+La configuración completa está en [`.env.example`](.env.example). No se cargan cursos automáticamente. Para importar `COURSES.enriched.json` y el cuestionario inicial, consulta [la guía de carga](docs/content-import.md).
 Si ya existen tablas creadas desde un esquema anterior, revisa su adaptación antes de ejecutar la migración inicial.
 
 ## Cómo ejecutar

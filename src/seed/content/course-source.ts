@@ -26,7 +26,7 @@ function object(value: unknown): Record<string, unknown> {
     throw new BadRequestException('Invalid course source object');
   return value as Record<string, unknown>;
 }
-// The enrichment sidecar is optional so COURSES.json keeps parsing. A
+// The enrichment sidecar is optional so plain course files keep parsing. A
 // present sidecar is validated strictly. Only level and technologies marked
 // curated are returned. Image and duration stay empty regardless of
 // provenance so scraped or sidecar media cannot satisfy publication checks.

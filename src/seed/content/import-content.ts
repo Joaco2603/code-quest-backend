@@ -11,7 +11,7 @@ async function main() {
   const apply = args.includes('--apply');
   const paths = args.filter((arg) => arg !== '--apply');
   if (paths.length !== 1 || paths[0].startsWith('--'))
-    throw new Error('Usage: pnpm content:import <COURSES.json> [--apply]');
+    throw new Error('Usage: pnpm content:import <COURSES.enriched.json> [--apply]');
   const { courses, skippedWithoutDevtalles } = parseCourseSource(
     JSON.parse(await readFile(paths[0], 'utf8')),
   );

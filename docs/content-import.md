@@ -1,18 +1,18 @@
 # Cargar los cursos y el cuestionario inicial
 
-El importador utiliza `COURSES.json` o `COURSES.enriched.json`. Conserva los datos del curso y lo crea **en borrador**. Del bloque `enrichment` solo se copian el nivel y las tecnologías con procedencia `curated`. `imageUrl` y `durationMinutes` nunca se copian del sidecar (ni aunque su procedencia sea `curated`): un administrador debe completarlas con información verificada antes de publicar.
+El importador utiliza `COURSES.enriched.json`. Conserva los datos del curso y lo crea **en borrador**. Del bloque `enrichment` solo se copian el nivel y las tecnologías con procedencia `curated`. `imageUrl` y `durationMinutes` nunca se copian del sidecar (ni aunque su procedencia sea `curated`): un administrador debe completarlas con información verificada antes de publicar.
 
 ## Revisar y aplicar
 
 ```bash
 # Compila y valida el archivo sin conectar a PostgreSQL
-pnpm content:import COURSES.json
+pnpm content:import COURSES.enriched.json
 
 # Aplica las migraciones al entorno configurado en .env
 pnpm migration:run
 
 # Carga explícita en ese entorno
-pnpm content:import COURSES.json --apply
+pnpm content:import COURSES.enriched.json --apply
 ```
 
 La importación exige que no haya migraciones pendientes. No se ejecuta al arrancar la API y no crea usuarios ni modifica roles. El resumen sin `--apply` incluye `curatedOnCreate` (cuántos cursos recibirán nivel o tecnologías) y `missingPublicationFields` (campos que todavía impiden publicar al menos un curso).
