@@ -21,6 +21,7 @@
     "test:debug": "vitest --inspect-brk --no-file-parallelism",
     "test:e2e": "pnpm build && vitest run --config ./vitest.config.e2e.ts",
     "typecheck": "tsc --noEmit --incremental false",
+    "content:import": "pnpm build && node dist/seed/content/import-content.js",
     "migration:run": "pnpm build && typeorm migration:run -d dist/config/typeorm.js",
     "migration:revert": "pnpm build && typeorm migration:revert -d dist/config/typeorm.js",
     "migration:show": "pnpm build && typeorm migration:show -d dist/config/typeorm.js"

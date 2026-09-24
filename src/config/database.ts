@@ -2,6 +2,10 @@ import { AdaptiveQuestionnaire1789600005000 } from '../database/migrations/17896
 import type { DataSourceOptions } from 'typeorm';
 import { readEnvironment } from './envs.js';
 import { catalogEntities } from '../catalog/entities/catalog.entities.js';
+import { CreateContentImports1789948801000 } from '../database/migrations/1789948801000-CreateContentImports.js';
+import { RenameUserResponsesToUserAnswers1789948802000 } from '../database/migrations/1789948802000-RenameUserResponsesToUserAnswers.js';
+import { assessmentEntities } from '../assessments/entities/index.js';
+import { CreateAssessments1789948800000 } from '../database/migrations/1789948800000-CreateAssessments.js';
 import { CreateCatalog1789600000000 } from '../database/migrations/1789600000000-CreateCatalog.js';
 import { User } from '../user/entities/user.entity.js';
 import { AuditLog } from '../common/entities/audit-log.entity.js';
@@ -35,6 +39,7 @@ export function databaseOptions(
     logging: database.logging,
     entities: [
       ...catalogEntities,
+      ...assessmentEntities,
       User,
       AuditLog,
       AnswerOption,
@@ -53,6 +58,9 @@ export function databaseOptions(
       RenameUserResponsesToUserAnswers1789600003000,
       CreateRoadmaps1789600004000,
       AdaptiveQuestionnaire1789600005000,
+      CreateAssessments1789948800000,
+      CreateContentImports1789948801000,
+      RenameUserResponsesToUserAnswers1789948802000,
     ],
   };
 }
