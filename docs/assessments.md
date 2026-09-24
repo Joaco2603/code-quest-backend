@@ -149,7 +149,7 @@ El perfil no contiene nombre, correo, dirección ni identidad de Discord. Los ob
 
 Los IDs de preguntas y opciones históricos se resuelven contra la copia guardada. Eliminar una opción original no elimina respuestas anteriores. Se restringe el borrado físico del cuestionario referenciado; su desactivación sigue permitida. Eliminar un usuario elimina sus evaluaciones.
 
-La evaluación se guarda en una transacción con lectura repetible. Respuestas inválidas o fallos al escribir provocan rollback completo. El catálogo y las escrituras de evaluaciones comparten el lock transaccional existente. La copia corresponde al estado leído por esa transacción; las futuras modificaciones no recalculan perfiles ya entregados.
+La evaluación se guarda en una transacción con lectura repetible. Respuestas inválidas o fallos al escribir provocan rollback completo. La configuración y la importación de contenido comparten el advisory lock del catálogo; un envío usa lectura repetible y no toma ese lock. Las referencias históricas de una evaluación cubren solo el perfil; la configuración vigente sigue anclando el vocabulario completo de la definición. La copia corresponde al estado leído por esa transacción; las futuras modificaciones no recalculan perfiles ya entregados.
 
 ## Verificación y pendientes de integración
 
