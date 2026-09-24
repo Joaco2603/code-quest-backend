@@ -61,7 +61,7 @@ const curatedProvenance = {
   level: 'curated',
   technologyNames: 'curated',
 };
-it('accepts a curated enrichment sidecar and normalizes technology names', () => {
+it('accepts curated level and technologies without copying sidecar media', () => {
   const parsed = parseCourseSource({
     cursos: [
       {
@@ -77,8 +77,8 @@ it('accepts a curated enrichment sidecar and normalizes technology names', () =>
     ],
   });
   expect(parsed.courses[0].enrichment).toEqual({
-    imageUrl: 'https://cdn.example.com/img.jpg',
-    durationMinutes: 1470,
+    imageUrl: null,
+    durationMinutes: null,
     level: 'intermediate',
     technologyNames: ['Node.js', 'NestJS'],
   });
@@ -119,11 +119,29 @@ it('drops scraped and inferred enrichment instead of copying it onto the course'
     missingPublicationFields: ['imageUrl', 'durationMinutes', 'level'],
   });
 });
+it('ignores unused sidecar image and duration values during import parsing', () => {
+  const parsed = parseCourseSource({
+    cursos: [
+      {
+        ...course,
+        enrichment: {
+          imageUrl: 'notaurl',
+          durationMinutes: 0,
+          level: 'beginner',
+          technologyNames: ['Docker'],
+          provenance: curatedProvenance,
+        },
+      },
+    ],
+  });
+  expect(parsed.courses[0].enrichment).toEqual({
+    imageUrl: null,
+    durationMinutes: null,
+    level: 'beginner',
+    technologyNames: ['Docker'],
+  });
+});
 it.each([
-  { imageUrl: 'http://cdn.example.com/img.jpg' },
-  { imageUrl: 'notaurl' },
-  { durationMinutes: 0 },
-  { durationMinutes: 1.5 },
   { level: 'expert' },
   { technologyNames: [''] },
   { technologyNames: 'Node.js' },
@@ -194,5 +212,16 @@ it('keeps scraped media out of the curated course file', () => {
     byTitle.get('Dart: De cero hasta los detalles')?.enrichment,
   ).toMatchObject({
     technologyNames: ['Dart'],
+  });
+  expect(
+    byTitle.get('Docker: Guía práctica de uso para desarrolladores')
+      ?.enrichment,
+  ).toMatchObject({
+    technologyNames: ['Docker'],
+  });
+  expect(
+    byTitle.get('Principios: SOLID y Clean Code')?.enrichment,
+  ).toMatchObject({
+    technologyNames: [],
   });
 });

@@ -91,8 +91,9 @@ export async function importInitialContent(
             instructor: source.instructor,
             url: source.url,
             status: CourseStatus.Draft,
-            imageUrl: source.enrichment?.imageUrl ?? null,
-            durationMinutes: source.enrichment?.durationMinutes ?? null,
+            // Image and duration stay empty on import; admins fill verified media.
+            imageUrl: null,
+            durationMinutes: null,
             level: source.enrichment?.level ?? null,
             categories: [categories.get(source.category)!],
             technologies: courseTechnologies,

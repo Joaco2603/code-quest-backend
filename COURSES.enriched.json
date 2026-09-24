@@ -106,7 +106,7 @@
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
           "level": "inferred",
-          "technologyNames": "curated"
+          "technologyNames": "unknown"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -116,7 +116,7 @@
           "Poder realizar instalaciones y descomprimir archivos",
           "Descripción del curso"
         ],
-        "notes": "Sin match en vocabulario de 11 techs; curaduria manual | Curado 2026-09-21 (batch6).",
+        "notes": "Sin match en vocabulario de 11 techs; tecnologías pendientes.",
         "sourceUrl": "https://cursos.devtalles.com/courses/solid-clean-code"
       }
     },
@@ -146,7 +146,7 @@
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
           "level": "curated",
-          "technologyNames": "inferred"
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -184,7 +184,7 @@
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
           "level": "curated",
-          "technologyNames": "curated"
+          "technologyNames": "unknown"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -194,7 +194,7 @@
           "Descripción del curso",
           "El curso, aunque es con TypeScript, se desarrolla de forma agnóstica, lo que te ayudará a poder aplicar los conocimientos en cualquier otro lenguaje que aplique programación basada en objetos."
         ],
-        "notes": "Sin match en vocabulario de 11 techs; curaduria manual; Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch1). | Curado 2026-09-21 (batch6).",
+        "notes": "Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch1). Sin match en vocabulario de 11 techs; tecnologías pendientes.",
         "sourceUrl": "https://cursos.devtalles.com/courses/patrones-diseno"
       }
     },
@@ -426,7 +426,7 @@
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
           "level": "curated",
-          "technologyNames": "inferred"
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -466,7 +466,7 @@
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
           "level": "curated",
-          "technologyNames": "inferred"
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -546,7 +546,7 @@
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
           "level": "curated",
-          "technologyNames": "inferred"
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -948,7 +948,7 @@
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
           "level": "curated",
-          "technologyNames": "inferred"
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -988,7 +988,7 @@
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
           "level": "curated",
-          "technologyNames": "inferred"
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -1473,7 +1473,7 @@
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
           "level": "curated",
-          "technologyNames": "inferred"
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -1778,7 +1778,7 @@
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
           "level": "curated",
-          "technologyNames": "inferred"
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -2018,7 +2018,7 @@
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
           "level": "curated",
-          "technologyNames": "inferred"
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -2059,7 +2059,7 @@
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
           "level": "curated",
-          "technologyNames": "inferred"
+          "technologyNames": "curated"
         },
         "prerequisites_text": [],
         "notes": "Nivel sin marcadores explicitos; curaduria manual | Curado 2026-09-21 (batch5).",
@@ -2207,7 +2207,7 @@
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
           "level": "curated",
-          "technologyNames": "inferred"
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -2321,7 +2321,7 @@
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
           "level": "curated",
-          "technologyNames": "inferred"
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -2441,7 +2441,7 @@
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
           "level": "curated",
-          "technologyNames": "inferred"
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -2508,7 +2508,7 @@
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
           "level": "inferred",
-          "technologyNames": "curated"
+          "technologyNames": "unknown"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -2518,7 +2518,7 @@
           "Descripción del curso",
           "Bienvenido al curso donde aprenderás"
         ],
-        "notes": "Sin match en vocabulario de 11 techs; curaduria manual | Curado 2026-09-21 (batch6).",
+        "notes": "Sin match en vocabulario de 11 techs; tecnologías pendientes.",
         "sourceUrl": "https://cursos.devtalles.com/courses/programacion-para-principiantes"
       }
     },
@@ -2548,7 +2548,7 @@
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
           "level": "curated",
-          "technologyNames": "inferred"
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -2657,7 +2657,7 @@
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
           "level": "curated",
-          "technologyNames": "inferred"
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -2726,7 +2726,7 @@
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
           "level": "curated",
-          "technologyNames": "inferred"
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -2942,7 +2942,7 @@
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
           "level": "curated",
-          "technologyNames": "inferred"
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -3011,7 +3011,7 @@
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
           "level": "curated",
-          "technologyNames": "inferred"
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
@@ -3091,7 +3091,7 @@
           "imageUrl": "scraped",
           "durationMinutes": "scraped",
           "level": "curated",
-          "technologyNames": "inferred"
+          "technologyNames": "curated"
         },
         "prerequisites_text": [
           "Requisitos previos",
