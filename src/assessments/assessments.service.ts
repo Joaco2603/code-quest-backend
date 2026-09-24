@@ -7,13 +7,13 @@ import { DataSource, EntityManager, In, QueryFailedError } from 'typeorm';
 import { Questionnaire } from '../questions/entities/questionnaire.entity.js';
 import { serializeQuestionnaire } from '../questions/serializers/questions.serializer.js';
 import { Category, Technology } from '../catalog/entities.js';
-import { Assessment, EvaluationConfig, UserResponse } from './entities.js';
+import { Assessment, EvaluationConfig, UserAnswer } from './entities/index.js';
 import type {
   AssessmentProfile,
   EvaluationDefinition,
   EvaluationSnapshot,
-} from './contracts.js';
-import type { AssessmentQueryDto, SubmitAssessmentDto } from './dto.js';
+} from './interfaces/index.js';
+import type { AssessmentQueryDto, SubmitAssessmentDto } from './dto/index.js';
 import {
   evaluate,
   revisionFor,
@@ -123,7 +123,7 @@ export class AssessmentsService {
         profile: result.profile,
       });
       await manager.save(
-        UserResponse,
+        UserAnswer,
         result.answers.map((answer) => ({
           ...answer,
           assessmentId: assessment.id,
@@ -153,10 +153,10 @@ export class AssessmentsService {
     };
   }
 
-  private async owned(userId: string, id: number, responses = false) {
+  private async owned(userId: string, id: number, answers = false) {
     const assessment = await this.db
       .getRepository(Assessment)
-      .findOne({ where: { id, userId }, relations: { responses } });
+      .findOne({ where: { id, userId }, relations: { answers } });
     if (!assessment) throw new NotFoundException('Assessment not found');
     return assessment;
   }
@@ -168,7 +168,7 @@ export class AssessmentsService {
     );
     return this.serialize(
       assessment,
-      assessment.responses.sort(
+      assessment.answers.sort(
         (a, b) => order.get(a.questionId)! - order.get(b.questionId)!,
       ),
     );

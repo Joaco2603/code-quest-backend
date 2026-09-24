@@ -5,18 +5,18 @@ import {
   Course,
   CourseStatus,
   Technology,
-} from '../catalog/entities.js';
-import { Questionnaire } from '../questions/entities/questionnaire.entity.js';
-import { Question } from '../questions/entities/question.entity.js';
-import { AnswerOption } from '../questions/entities/answer-option.entity.js';
-import { QuestionType } from '../questions/enums/question-type.enum.js';
-import { EvaluationConfig } from '../assessments/entities.js';
+} from '../../catalog/entities.js';
+import { Questionnaire } from '../../questions/entities/questionnaire.entity.js';
+import { Question } from '../../questions/entities/question.entity.js';
+import { AnswerOption } from '../../questions/entities/answer-option.entity.js';
+import { QuestionType } from '../../questions/enums/question-type.enum.js';
+import { EvaluationConfig } from '../../assessments/entities/index.js';
 import type {
   EvaluationDefinition,
   QuestionRule,
-} from '../assessments/contracts.js';
-import { validateDefinition } from '../assessments/evaluation.js';
-import { serializeQuestionnaire } from '../questions/serializers/questions.serializer.js';
+} from '../../assessments/interfaces/index.js';
+import { validateDefinition } from '../../assessments/evaluation.js';
+import { serializeQuestionnaire } from '../../questions/serializers/questions.serializer.js';
 import type { SourceCourse } from './course-source.js';
 
 const initialTechnologies = [

@@ -1,5 +1,5 @@
 import { evaluate, revisionFor, validateDefinition } from '../evaluation.js';
-import type { EvaluationDefinition } from '../contracts.js';
+import type { EvaluationDefinition } from '../interfaces/index.js';
 import type { QuestionnaireResponseDto } from '../../questions/dtos/questionnaire-response.dto.js';
 import { QuestionType } from '../../questions/enums/question-type.enum.js';
 

@@ -143,7 +143,7 @@ El perfil no contiene nombre, correo, dirección ni identidad de Discord. Los ob
 ## Persistencia y límites
 
 - `assessments`: usuario UUID, cuestionario, fecha, perfil y copia del formulario y reglas.
-- `user_responses`: una respuesta tipada en JSONB por pregunta y evaluación. Las selecciones múltiples se guardan juntas.
+- `user_answers`: una respuesta tipada en JSONB por pregunta y evaluación. Las selecciones múltiples se guardan juntas.
 - `evaluation_configs`: configuración vigente y versión por cuestionario.
 - `evaluation_taxonomy_refs`: referencias con claves foráneas restrictivas que mantienen válidos los IDs del catálogo usados por configuraciones e historiales.
 

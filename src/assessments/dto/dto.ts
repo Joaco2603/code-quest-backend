@@ -16,7 +16,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import type { AnswerValue, RuleKind } from './contracts.js';
+import type { AnswerValue, RuleKind } from '../interfaces/index.js';
 
 export class OptionMappingDto {
   @ApiProperty() @IsInt() @Min(1) optionId: number;

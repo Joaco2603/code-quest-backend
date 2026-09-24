@@ -26,16 +26,14 @@ import {
 } from '../common/dto/api-response.dto.js';
 import { AssessmentsService } from './assessments.service.js';
 import {
-  AssessmentQueryDto,
-  EvaluationDefinitionDto,
-  SubmitAssessmentDto,
-} from './dto.js';
-import {
   AssessmentDataDto,
   AssessmentListDto,
+  AssessmentQueryDto,
   EvaluationConfigDataDto,
+  EvaluationDefinitionDto,
   EvaluationFormDataDto,
-} from './response.dto.js';
+  SubmitAssessmentDto,
+} from './dto/index.js';
 
 @ApiTags('Assessments')
 @ApiBearerAuth('access-token')
