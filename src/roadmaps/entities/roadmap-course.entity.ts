@@ -24,8 +24,8 @@ export class RoadmapCourse {
   @Column({ name: 'course_id', type: 'int' })
   courseId: number;
 
-  @Column({ type: 'int', default: 0 })
-  progress: number;
+  @Column({ name: 'completed', type: 'boolean', default: false })
+  completed: boolean;
 
   @Column({ name: 'sort_order', type: 'int' })
   sortOrder: number;
