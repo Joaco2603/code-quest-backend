@@ -33,7 +33,7 @@ afterAll(async () => {
   }
 });
 
-it('upgrades the existing main schema without erasing attempts or roadmaps', async () => {
+it('upgrades the existing main schema dropping legacy attempts and keeping roadmaps', async () => {
   const all = [...db.migrations];
   db.migrations.splice(
     0,
@@ -49,8 +49,8 @@ it('upgrades the existing main schema without erasing attempts or roadmaps', asy
   const [questionnaire] = await db.query(
     `SELECT id FROM questionnaires ORDER BY id LIMIT 1`,
   );
-  const [attempt] = await db.query(
-    `INSERT INTO assessments(user_id, questionnaire_id) VALUES ($1, $2) RETURNING id`,
+  await db.query(
+    `INSERT INTO assessments(user_id, questionnaire_id) VALUES ($1, $2)`,
     [user.id, questionnaire.id],
   );
   const [roadmap] = await db.query(
@@ -59,9 +59,8 @@ it('upgrades the existing main schema without erasing attempts or roadmaps', asy
   );
   db.migrations.splice(0, db.migrations.length, ...all);
   await db.runMigrations();
-  expect(
-    await db.query('SELECT id FROM assessments WHERE id = $1', [attempt.id]),
-  ).toHaveLength(1);
+  // Legacy attempts are dropped by design (MVP simplification); roadmaps stay.
+  expect(await legacyTables()).toEqual([]);
   expect(
     (
       await db.query(
@@ -82,9 +81,10 @@ it('upgrades the existing main schema without erasing attempts or roadmaps', asy
     (m) => Number((m.name ?? m.constructor.name).slice(-13)) >= 1789948800000,
   );
   for (let i = 0; i < added.length; i++) await db.undoLastMigration();
-  expect(
-    await db.query('SELECT id FROM assessments WHERE id = $1', [attempt.id]),
-  ).toHaveLength(1);
+  // Reverting recreates the empty legacy tables; dropped rows are gone.
+  expect(await legacyTables()).toEqual(['assessments', 'user_answers']);
+  expect(await db.query('SELECT * FROM assessments')).toEqual([]);
+  expect(await db.query('SELECT * FROM user_answers')).toEqual([]);
   expect(
     await db.query('SELECT id FROM roadmaps WHERE id = $1', [roadmap.id]),
   ).toHaveLength(1);
@@ -96,6 +96,7 @@ it('upgrades the existing main schema without erasing attempts or roadmaps', asy
     )[0],
   ).toMatchObject({ is_active: true });
   await db.runMigrations();
+  expect(await legacyTables()).toEqual([]);
   expect(
     (
       await db.query(`SELECT is_active FROM questionnaires WHERE title = $1`, [
@@ -104,3 +105,13 @@ it('upgrades the existing main schema without erasing attempts or roadmaps', asy
     )[0],
   ).toMatchObject({ is_active: false });
 });
+
+async function legacyTables(): Promise<string[]> {
+  const rows = (await db.query(
+    `SELECT table_name FROM information_schema.tables
+     WHERE table_schema = current_schema()
+       AND table_name IN ('assessments', 'user_answers')
+     ORDER BY table_name`,
+  )) as { table_name: string }[];
+  return rows.map((row) => row.table_name);
+}

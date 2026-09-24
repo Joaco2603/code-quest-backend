@@ -1,5 +1,6 @@
 import { CreateRoadmaps1789948803000 } from '../database/migrations/1789948803000-CreateRoadmaps.js';
 import { DeactivateAdaptiveQuestionnaire1789948804000 } from '../database/migrations/1789948804000-DeactivateAdaptiveQuestionnaire.js';
+import { DropLegacyAssessments1789948805000 } from '../database/migrations/1789948805000-DropLegacyAssessments.js';
 import { AdaptiveQuestionnaire1789600005000 } from '../database/migrations/1789600005000-AdaptiveQuestionnaire.js';
 import type { DataSourceOptions } from 'typeorm';
 import { readEnvironment } from './envs.js';
@@ -61,6 +62,7 @@ export function databaseOptions(
       RenameUserResponsesToUserAnswers1789948802000,
       CreateRoadmaps1789948803000,
       DeactivateAdaptiveQuestionnaire1789948804000,
+      DropLegacyAssessments1789948805000,
     ],
   };
 }
