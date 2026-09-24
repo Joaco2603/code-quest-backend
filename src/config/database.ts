@@ -1,5 +1,9 @@
+import { CreateContentImports1789948801000 } from '../database/migrations/1789948801000-CreateContentImports.js';
+import { RenameUserResponsesToUserAnswers1789948802000 } from '../database/migrations/1789948802000-RenameUserResponsesToUserAnswers.js';
 import type { DataSourceOptions } from 'typeorm';
 import { readEnvironment } from './envs.js';
+import { assessmentEntities } from '../assessments/entities/index.js';
+import { CreateAssessments1789948800000 } from '../database/migrations/1789948800000-CreateAssessments.js';
 import { catalogEntities } from '../catalog/entities.js';
 import { CreateCatalog1789600000000 } from '../database/migrations/1789600000000-CreateCatalog.js';
 import { User } from '../user/entities/user.entity.js';
@@ -27,6 +31,7 @@ export function databaseOptions(
     logging: database.logging,
     entities: [
       ...catalogEntities,
+      ...assessmentEntities,
       User,
       AuditLog,
       AnswerOption,
@@ -37,6 +42,9 @@ export function databaseOptions(
       CreateUsersAndAuditLogs1760000000000,
       CreateCatalog1789600000000,
       CreateQuestions1789600001000,
+      CreateAssessments1789948800000,
+      CreateContentImports1789948801000,
+      RenameUserResponsesToUserAnswers1789948802000,
     ],
   };
 }

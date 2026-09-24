@@ -1,6 +1,6 @@
 # Catálogo de cursos
 
-El catálogo permite preparar cursos como borradores, publicarlos cuando están completos y archivarlos sin perder sus IDs. Las categorías son administrables; los niveles son fijos. No se importó `COURSES.txt` ni se generaron datos faltantes.
+El catálogo permite preparar cursos como borradores, publicarlos cuando están completos y archivarlos sin perder sus IDs. Las categorías son administrables; los niveles son fijos. La [carga explícita de `COURSES.json`](content-import.md) crea borradores sin inventar datos faltantes.
 
 ## Ejecutar
 
@@ -38,7 +38,7 @@ Curso serializado (campos exactos, sin spreads): `id, title, description|null, u
 
 Filtros: `search` busca una subcadena literal del título; `level`, `categoryId` y `technologyId` se combinan con AND. Paginación: entradas `page=1`, `limit=20` por defecto, máximo 100 resultados por página, orden por ID; salida `meta:{total, limit, offset}` con `offset=(page-1)*limit`. Solo el listado administrativo acepta `status`.
 
-Ejemplo de curso completo para `POST /api/admin/courses`, una vez integrada la autenticación:
+Ejemplo de curso completo para `POST /api/admin/courses`, con una sesión administradora completa:
 
 ```json
 {
@@ -65,13 +65,13 @@ Para archivar o pasar a borrador un prerrequisito de cursos publicados, primero 
 
 Errores: `400` para datos inválidos o publicación incompleta; `403` para administración sin autorización; `404` para recursos inexistentes/no visibles; `409` para duplicados, categorías o tecnologías en uso, ciclos y conflictos de estado. Los nombres se comparan sin distinguir mayúsculas y tras quitar espacios exteriores.
 
-## Integrar autenticación — Persona 2
+## Autenticación administrativa
 
-`CatalogAdminGuard` deniega todas las operaciones administrativas por defecto. No acepta un rol por cabecera o cuerpo y no existe una clave administrativa provisional.
+`CatalogAdminGuard` verifica el JWT mediante Passport, carga el rol actual desde la base y exige una sesión completa con rol `admin`. Deniega tokens temporales, recuperación y cambio de contraseña pendiente. Un anónimo recibe `401`; un estudiante autenticado recibe `403`.
 
-Reemplazar su implementación por un adaptador al guard de autenticación del equipo: primero verificar la sesión/token y luego el rol administrador. Si la autenticación usa un guard global, este debe producir una identidad verificada antes de ejecutar el guard del catálogo. Importar el módulo de autenticación si requiere inyección de dependencias. Mantener las lecturas accesibles a estudiantes y añadir pruebas de usuario anónimo, estudiante y administrador. El decorador Bearer en Swagger describe el contrato futuro; no implementa autenticación.
+Las lecturas públicas conservan su acceso. Hay pruebas HTTP con JWT firmados y la estrategia real, además de las pruebas de negocio que sustituyen el guard dentro de su harness. El guard de roles compartido también respeta los permisos declarados sobre controladores, como los de preguntas y opciones.
 
-El guard se sustituye **solo dentro del harness de pruebas** para verificar escrituras. El servidor normal sigue bloqueándolas.
+Para disponer de una cuenta administradora inicial, consultar [carga de contenido](content-import.md#cuenta-administradora).
 
 ## Integrar roadmaps y LLM — Persona 2
 
@@ -89,7 +89,7 @@ El servicio interno devuelve metadatos actuales, no una instantánea histórica.
 
 `Course`, `Category` y `Technology` se exportan desde `src/catalog/entities.ts`. La migración crea solo sus tablas y relaciones; no crea usuarios, progreso, cuestionarios ni roadmaps. Al incorporar `user_technologies`, usar una FK restrictiva hacia tecnologías para que no puedan borrarse cuando estén referenciadas. Ambos módulos deben reutilizar el enum PostgreSQL `skill_level`.
 
-`DB_SCHEMA.txt` refleja el catálogo implementado; las otras tablas siguen siendo diseño compartido pendiente. Las tablas de unión del catálogo usan claves primarias compuestas. El listado local de cursos permanece intacto y no es necesario para arrancar la API.
+`DB_SCHEMA.txt` refleja el diseño inicial, no la totalidad de las migraciones actuales. Las evaluaciones ya tienen su [propio contrato implementado](assessments.md); usuarios usan UUID. Las tablas de unión del catálogo usan claves primarias compuestas. El listado local de cursos permanece intacto y no es necesario para arrancar la API.
 
 ## Verificación
 
@@ -120,4 +120,4 @@ Las pruebas consumen `dist/` para conservar los metadatos de decoradores emitido
 
 Este catálogo parte de `main` y requiere coordinar el bootstrap con los PR de infraestructura y autenticación. Mantener las migraciones, las entidades del catálogo y la validación explícita de DTOs al integrar esos cambios. No activar sincronización automática sobre esta base.
 
-La administración permanece bloqueada hasta completar el contrato de autenticación descrito arriba. Los campos y relaciones de usuarios del esquema compartido deberán conciliarse con el módulo definitivo de Persona 2.
+La administración usa la autenticación existente. Persona 2 debe reutilizar los UUID de usuarios y el contrato de perfiles de evaluaciones; no duplicar esas entidades.

@@ -1,3 +1,4 @@
+import { AssessmentsModule } from './assessments/assessments.module.js';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -24,6 +25,7 @@ export { ObserveInstrument };
     UserModule,
     AuthModule,
     QuestionsModule,
+    AssessmentsModule,
     CatalogModule,
   ],
 })

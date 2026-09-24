@@ -44,11 +44,11 @@ El diseño busca quedar abierto a nuevas características para la comunidad (má
 
 | Requerimiento | Estado |
 | --- | --- |
-| Cuestionario de habilidades e intereses | En progreso |
+| Cuestionario de habilidades e intereses | Backend de autoevaluación implementado; integración frontend pendiente |
 | Rutas dinámicas con cursos de DevTalles | En progreso |
 | Guardar y generar múltiples rutas | En progreso |
 | Progreso de la ruta | En progreso |
-| Auth (registro / login) + Discord | En progreso |
+| Auth (registro / login) + Discord | Backend implementado; recorrido real con frontend pendiente |
 | Stack de cursos DevTalles | NestJS, TypeScript, PostgreSQL, TypeORM |
 | Licencia MIT | Ver [LICENSE](LICENSE) |
 
@@ -143,7 +143,7 @@ CREATE DATABASE code_quest;
 pnpm migration:run
 ```
 
-La configuración completa está en [`.env.example`](.env.example). No se cargan cursos automáticamente.
+La configuración completa está en [`.env.example`](.env.example). No se cargan cursos automáticamente. Para importar `COURSES.json` y el cuestionario inicial, consulta [la guía de carga](docs/content-import.md).
 Si ya existen tablas creadas desde un esquema anterior, revisa su adaptación antes de ejecutar la migración inicial.
 
 ## Cómo ejecutar
@@ -227,9 +227,13 @@ src/
 ## Catálogo implementado
 
 Consulta [la guía del catálogo](docs/catalog.md) para endpoints, publicación, pruebas y contratos de integración.
-Las lecturas muestran cursos publicados. Las escrituras administrativas devuelven `403` hasta integrar
-la autenticación de Persona 2 mediante `CatalogAdminGuard`. No hay credenciales ni bypass de desarrollo.
-Usuarios, cuestionarios y generación de roadmaps siguen pendientes.
+Las lecturas muestran cursos publicados. Las escrituras administrativas requieren JWT válido,
+sesión completa y rol administrador verificado. No hay credenciales ni bypass de desarrollo.
+
+El [módulo de evaluaciones](docs/assessments.md) guarda respuestas y perfiles de autoevaluación
+para el generador con IA. Incluye historial, aislamiento por usuario y reglas versionadas.
+La generación con IA, las rutas guardadas y el progreso corresponden a Persona 2 y siguen pendientes.
+Los cursos importados quedan como borradores hasta completar sus metadatos.
 
 ## Fechas de la misión
 
