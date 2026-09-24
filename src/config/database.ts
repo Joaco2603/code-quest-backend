@@ -13,6 +13,9 @@ import { Question } from '../questions/entities/question.entity.js';
 import { Questionnaire } from '../questions/entities/questionnaire.entity.js';
 import { CreateUsersAndAuditLogs1760000000000 } from '../database/migrations/1760000000000-CreateUsersAndAuditLogs.js';
 import { CreateQuestions1789600001000 } from '../database/migrations/1789600001000-CreateQuestions.js';
+import { CreateRoadmaps1789948803000 } from '../database/migrations/1789948803000-CreateRoadmaps.js';
+import { RoadmapCourse } from '../roadmaps/entities/roadmap-course.entity.js';
+import { Roadmap } from '../roadmaps/entities/roadmap.entity.js';
 
 export function databaseOptions(
   env: NodeJS.ProcessEnv = process.env,
@@ -37,6 +40,8 @@ export function databaseOptions(
       AnswerOption,
       Question,
       Questionnaire,
+      Roadmap,
+      RoadmapCourse,
     ],
     migrations: [
       CreateUsersAndAuditLogs1760000000000,
@@ -45,6 +50,7 @@ export function databaseOptions(
       CreateAssessments1789948800000,
       CreateContentImports1789948801000,
       RenameUserResponsesToUserAnswers1789948802000,
+      CreateRoadmaps1789948803000,
     ],
   };
 }
