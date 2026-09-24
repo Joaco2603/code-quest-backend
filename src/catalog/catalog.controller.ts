@@ -24,25 +24,21 @@ import {
   toPaginatedResponse,
 } from '../common/dto/api-response.dto.js';
 import { CatalogService } from './catalog.service.js';
-import { CatalogAdminGuard } from './catalog-access.js';
-import { CatalogIdPipe } from './catalog-id.pipe.js';
+import { CatalogAdminGuard } from './guards/catalog-admin.guard.js';
+import { CatalogIdPipe } from './pipes/catalog-id.pipe.js';
 import {
   AdminCourseQueryDto,
-  CourseQueryDto,
-  CreateCourseDto,
-  NameDto,
-  UpdateCourseDto,
-} from './dto.js';
-import {
-  CategoryCollectionDataResponseDto,
-  CategoryDataResponseDto,
+  CatalogSummaryCollectionDataResponseDto,
+  CatalogSummaryDataResponseDto,
   CourseDataResponseDto,
   CoursePaginatedResponseDto,
+  CourseQueryDto,
+  CreateCourseDto,
   LevelCollectionDataResponseDto,
-  TechnologyCollectionDataResponseDto,
-  TechnologyDataResponseDto,
-} from './dto/catalog-response.dto.js';
-import { CourseStatus, SkillLevel } from './entities.js';
+  NameDto,
+  UpdateCourseDto,
+} from './dto/catalog.dto.js';
+import { CourseStatus, SkillLevel } from './entities/catalog.entities.js';
 
 @ApiTags('Courses')
 @Controller('courses')
@@ -182,7 +178,7 @@ export class CategoriesController {
   @Get()
   @ApiOkResponse({
     description: 'Categories ordered by name.',
-    type: CategoryCollectionDataResponseDto,
+    type: CatalogSummaryCollectionDataResponseDto,
   })
   async list() {
     return toDataResponse(await this.catalog.listTaxonomy('categories'));
@@ -191,7 +187,7 @@ export class CategoriesController {
   @Get(':id')
   @ApiOkResponse({
     description: 'Category detail.',
-    type: CategoryDataResponseDto,
+    type: CatalogSummaryDataResponseDto,
   })
   @ApiNotFoundResponse({ description: 'Catalog entry was not found.' })
   async get(@Param('id', CatalogIdPipe) id: number) {
@@ -203,7 +199,7 @@ export class CategoriesController {
   @ApiBearerAuth('access-token')
   @ApiCreatedResponse({
     description: 'Category created.',
-    type: CategoryDataResponseDto,
+    type: CatalogSummaryDataResponseDto,
   })
   async create(@Body() dto: NameDto) {
     return toDataResponse(
@@ -216,7 +212,7 @@ export class CategoriesController {
   @ApiBearerAuth('access-token')
   @ApiOkResponse({
     description: 'Renamed category.',
-    type: CategoryDataResponseDto,
+    type: CatalogSummaryDataResponseDto,
   })
   async update(@Param('id', CatalogIdPipe) id: number, @Body() dto: NameDto) {
     return toDataResponse(
@@ -242,7 +238,7 @@ export class TechnologiesController {
   @Get()
   @ApiOkResponse({
     description: 'Technologies ordered by name.',
-    type: TechnologyCollectionDataResponseDto,
+    type: CatalogSummaryCollectionDataResponseDto,
   })
   async list() {
     return toDataResponse(await this.catalog.listTaxonomy('technologies'));
@@ -251,7 +247,7 @@ export class TechnologiesController {
   @Get(':id')
   @ApiOkResponse({
     description: 'Technology detail.',
-    type: TechnologyDataResponseDto,
+    type: CatalogSummaryDataResponseDto,
   })
   @ApiNotFoundResponse({ description: 'Catalog entry was not found.' })
   async get(@Param('id', CatalogIdPipe) id: number) {
@@ -263,7 +259,7 @@ export class TechnologiesController {
   @ApiBearerAuth('access-token')
   @ApiCreatedResponse({
     description: 'Technology created.',
-    type: TechnologyDataResponseDto,
+    type: CatalogSummaryDataResponseDto,
   })
   async create(@Body() dto: NameDto) {
     return toDataResponse(
@@ -276,7 +272,7 @@ export class TechnologiesController {
   @ApiBearerAuth('access-token')
   @ApiOkResponse({
     description: 'Renamed technology.',
-    type: TechnologyDataResponseDto,
+    type: CatalogSummaryDataResponseDto,
   })
   async update(@Param('id', CatalogIdPipe) id: number, @Body() dto: NameDto) {
     return toDataResponse(

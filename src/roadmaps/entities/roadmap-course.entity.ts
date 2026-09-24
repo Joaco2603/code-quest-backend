@@ -7,7 +7,7 @@ import {
   PrimaryGeneratedColumn,
   Unique,
 } from 'typeorm';
-import { Course } from '../../catalog/entities.js';
+import { Course } from '../../catalog/entities/catalog.entities.js';
 import { Roadmap } from './roadmap.entity.js';
 
 @Entity({ name: 'roadmap_courses' })

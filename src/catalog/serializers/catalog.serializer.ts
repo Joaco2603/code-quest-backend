@@ -1,13 +1,8 @@
+import type { Course } from '../entities/catalog.entities.js';
 import type {
-  Category,
-  Course,
-  Technology,
-} from '../entities.js';
-import type {
-  CategoryResponseDto,
+  CatalogSummaryResponseDto,
   CourseResponseDto,
-  TechnologyResponseDto,
-} from '../dto/catalog-response.dto.js';
+} from '../dto/catalog.dto.js';
 
 function toIsoUtc(value: Date | string): string {
   if (value instanceof Date) return value.toISOString();
@@ -15,41 +10,27 @@ function toIsoUtc(value: Date | string): string {
 }
 
 /**
- * Explicit catalog serializers (Etapa 4).
- * Every public field is picked by hand: no entity spreads, so adding a
- * column never leaks into the API. Absent nullable fields map to null and
- * dates serialize to ISO 8601 UTC. Relations are summaries (`{ id, name }`)
- * plus sorted `prerequisiteIds`; full entities are never expanded.
+ * Explicit catalog serializers. Every public field is picked by hand:
+ * no entity spreads, so extra columns never leak. Absent nullable fields
+ * map to null and dates serialize to ISO 8601 UTC.
  */
-export function serializeCategory(
-  source: Category,
-): CategoryResponseDto {
+export function serializeCatalogSummary(source: {
+  id: number;
+  name: string;
+}): CatalogSummaryResponseDto {
   return {
     id: source.id,
     name: source.name,
   };
 }
 
-export function serializeTechnology(
-  source: Technology,
-): TechnologyResponseDto {
-  return {
-    id: source.id,
-    name: source.name,
-  };
+export function serializeCatalogSummaries(
+  sources: { id: number; name: string }[],
+): CatalogSummaryResponseDto[] {
+  return sources.map((source) => serializeCatalogSummary(source));
 }
 
 export function serializeCourse(source: Course): CourseResponseDto {
-  const categories = (source.categories ?? []).map((item) =>
-    serializeCategory(item),
-  );
-  const technologies = (source.technologies ?? []).map((item) =>
-    serializeTechnology(item),
-  );
-  const prerequisiteIds = (source.prerequisites ?? [])
-    .map((item) => item.id)
-    .sort((a, b) => a - b);
-
   return {
     id: source.id,
     title: source.title,
@@ -62,24 +43,14 @@ export function serializeCourse(source: Course): CourseResponseDto {
     status: source.status,
     createdAt: toIsoUtc(source.createdAt),
     updatedAt: toIsoUtc(source.updatedAt),
-    categories,
-    technologies,
-    prerequisiteIds,
+    categories: serializeCatalogSummaries(source.categories ?? []),
+    technologies: serializeCatalogSummaries(source.technologies ?? []),
+    prerequisiteIds: (source.prerequisites ?? [])
+      .map((item) => item.id)
+      .sort((a, b) => a - b),
   };
 }
 
 export function serializeCourses(sources: Course[]): CourseResponseDto[] {
   return sources.map((source) => serializeCourse(source));
-}
-
-export function serializeCategories(
-  sources: Category[],
-): CategoryResponseDto[] {
-  return sources.map((source) => serializeCategory(source));
-}
-
-export function serializeTechnologies(
-  sources: Technology[],
-): TechnologyResponseDto[] {
-  return sources.map((source) => serializeTechnology(source));
 }
