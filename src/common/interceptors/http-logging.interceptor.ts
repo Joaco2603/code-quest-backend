@@ -9,6 +9,7 @@ import { mergeMap } from 'rxjs/operators';
 import { requestContext } from '../request-context/request-context.js';
 import { StructuredLoggerService } from '../logger/structured-logger.service.js';
 import { AuditLogService } from '../services/audit-log.service.js';
+import { requestNetwork } from '../helpers/request-network.js';
 
 @Injectable()
 export class HttpLoggingInterceptor implements NestInterceptor {
@@ -28,6 +29,7 @@ export class HttpLoggingInterceptor implements NestInterceptor {
       method: string;
       originalUrl?: string;
       ip?: string;
+      socket?: { remoteAddress?: string };
       user?: {
         id?: string;
         role?: string;
@@ -56,7 +58,7 @@ export class HttpLoggingInterceptor implements NestInterceptor {
                 event: 'http.request.completed',
                 statusCode: response.statusCode,
                 durationMs,
-                ip: request.ip,
+                ...requestNetwork(request),
                 userAgent: request.headers?.['user-agent'],
               },
               HttpLoggingInterceptor.name,

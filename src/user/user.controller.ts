@@ -49,7 +49,7 @@ import {
 @UseGuards(JwtAuthGuard, TwoFactorGuard)
 @ApiTags('Code Quest Used Endpoints', 'Users')
 @ApiBearerAuth('access-token')
-@Controller('user')
+@Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 

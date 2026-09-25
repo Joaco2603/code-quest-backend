@@ -1,6 +1,8 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
+import type { Express } from 'express';
 import { parseAllowedOrigins } from './envs.js';
+import { parseTrustProxy } from './trust-proxy.js';
 
 type CorsOriginCallback = (err: Error | null, allow?: boolean) => void;
 
@@ -76,8 +78,13 @@ export function setupCors(app: INestApplication, allowedOrigins?: string[]) {
 
 export function setupApp(
   app: INestApplication,
-  opts?: { allowedOrigins?: string[] },
+  opts?: { allowedOrigins?: string[]; trustProxy?: string },
 ) {
+  const express: Express = app.getHttpAdapter().getInstance();
+  express.set(
+    'trust proxy',
+    parseTrustProxy(opts?.trustProxy ?? process.env.TRUST_PROXY),
+  );
   app.setGlobalPrefix('api');
   setupValidation(app);
   setupHelmet(app);

@@ -73,7 +73,7 @@ Ese `tempToken` dura 10 minutos y su propósito es `password_change`. `POST /aut
 
 ## Cuentas creadas por un administrador o un cliente
 
-`POST /auth/register/managed` y `POST /user` dejan `mustChangePassword` en true. El login no abre sesión hasta completar el cambio. Un `client` solo puede crear hijos con rol `user` y `client_id` igual a su propio id. Un `admin` elige el rol (`admin`, `client` o `user`).
+`POST /auth/register/managed` y `POST /users` dejan `mustChangePassword` en true. El login no abre sesión hasta completar el cambio. Un `client` solo puede crear hijos con rol `user` y `client_id` igual a su propio id. Un `admin` elige el rol (`admin`, `client` o `user`).
 
 `POST /auth/register/user` ignora el rol del cuerpo y siempre crea un `user`.
 
