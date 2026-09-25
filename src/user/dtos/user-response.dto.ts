@@ -99,7 +99,7 @@ export class UserDetailResponseDto {
 }
 
 /**
- * List item for GET /user.
+ * List item for GET /users.
  * Same fields as the detail plus `quantityUsers`, which is only promised
  * by the paginated list using a grouped count of child users.
  * Detail, search and byClient responses omit `quantityUsers` entirely.
@@ -131,7 +131,7 @@ export class UserListPaginatedResponseDto {
 }
 
 /**
- * Result of DELETE /user/:id. The account is soft-deactivated
+ * Result of DELETE /users/:id. The account is soft-deactivated
  * (`isActive=false`), so the message plus the id stay useful to the
  * client — same shape as the questionnaire deactivation results.
  */

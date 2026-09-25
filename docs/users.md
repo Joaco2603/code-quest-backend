@@ -1,27 +1,27 @@
 # Usuarios
 
-Las cuentas se administran en `/api/user`. Hace falta una sesión completa. Un `admin` ve todas las cuentas. Un `client` ve la suya y las de sus usuarios hijos. El borrado desactiva la cuenta; no elimina la fila.
+Las cuentas se administran en `/api/users`. Hace falta una sesión completa. Un `admin` ve todas las cuentas. Un `client` ve la suya y las de sus usuarios hijos. El borrado desactiva la cuenta; no elimina la fila.
 
 Las respuestas usan `{ data }` o `{ data, meta }` en camelCase. La contraseña y el secreto 2FA no salen en ninguna serialización.
 
 ## Camino rápido
 
 1. Iniciar sesión como `admin` o `client`.
-2. Crear con `POST /user`.
-3. Listar con `GET /user?page=1&limit=20`.
-4. Desactivar con `DELETE /user/:id` (solo `admin`).
+2. Crear con `POST /users`.
+3. Listar con `GET /users?page=1&limit=20`.
+4. Desactivar con `DELETE /users/:id` (solo `admin`).
 
 ## Endpoints
 
 | Método y ruta | Quién | Comportamiento |
 | --- | --- | --- |
-| `POST /user` | `admin`, `client` | Crea la cuenta y responde el detalle |
-| `GET /user` | `admin`, `client` | Listado paginado `{ data, meta: { total, limit, offset } }` |
-| `GET /user/:id` | `admin`, `client` | Detalle por UUID |
-| `POST /user/search` | `admin`, `client` | Busca por email, nombre o rol |
-| `POST /user/byClient` | `client` | Usuarios hijos de ese cliente |
-| `PATCH /user/:id` | `admin`, `client` | Actualiza perfil; el rol y el dueño solo los cambia un `admin` |
-| `DELETE /user/:id` | `admin` | Pone `isActive=false` |
+| `POST /users` | `admin`, `client` | Crea la cuenta y responde el detalle |
+| `GET /users` | `admin`, `client` | Listado paginado `{ data, meta: { total, limit, offset } }` |
+| `GET /users/:id` | `admin`, `client` | Detalle por UUID |
+| `POST /users/search` | `admin`, `client` | Busca por email, nombre o rol |
+| `POST /users/byClient` | `client` | Usuarios hijos de ese cliente |
+| `PATCH /users/:id` | `admin`, `client` | Actualiza perfil; el rol y el dueño solo los cambia un `admin` |
+| `DELETE /users/:id` | `admin` | Pone `isActive=false` |
 
 El alta pública está en `POST /auth/register`. Este módulo es para cuentas administradas.
 
@@ -49,8 +49,10 @@ Detalle serializado: `id, email, discordId|null, firstName, lastName|null, addre
 | `client` | Su propia cuenta y los usuarios cuyo `client` es él. No cambia rol ni dueño |
 | `user` | El controlador exige `admin` o `client`; un estudiante no administra cuentas |
 
-`GET /user` filtra `isActive=true` salvo `all=true`. Si no llega `limit` ni `pageSize`, el listado usa 100; el máximo es 100. `page` y `offset` se resuelven a `meta.offset`. Un cliente que pide `POST /user/byClient` con un `user_id` distinto del suyo recibe `403`.
+`GET /users` filtra `isActive=true` salvo `all=true`. Si no llega `limit` ni `pageSize`, el listado usa 100; el máximo es 100. `page` y `offset` se resuelven a `meta.offset`. Un cliente que pide `POST /users/byClient` con un `user_id` distinto del suyo recibe `403`.
 
-`POST /user/search` espera `{ "key": "ada" }` y busca subcadena, sin distinguir mayúsculas, en email, nombre completo y rol. Respeta el mismo alcance.
+`POST /users/search` espera `{ "key": "ada" }` y busca subcadena, sin distinguir mayúsculas, en email, nombre completo y rol. Respeta el mismo alcance.
 
 Un UUID inexistente responde `404`. Un email ya usado responde `400`. Un `client` que intenta cambiar `role` o `client_id` responde `403`.
+
+La ruta anterior `/api/user` fue reemplazada por `/api/users`, sin alias. Actualizar los consumidores al desplegar. Las rutas `/api/auth/register/user` mantienen su nombre.

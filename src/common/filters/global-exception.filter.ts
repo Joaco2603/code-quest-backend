@@ -9,6 +9,7 @@ import { Response } from 'express';
 import { requestContext } from '../request-context/request-context.js';
 import { StructuredLoggerService } from '../logger/structured-logger.service.js';
 import { AuditLogService } from '../services/audit-log.service.js';
+import { requestNetwork } from '../helpers/request-network.js';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
@@ -34,6 +35,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       originalUrl?: string;
       requestId?: string;
       ip?: string;
+      socket?: { remoteAddress?: string };
       user?: {
         id?: string;
         role?: string;
@@ -49,12 +51,13 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const stack = exception instanceof Error ? exception.stack : undefined;
 
     const logPayload = {
-      event: status === HttpStatus.NOT_FOUND ? 'http.not_found' : 'http.exception',
+      event:
+        status === HttpStatus.NOT_FOUND ? 'http.not_found' : 'http.exception',
       statusCode: status,
       path: request.originalUrl,
       method: request.method,
       response: responseBody,
-      ip: request.ip,
+      ...requestNetwork(request),
       userAgent: this.normalizeHeader(request.headers?.['user-agent']),
     };
 
@@ -64,11 +67,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       // a full framework stack trace.
       this.logger.warn(logPayload, GlobalExceptionFilter.name);
     } else {
-      this.logger.error(
-        logPayload,
-        stack,
-        GlobalExceptionFilter.name,
-      );
+      this.logger.error(logPayload, stack, GlobalExceptionFilter.name);
     }
 
     await this.auditLogService.recordHttpEvent({

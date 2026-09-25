@@ -95,3 +95,27 @@ y los límites de peticiones detrás de ambos proxies: no habilitar `trust proxy
 globalmente sin definir qué proxies son confiables. La cuenta inicial PostgreSQL
 tiene privilegios de administración; separar el rol de migraciones del rol de la
 API es una mejora pendiente. No reutilizar esa cuenta en otras bases o servicios.
+
+## IP del cliente detrás de Traefik
+
+Configurar `TRUST_PROXY` en el archivo usado por `CODEQUEST_ENV_FILE` con las IP
+o CIDR de los proxies confiables, separados por comas. Vacío o `false` desactiva
+la confianza; se rechazan booleanos `true`, números de saltos, nombres y redes `/0`.
+Ejemplo para la IP verificada de Traefik: `TRUST_PROXY=172.18.0.3`. Fijar esa IP
+en la configuración de red de Traefik o actualizar el valor si cambia al recrearlo.
+No confiar en toda la red compartida `web` si incluye contenedores no confiables.
+Recrear la API después de cambiar la variable; el compose ya carga ese archivo.
+
+Express resuelve `request.ip` desde el socket y `X-Forwarded-For`, de derecha a
+izquierda hasta el primer origen no confiable. Esta IP se usa en auditoría y
+rate limiting. Los logs de éxito y error incluyen `ip`, `peerIp` (conexión directa)
+y `forwardedFor` (encabezado sin validar, limitado a 2048 caracteres y omitido
+cuando falta). No usar el encabezado crudo para autorizar ni limitar solicitudes.
+Traefik debe conservar su validación de encabezados reenviados; no habilitar
+`forwardedHeaders.insecure`. Si hay otro proxy delante, configurar su confianza
+de forma explícita. Una petición desde el servidor del frontend puede mostrar
+la IP de ese servidor en lugar de la del navegador.
+
+Comprobar tras desplegar una petición válida y una ruta inexistente: `peerIp` debe
+identificar Traefik y `ip` el origen resuelto. Una conexión directa desde un origen
+no confiable no debe poder cambiar `ip` enviando `X-Forwarded-For`.
