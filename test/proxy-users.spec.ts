@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { Test } from '@nestjs/testing';
-import type { INestApplication } from '@nestjs/common';
+import { Controller, type INestApplication } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
 import { getRepositoryToken } from '@nestjs/typeorm';
@@ -17,13 +17,16 @@ import { HttpLoggingInterceptor } from '../dist/common/interceptors/http-logging
 import { StructuredLoggerService } from '../dist/common/logger/structured-logger.service.js';
 import { AuditLogService } from '../dist/common/services/audit-log.service.js';
 
+@Controller('network')
+class NetworkProbe extends HealthController {}
+
 const logger = { log: vi.fn(), warn: vi.fn(), error: vi.fn() };
 const audit = { recordHttpEvent: vi.fn().mockResolvedValue(undefined) };
 let app: INestApplication;
 async function start(trustProxy: string) {
   const module = await Test.createTestingModule({
     imports: [PassportModule.register({ defaultStrategy: 'jwt' })],
-    controllers: [HealthController, UserController],
+    controllers: [HealthController, NetworkProbe, UserController],
     providers: [
       { provide: UserService, useValue: {} },
       JwtStrategy,
@@ -86,7 +89,7 @@ it('logs the resolved client and direct peer for success and 404, ignoring spoof
   await start('127.0.0.1');
   const forwarded = '198.51.100.99, 203.0.113.7';
   await request(app.getHttpServer())
-    .get('/api/health')
+    .get('/api/network')
     .set('X-Forwarded-For', forwarded)
     .expect(200);
   await request(app.getHttpServer())
@@ -112,7 +115,7 @@ it.each(['', '172.18.0.3'])(
   async (trust) => {
     await start(trust);
     await request(app.getHttpServer())
-      .get('/api/health')
+      .get('/api/network')
       .set('X-Forwarded-For', '203.0.113.7')
       .expect(200);
     expect(logger.log).toHaveBeenCalledWith(
@@ -127,7 +130,7 @@ it.each(['', '172.18.0.3'])(
 );
 it('keeps health working without forwarded headers and bounds diagnostic headers', async () => {
   await start('127.0.0.1');
-  await request(app.getHttpServer()).get('/api/health').expect(200);
+  await request(app.getHttpServer()).get('/api/network').expect(200);
   expect(logger.log.mock.calls[0][0]).toMatchObject({
     ip: '127.0.0.1',
     forwardedFor: undefined,
@@ -145,4 +148,11 @@ it('registers plural user routes behind authentication and removes the singular 
     .get('/api/users/43566ec8-22af-41d3-933a-918b536fe99f')
     .expect(401);
   await request(app.getHttpServer()).get('/api/user').expect(404);
+});
+
+it('silences successful health probes but keeps auditing them', async () => {
+  await start('');
+  await request(app.getHttpServer()).get('/api/health').expect(200);
+  expect(logger.log).not.toHaveBeenCalled();
+  expect(audit.recordHttpEvent).toHaveBeenCalled();
 });

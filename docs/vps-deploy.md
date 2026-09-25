@@ -119,3 +119,23 @@ la IP de ese servidor en lugar de la del navegador.
 Comprobar tras desplegar una petición válida y una ruta inexistente: `peerIp` debe
 identificar Traefik y `ip` el origen resuelto. Una conexión directa desde un origen
 no confiable no debe poder cambiar `ip` enviando `X-Forwarded-For`.
+
+## Lectura de logs
+
+`LOG_FORMAT=json` conserva JSON estructurado para producción; `LOG_FORMAT=pretty`
+muestra una línea compacta con método, ruta, estado, duración, requestId y detalles.
+Sin configurar, se usa pretty solamente en `NODE_ENV=development` y JSON en los
+otros entornos. El nivel de éxitos ahora es `info` (antes `log`); adaptar filtros
+externos que dependan de ese valor. `message` es texto y los detalles aparecen una
+sola vez en `metadata`. Los rechazos 4xx son `warn`, sin stack; los 5xx conservan
+`error` y stack. Los JWT rechazados distinguen `auth.token_missing`,
+`auth.token_expired` y `auth.token_invalid` sin imprimir credenciales ni cambiar
+la respuesta pública. Los health checks GET exitosos no imprimen logs HTTP,
+pero conservan auditoría; sus fallos siguen visibles.
+
+Reversión de esta limpieza: revertir su commit, independiente del cambio de rutas
+`users` y proxies. No requiere migraciones ni cambios de datos.
+
+La vista compacta usa `LOG_TIMEZONE` (por defecto
+`America/Argentina/Buenos_Aires`) e incluye el offset GMT. JSON conserva ISO 8601
+en UTC (`Z`) para correlacionar eventos entre servicios.
