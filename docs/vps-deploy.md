@@ -135,3 +135,7 @@ pero conservan auditoría; sus fallos siguen visibles.
 
 Reversión de esta limpieza: revertir su commit, independiente del cambio de rutas
 `users` y proxies. No requiere migraciones ni cambios de datos.
+
+La vista compacta usa `LOG_TIMEZONE` (por defecto
+`America/Argentina/Buenos_Aires`) e incluye el offset GMT. JSON conserva ISO 8601
+en UTC (`Z`) para correlacionar eventos entre servicios.

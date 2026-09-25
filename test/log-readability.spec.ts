@@ -122,3 +122,25 @@ it.each([
     }
   },
 );
+
+it('shows Argentina time and previous date in pretty output while JSON stays UTC', () => {
+  vi.useFakeTimers();
+  try {
+    vi.setSystemTime(new Date('2026-09-25T02:06:08.913Z'));
+    vi.stubEnv('LOG_FORMAT', 'pretty');
+    vi.stubEnv('LOG_TIMEZONE', 'America/Argentina/Buenos_Aires');
+    const output = vi.spyOn(process.stdout, 'write').mockReturnValue(true);
+    const logger = new StructuredLoggerService();
+    logger.log('test');
+    expect(String(output.mock.calls[0][0])).toContain(
+      '2026-09-24 23:06:08,913 GMT-3',
+    );
+    vi.stubEnv('LOG_FORMAT', 'json');
+    logger.log('test');
+    expect(JSON.parse(String(output.mock.calls[1][0])).timestamp).toBe(
+      '2026-09-25T02:06:08.913Z',
+    );
+  } finally {
+    vi.useRealTimers();
+  }
+});

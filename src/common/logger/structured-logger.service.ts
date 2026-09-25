@@ -125,7 +125,20 @@ export class StructuredLoggerService extends ConsoleLogger {
   private pretty(payload: StructuredPayload): string {
     const { statusCode, durationMs, ...details } = payload.metadata ?? {};
     const fields = [
-      payload.timestamp,
+      new Intl.DateTimeFormat('sv-SE', {
+        timeZone: process.env.LOG_TIMEZONE || 'America/Argentina/Buenos_Aires',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        fractionalSecondDigits: 3,
+        hourCycle: 'h23',
+        timeZoneName: 'shortOffset',
+      })
+        .format(new Date(payload.timestamp))
+        .replace('−', '-'),
       payload.level.toUpperCase(),
       payload.method,
       payload.path,
