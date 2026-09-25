@@ -2,6 +2,8 @@ import { AsyncLocalStorage } from 'async_hooks';
 
 export type RequestContextStore = {
   requestId?: string;
+  startedAt?: number;
+  authFailureReason?: string;
   userId?: string;
   userRole?: string;
   path?: string;

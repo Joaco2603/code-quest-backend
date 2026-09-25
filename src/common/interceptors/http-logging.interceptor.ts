@@ -53,16 +53,23 @@ export class HttpLoggingInterceptor implements NestInterceptor {
         from(
           (async () => {
             const durationMs = Date.now() - startedAt;
-            this.logger.log(
-              {
-                event: 'http.request.completed',
-                statusCode: response.statusCode,
-                durationMs,
-                ...requestNetwork(request),
-                userAgent: request.headers?.['user-agent'],
-              },
-              HttpLoggingInterceptor.name,
-            );
+            const quietHealth =
+              request.method === 'GET' &&
+              request.originalUrl?.split('?')[0] === '/api/health' &&
+              response.statusCode < 400;
+            if (!quietHealth)
+              this.logger.log(
+                {
+                  event: 'http.request.completed',
+                  method: request.method,
+                  path: request.originalUrl,
+                  statusCode: response.statusCode,
+                  durationMs,
+                  ...requestNetwork(request),
+                  userAgent: request.headers?.['user-agent'],
+                },
+                HttpLoggingInterceptor.name,
+              );
 
             await this.auditLogService.recordHttpEvent({
               statusCode: response.statusCode,
