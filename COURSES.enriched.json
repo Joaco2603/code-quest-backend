@@ -657,7 +657,7 @@
     },
     {
       "titulo": "Flutter móvil: Recursos Nativos - Nivel intermedio",
-      "categoria": "Dart Flutter",
+      "categoria": "Móvil",
       "instructor": "Fernando Herrera",
       "descripcion": "Se enfoca en la utilización de recursos nativos del dispositivo móvil: sensores, ads y su interacción, biométricos y más.",
       "url": "https://fernando-herrera.com/course/flutter-recursos-nativos",
@@ -786,7 +786,7 @@
     },
     {
       "titulo": "Dart: De cero hasta los detalles",
-      "categoria": "Dart Flutter",
+      "categoria": "Móvil",
       "instructor": "Fernando Herrera",
       "descripcion": "Desde lo más básico de Dart hasta temas más complejos y necesarios para trabajar con cualquier tecnología que utilice Dart.",
       "url": "https://fernando-herrera.com/course/dart-cero-detalles",
@@ -1038,7 +1038,7 @@
     },
     {
       "titulo": "Flutter Móvil: De cero a experto",
-      "categoria": "Dart Flutter",
+      "categoria": "Móvil",
       "instructor": "Fernando Herrera",
       "descripcion": "Cubre todo lo necesario de Flutter para crear aplicaciones móviles para iOS y Android hasta su despliegue en las tiendas siguiendo DDD.",
       "url": "https://fernando-herrera.com/course/flutter-cero-experto",
@@ -1102,7 +1102,7 @@
     },
     {
       "titulo": "Flutter Intermedio: Diseños profesionales y animaciones",
-      "categoria": "Dart Flutter",
+      "categoria": "Móvil",
       "instructor": "Fernando Herrera",
       "descripcion": "Enseña a crear animaciones personalizadas y diseños atractivos para aplicaciones móviles.",
       "url": "https://fernando-herrera.com/course/flutter-disenos-intermedio",
@@ -1391,7 +1391,7 @@
     },
     {
       "titulo": "Mini-Curso: Riverpod providers con anotaciones",
-      "categoria": "Dart Flutter",
+      "categoria": "Móvil",
       "instructor": "Fernando Herrera",
       "descripcion": "Diseñado para enseñarte Riverpod con anotaciones y generación de código.",
       "url": "https://fernando-herrera.com/course/riverpod",
@@ -1472,7 +1472,7 @@
     },
     {
       "titulo": "Flutter Avanzado: Lleva tu conocimiento al siguiente nivel",
-      "categoria": "Dart Flutter",
+      "categoria": "Móvil",
       "instructor": "Fernando Herrera",
       "descripcion": "Cargado de información importante que ayuda a crear mejores aplicaciones con el SDK de Google.",
       "url": "https://fernando-herrera.com/course/flutter-avanzado",
