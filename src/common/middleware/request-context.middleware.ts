@@ -17,6 +17,7 @@ export class RequestContextMiddleware implements NestMiddleware {
     requestContext.run(
       {
         requestId,
+        startedAt: Date.now(),
         method: req.method,
         path: req.originalUrl ?? req.url,
         ip: req.ip,

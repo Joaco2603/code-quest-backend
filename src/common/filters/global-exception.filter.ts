@@ -54,6 +54,12 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       event:
         status === HttpStatus.NOT_FOUND ? 'http.not_found' : 'http.exception',
       statusCode: status,
+      requestId: request.requestId,
+      reason: requestContext.get()?.authFailureReason,
+      durationMs:
+        requestContext.get()?.startedAt === undefined
+          ? undefined
+          : Date.now() - requestContext.get()!.startedAt!,
       path: request.originalUrl,
       method: request.method,
       response: responseBody,
@@ -61,10 +67,8 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       userAgent: this.normalizeHeader(request.headers?.['user-agent']),
     };
 
-    if (status === HttpStatus.NOT_FOUND) {
-      // Internet scanners generate expected 404 traffic. Preserve attribution
-      // without treating rejected probes as application failures or printing
-      // a full framework stack trace.
+    if (status >= 400 && status < 500) {
+      // Expected client rejections do not need framework stack traces.
       this.logger.warn(logPayload, GlobalExceptionFilter.name);
     } else {
       this.logger.error(logPayload, stack, GlobalExceptionFilter.name);
@@ -72,7 +76,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     await this.auditLogService.recordHttpEvent({
       statusCode: status,
-      outcome: status === HttpStatus.NOT_FOUND ? 'warning' : 'error',
+      outcome: status < 500 ? 'warning' : 'error',
       eventType:
         status === HttpStatus.NOT_FOUND ? 'http.not_found' : 'http.exception',
       method: request.method,
