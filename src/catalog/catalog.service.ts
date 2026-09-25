@@ -7,7 +7,12 @@ import {
 } from '@nestjs/common';
 import { DataSource, EntityManager, In, QueryFailedError } from 'typeorm';
 import { resolvePagination } from '../common/helpers/pagination.js';
-import { Category, Course, CourseStatus, Technology } from './entities/catalog.entities.js';
+import {
+  Category,
+  Course,
+  CourseStatus,
+  Technology,
+} from './entities/catalog.entities.js';
 import type {
   AdminCourseQueryDto,
   CatalogSummaryResponseDto,
@@ -20,6 +25,7 @@ import {
   serializeCatalogSummary,
   serializeCourse,
 } from './serializers/catalog.serializer.js';
+import { assertPublishable } from './publication.js';
 
 const relations = { categories: true, technologies: true, prerequisites: true };
 
@@ -209,28 +215,7 @@ export class CatalogService {
   }
 
   private validatePublication(course: Course) {
-    const required = [
-      'description',
-      'url',
-      'imageUrl',
-      'durationMinutes',
-      'instructor',
-      'level',
-    ] as const;
-    const missing: string[] = required.filter((key) => !course[key]);
-    if (!course.categories?.length) missing.push('categoryIds');
-    if (!course.technologies?.length) missing.push('technologyIds');
-    if (missing.length)
-      throw new BadRequestException({
-        message: 'Complete the course before publishing',
-        missing,
-      });
-    if (
-      course.prerequisites.some(
-        (item) => item.status !== CourseStatus.Published,
-      )
-    )
-      throw new ConflictException('Publish all prerequisites first');
+    assertPublishable(course);
   }
 
   createCourse(dto: CreateCourseDto): Promise<CourseResponseDto> {
