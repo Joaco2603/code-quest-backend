@@ -1,4 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
+import { isURL } from 'class-validator';
 import { SkillLevel } from '../../catalog/entities/catalog.entities.js';
 
 export interface SourceEnrichment {
@@ -26,22 +27,57 @@ function object(value: unknown): Record<string, unknown> {
     throw new BadRequestException('Invalid course source object');
   return value as Record<string, unknown>;
 }
-// Flat curation fields live on the course itself: level and technologyNames
-// are the curated truth. Image, duration and raw scrape metadata stay on the
-// record for reference but are never copied: image and duration stay empty so
-// unverified media cannot satisfy publication checks.
+// Flat curation fields live on the course itself: level, technologyNames,
+// imageUrl and durationMinutes are the curated truth and are copied on
+// create (or used to fill empty fields with --fill-missing). Raw scrape
+// metadata (durationHoursRaw, lessonsRaw) stays on the record for reference
+// but is never copied: durations are never inferred from lessons and images
+// or technologies are never invented.
+//
+// NOTE: this validation checks format only (same constraints as the catalog
+// DTOs: IsUrl http/https + MaxLength 2048, IsInt 1..1000000). A value passing
+// here can still be wrong (moved image, mistyped duration): verify against
+// the official course page before publishing. Absent fields stay null and are
+// reported as pending; present-but-invalid values reject the whole file
+// before anything is written.
 function enrichment(row: Record<string, unknown>): SourceEnrichment | null {
-  if (row.level == null && row.technologyNames == null) return null;
-  // Unused image/duration/raw values are ignored (not mapped). Invalid
-  // unused values must not block import.
-  const level = optionalLevel(row.level);
-  const technologyNames = readTechnologyNames(row.technologyNames ?? []);
+  if (
+    row.level == null &&
+    row.technologyNames == null &&
+    row.imageUrl == null &&
+    row.durationMinutes == null
+  )
+    return null;
   return {
-    imageUrl: null,
-    durationMinutes: null,
-    level,
-    technologyNames,
+    imageUrl: optionalImageUrl(row.imageUrl),
+    durationMinutes: optionalDurationMinutes(row.durationMinutes),
+    level: optionalLevel(row.level),
+    technologyNames: readTechnologyNames(row.technologyNames ?? []),
   };
+}
+function optionalImageUrl(value: unknown) {
+  if (value == null) return null;
+  if (typeof value !== 'string')
+    throw new BadRequestException('Invalid source field: imageUrl');
+  const clean = value.trim();
+  if (
+    !clean ||
+    clean.length > 2048 ||
+    !isURL(clean, { protocols: ['http', 'https'], require_protocol: true })
+  )
+    throw new BadRequestException('Invalid source field: imageUrl');
+  return clean;
+}
+function optionalDurationMinutes(value: unknown) {
+  if (value == null) return null;
+  if (
+    typeof value !== 'number' ||
+    !Number.isInteger(value) ||
+    value < 1 ||
+    value > 1000000
+  )
+    throw new BadRequestException('Invalid source field: durationMinutes');
+  return value;
 }
 function optionalLevel(value: unknown) {
   if (value == null) return null;

@@ -348,9 +348,12 @@ it('imports repeatedly without overwriting edited courses or publishing missing 
     url: 'https://cursos.devtalles.com/courses/edited',
   });
   const imported = await importInitialContent(db, sources);
-  expect(imported).toEqual({
+  expect(imported).toMatchObject({
     imported: 0,
     skipped: 2,
+    filled: [],
+    published: [],
+    publishSkipped: [],
     questionnaireId,
     questionnaireCreated: false,
   });

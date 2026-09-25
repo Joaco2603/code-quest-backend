@@ -55,7 +55,7 @@ it('keeps enrichment null when the source has no curation fields', () => {
   const parsed = parseCourseSource({ cursos: [course] });
   expect(parsed.courses[0].enrichment).toBeNull();
 });
-it('accepts flat level and technologies without copying media', () => {
+it('accepts flat level, technologies, image and duration as curated truth', () => {
   const parsed = parseCourseSource({
     cursos: [
       {
@@ -68,13 +68,13 @@ it('accepts flat level and technologies without copying media', () => {
     ],
   });
   expect(parsed.courses[0].enrichment).toEqual({
-    imageUrl: null,
-    durationMinutes: null,
+    imageUrl: 'https://cdn.example.com/img.jpg',
+    durationMinutes: 1470,
     level: 'intermediate',
     technologyNames: ['Node.js', 'NestJS'],
   });
 });
-it('treats flat level and technologies as the curated truth', () => {
+it('counts image and duration as curated on create', () => {
   const parsed = parseCourseSource({
     cursos: [
       {
@@ -87,39 +87,59 @@ it('treats flat level and technologies as the curated truth', () => {
     ],
   });
   expect(parsed.courses[0].enrichment).toEqual({
-    imageUrl: null,
-    durationMinutes: null,
+    imageUrl: 'https://cdn.example.com/img.jpg',
+    durationMinutes: 1470,
     level: 'intermediate',
     technologyNames: ['PHP', 'IA'],
   });
   expect(publicationPreview(parsed.courses)).toEqual({
     curatedOnCreate: {
-      imageUrl: 0,
-      durationMinutes: 0,
+      imageUrl: 1,
+      durationMinutes: 1,
       level: 1,
       technologies: 1,
     },
-    missingPublicationFields: ['imageUrl', 'durationMinutes'],
+    missingPublicationFields: [],
   });
 });
-it('ignores unused image and duration values during import parsing', () => {
-  const parsed = parseCourseSource({
-    cursos: [
-      {
-        ...course,
-        imageUrl: 'notaurl',
-        durationMinutes: 0,
-        level: 'beginner',
-        technologyNames: ['Docker'],
-      },
+it('reports absent image and duration as pending publication fields', () => {
+  const parsed = parseCourseSource({ cursos: [course] });
+  expect(parsed.courses[0].enrichment).toBeNull();
+  expect(publicationPreview(parsed.courses)).toEqual({
+    curatedOnCreate: {
+      imageUrl: 0,
+      durationMinutes: 0,
+      level: 0,
+      technologies: 0,
+    },
+    missingPublicationFields: [
+      'imageUrl',
+      'durationMinutes',
+      'level',
+      'technologyIds',
     ],
   });
-  expect(parsed.courses[0].enrichment).toEqual({
-    imageUrl: null,
-    durationMinutes: null,
-    level: 'beginner',
-    technologyNames: ['Docker'],
-  });
+});
+it.each([
+  { imageUrl: 'notaurl', durationMinutes: 60 },
+  { imageUrl: '', durationMinutes: 60 },
+  { imageUrl: 'ftp://cdn.example.com/img.jpg', durationMinutes: 60 },
+  { imageUrl: 'https://cdn.example.com/img.jpg', durationMinutes: 0 },
+  { imageUrl: 'https://cdn.example.com/img.jpg', durationMinutes: -5 },
+  { imageUrl: 'https://cdn.example.com/img.jpg', durationMinutes: 1.5 },
+  { imageUrl: 'https://cdn.example.com/img.jpg', durationMinutes: 1000001 },
+  { imageUrl: 'https://cdn.example.com/img.jpg', durationMinutes: '90' },
+])('rejects present-but-invalid media %j before writing', (media) => {
+  expect(() =>
+    parseCourseSource({
+      cursos: [
+        {
+          ...course,
+          ...media,
+        },
+      ],
+    }),
+  ).toThrow('Invalid source field');
 });
 it.each([
   { level: 'expert', technologyNames: [] },
@@ -137,7 +157,7 @@ it.each([
     }),
   ).toThrow(BadRequestException);
 });
-it('keeps scraped media out of the curated course file', () => {
+it('reads curated media from the course file with format validation', () => {
   const parsed = parseCourseSource(
     JSON.parse(
       readFileSync(
@@ -152,9 +172,11 @@ it('keeps scraped media out of the curated course file', () => {
   const byTitle = new Map(parsed.courses.map((item) => [item.title, item]));
   expect(parsed.courses).toHaveLength(74);
   expect(parsed.skippedWithoutDevtalles).toBe(8);
-  expect(parsed.courses.every((item) => !item.enrichment?.imageUrl)).toBe(true);
+  // Format validation passed for every record; correctness against the
+  // official pages is still pending verification before publishing.
+  expect(parsed.courses.every((item) => item.enrichment?.imageUrl)).toBe(true);
   expect(
-    parsed.courses.every((item) => item.enrichment?.durationMinutes == null),
+    parsed.courses.every((item) => item.enrichment?.durationMinutes != null),
   ).toBe(true);
   expect(
     byTitle.get('Spring AI: LLMs, Tools, RAG, Agentes y Deploy en AWS')
