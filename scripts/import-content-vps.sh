@@ -56,6 +56,13 @@ if [[ ! -f "$JSON_HOST" && ! -f "$(dirname "$0")/../$JSON_HOST" ]]; then
   exit 1
 fi
 [[ -f "$JSON_HOST" ]] || JSON_HOST="$(dirname "$0")/../$JSON_HOST"
+# Docker trata una ruta relativa en -v como volumen nombrado (crea un
+# directorio vacío) en vez de un bind-mount. Canonicalizar a absoluta.
+if command -v realpath >/dev/null 2>&1; then
+  JSON_HOST="$(realpath "$JSON_HOST")"
+else
+  JSON_HOST="$(readlink -f "$JSON_HOST")"
+fi
 
 compose=(docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE")
 MOUNT_ARGS=(-v "$JSON_HOST:$JSON_CONTAINER:ro")
