@@ -44,7 +44,7 @@ import { QuestionsService } from '../questions.service.js';
 
 @Auth()
 @UseGuards(JwtAuthGuard, TwoFactorGuard)
-@ApiTags('Code Quest Used Endpoints', 'Questionnaires')
+@ApiTags('Questionnaires')
 @ApiBearerAuth('access-token')
 @Controller('questionnaires')
 export class QuestionnairesController {

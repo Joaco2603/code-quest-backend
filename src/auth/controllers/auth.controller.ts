@@ -66,7 +66,7 @@ import {
   type VerifiedSessionResult,
 } from '../serializers/auth.serializer.js';
 
-@ApiTags('Code Quest Used Endpoints', 'Auth')
+@ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}

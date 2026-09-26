@@ -27,7 +27,7 @@ import { QuestionsService } from '../questions.service.js';
 
 @Auth(ValidRoles.admin)
 @UseGuards(JwtAuthGuard, TwoFactorGuard)
-@ApiTags('Code Quest Used Endpoints', 'Answer options')
+@ApiTags('Answer options')
 @ApiBearerAuth('access-token')
 @Controller('answer-options')
 export class AnswerOptionsController {

@@ -427,7 +427,7 @@ export function setupSwagger(
     .setDescription(
       [
         'REST API for Code Quest learning paths.',
-        'Published courses and catalogs are readable. Administration requires the pending authentication integration.',
+        'Published courses and catalogs are readable. Administration requires a full admin session with a JWT access token.',
       ].join(' '),
     )
     .setVersion('1.0')
@@ -445,9 +445,8 @@ export function setupSwagger(
     .addTag('Catalog', 'Categories, technologies and fixed levels.')
     .addTag(
       'Catalog administration',
-      'Blocked until administrator authentication is integrated.',
+      'Catalog administration with a full admin session.',
     )
-    .addTag('Code Quest Used Endpoints')
     .addTag(
       'Auth',
       'Login, Discord OAuth, 2FA, password recovery, and user registration.',
@@ -458,16 +457,38 @@ export function setupSwagger(
     .addTag('Answer options', 'Choice options for questionnaire questions.')
     .addTag('Assessments', 'Questionnaire attempts and typed student answers.')
     .addTag('Roadmaps', 'Student learning routes and course progress.')
-    .addTag('Challenges', 'Coding challenges, listing, and detail.')
-    .addTag('Submissions', 'Challenge submissions and evaluation results.')
-    .addTag('Health', 'API and database health checks.')
-    .addTag('System', 'Seed, version, and operational utility endpoints.');
+    .addTag('Health', 'API and database health checks.');
 
 
   const document = SwaggerModule.createDocument(app, config.build(), {
     operationIdFactory: (controllerKey: string, methodKey: string) =>
       `${controllerKey}_${methodKey}`,
   });
+
+  const securedMethods = [
+    'get',
+    'put',
+    'post',
+    'delete',
+    'options',
+    'head',
+    'patch',
+    'trace',
+  ] as const;
+  for (const pathItem of Object.values(document.paths)) {
+    for (const method of securedMethods) {
+      const operation = pathItem[method];
+      if (!operation?.security || operation.security.length === 0) {
+        continue;
+      }
+      operation.responses['401'] ??= {
+        description: 'Missing or invalid access token.',
+      };
+      operation.responses['403'] ??= {
+        description: 'Forbidden for the current session.',
+      };
+    }
+  }
 
   SwaggerModule.setup('api/docs', app, document, {
     jsonDocumentUrl: '/api/docs-json',

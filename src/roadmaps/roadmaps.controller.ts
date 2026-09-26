@@ -35,7 +35,7 @@ import { RoadmapsService } from './roadmaps.service.js';
 
 @Auth()
 @UseGuards(JwtAuthGuard, TwoFactorGuard)
-@ApiTags('Roadmaps', 'Code Quest Used Endpoints')
+@ApiTags('Roadmaps')
 @ApiBearerAuth('access-token')
 @Controller('roadmaps')
 export class RoadmapsController {

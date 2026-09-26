@@ -32,7 +32,7 @@ import { QuestionsService } from '../questions.service.js';
 
 @Auth(ValidRoles.admin)
 @UseGuards(JwtAuthGuard, TwoFactorGuard)
-@ApiTags('Code Quest Used Endpoints', 'Questions')
+@ApiTags('Questions')
 @ApiBearerAuth('access-token')
 @Controller('questions')
 export class QuestionsController {
