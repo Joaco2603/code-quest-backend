@@ -220,11 +220,23 @@ export class CatalogService {
     const missing: string[] = required.filter((key) => !course[key]);
     if (!course.categories?.length) missing.push('categoryIds');
     if (!course.technologies?.length) missing.push('technologyIds');
-    if (missing.length)
-      throw new BadRequestException({
-        message: 'Complete the course before publishing',
-        missing,
-      });
+    if (missing.length) {
+      const labels: Record<string, string> = {
+        description: 'descripción',
+        url: 'URL',
+        imageUrl: 'imagen',
+        durationMinutes: 'duración',
+        instructor: 'instructor',
+        level: 'nivel',
+        categoryIds: 'categoría',
+        technologyIds: 'tecnología',
+      };
+      throw new BadRequestException(
+        `Completa el curso antes de publicarlo. Faltan: ${missing
+          .map((key) => labels[key] ?? key)
+          .join(', ')}.`,
+      );
+    }
     if (
       course.prerequisites.some(
         (item) => item.status !== CourseStatus.Published,

@@ -508,6 +508,17 @@ describe('AssessmentsService', () => {
       expect(result).toHaveLength(1);
     });
 
+    it('lists every assessment for the admin overview', async () => {
+      assessments.find.mockResolvedValue([openAssessment()]);
+
+      const result = await service.listAll();
+
+      expect(assessments.find).toHaveBeenCalledWith({
+        order: { createdAt: 'DESC' },
+      });
+      expect(result).toHaveLength(1);
+    });
+
     it('returns 404 for another user assessment', async () => {
       assessments.findOne.mockResolvedValue(null);
 

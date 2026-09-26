@@ -1,10 +1,17 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { vi, type Mocked } from 'vitest';
+import type { AuthUser } from '../../auth/interfaces/auth-user.type.js';
+import { ValidRoles } from '../../auth/interfaces/index.js';
 import { CatalogService } from '../../catalog/catalog.service.js';
 import { RoadmapCourse } from '../entities/roadmap-course.entity.js';
+import { RoadmapScope } from '../entities/roadmap-scope.enum.js';
 import { Roadmap } from '../entities/roadmap.entity.js';
 import { RoadmapsService } from '../roadmaps.service.js';
 
@@ -19,6 +26,14 @@ describe('RoadmapsService', () => {
 
   const userId = '11111111-1111-4111-8111-111111111111';
   const otherUserId = '22222222-2222-4222-8222-222222222222';
+
+  const actor = (id: string, role = ValidRoles.user): AuthUser => ({
+    id,
+    email: `${role}@example.com`,
+    is_two_factor_enabled: false,
+    is_two_factor_validated: true,
+    role,
+  });
 
   const roadmapRepo = {
     find: vi.fn(),
@@ -89,11 +104,11 @@ describe('RoadmapsService', () => {
   });
 
   it('creates a roadmap with catalog-validated sort_order', async () => {
-    const result = await service.create(userId, {
+    const result = await service.create(actor(userId), {
       title: 'Backend',
       courseIds: [10, 20],
     });
-
+    expect(result.scope).toBe(RoadmapScope.Personal);
     expect(catalog.validateRoadmapSelection).toHaveBeenCalledWith([10, 20], []);
     expect(manager.query).toHaveBeenCalledWith(
       'SELECT pg_advisory_xact_lock(1789600000)',
@@ -103,14 +118,42 @@ describe('RoadmapsService', () => {
     expect(result.courses.every((item) => item.progress === 0)).toBe(true);
   });
 
+  it('stores a global roadmap when an admin creates it', async () => {
+    const result = await service.create(actor(userId, ValidRoles.admin), {
+      title: 'Catalog path',
+      courseIds: [10],
+    });
+
+    expect(manager.create).toHaveBeenCalledWith(
+      Roadmap,
+      expect.objectContaining({
+        userId,
+        scope: RoadmapScope.Global,
+      }),
+    );
+    expect(result.scope).toBe(RoadmapScope.Global);
+  });
+
+  it('lists global roadmaps for an admin', async () => {
+    roadmapRepo.find.mockResolvedValue([]);
+
+    await service.findAll(actor(userId, ValidRoles.admin));
+
+    expect(roadmapRepo.find).toHaveBeenCalledWith({
+      where: { scope: RoadmapScope.Global },
+      relations: { courses: true },
+      order: { id: 'ASC' },
+    });
+  });
+
   it('rejects non-unique courseIds', async () => {
     await expect(
-      service.create(userId, { title: 'Dupes', courseIds: [1, 1] }),
+      service.create(actor(userId), { title: 'Dupes', courseIds: [1, 1] }),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(catalog.validateRoadmapSelection).not.toHaveBeenCalled();
   });
 
-  it('lists only the current user roadmaps', async () => {
+  it('lists the current user roadmaps and every global roadmap', async () => {
     roadmapRepo.find.mockResolvedValue([
       {
         id: 1,
@@ -120,10 +163,13 @@ describe('RoadmapsService', () => {
       },
     ]);
 
-    const result = await service.findAll(userId);
+    const result = await service.findAll(actor(userId));
 
     expect(roadmapRepo.find).toHaveBeenCalledWith({
-      where: { userId },
+      where: [
+        { userId, scope: RoadmapScope.Personal },
+        { scope: RoadmapScope.Global },
+      ],
       relations: { courses: true },
       order: { id: 'ASC' },
     });
@@ -148,7 +194,7 @@ describe('RoadmapsService', () => {
       },
     ]);
 
-    const result = await service.findAll(userId);
+    const result = await service.findAll(actor(userId));
 
     expect(catalog.getCoursesForExistingRoadmap).toHaveBeenCalledTimes(1);
     expect(catalog.getCoursesForExistingRoadmap).toHaveBeenCalledWith([3, 4]);
@@ -156,10 +202,43 @@ describe('RoadmapsService', () => {
     expect(result[1].courses[0].course.id).toBe(4);
   });
 
+  it('lets a student read a global roadmap', async () => {
+    roadmapRepo.findOne.mockResolvedValue({
+      id: 9,
+      title: 'Shared',
+      userId: otherUserId,
+      scope: RoadmapScope.Global,
+      courses: [],
+    });
+
+    const result = await service.findOne(actor(userId), 9);
+
+    expect(roadmapRepo.findOne).toHaveBeenCalledWith({
+      where: [
+        { id: 9, userId, scope: RoadmapScope.Personal },
+        { id: 9, scope: RoadmapScope.Global },
+      ],
+      relations: { courses: true },
+    });
+    expect(result.scope).toBe(RoadmapScope.Global);
+  });
+
+  it('does not let a student mutate a global roadmap', async () => {
+    roadmapRepo.findOne.mockResolvedValue(null);
+
+    await expect(
+      service.update(actor(userId), 9, { title: 'Nope' }),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    expect(roadmapRepo.findOne).toHaveBeenCalledWith({
+      where: { id: 9, userId, scope: RoadmapScope.Personal },
+      relations: { courses: true },
+    });
+  });
+
   it('returns 404 when another user requests a roadmap', async () => {
     roadmapRepo.findOne.mockResolvedValue(null);
 
-    await expect(service.findOne(otherUserId, 1)).rejects.toBeInstanceOf(
+    await expect(service.findOne(actor(otherUserId), 1)).rejects.toBeInstanceOf(
       NotFoundException,
     );
   });
@@ -175,7 +254,7 @@ describe('RoadmapsService', () => {
       ],
     });
 
-    const result = await service.update(userId, 5, { courseIds: [2, 8] });
+    const result = await service.update(actor(userId), 5, { courseIds: [2, 8] });
 
     expect(manager.delete).toHaveBeenCalledWith(RoadmapCourse, {
       roadmapId: 5,
@@ -204,7 +283,7 @@ describe('RoadmapsService', () => {
       ],
     });
 
-    await service.update(userId, 5, { courseIds: [1, 3] });
+    await service.update(actor(userId), 5, { courseIds: [1, 3] });
 
     expect(catalog.validateRoadmapSelection).toHaveBeenCalledWith([1, 3], [1]);
   });
@@ -220,17 +299,17 @@ describe('RoadmapsService', () => {
       ],
     });
 
-    await service.update(userId, 5, { courseIds: [2, 3] });
+    await service.update(actor(userId), 5, { courseIds: [2, 3] });
 
     expect(catalog.validateRoadmapSelection).toHaveBeenCalledWith([2, 3], [1]);
   });
 
   it('rejects progress outside 0-100', async () => {
     await expect(
-      service.updateProgress(userId, 5, 2, 101),
+      service.updateProgress(actor(userId), 5, 2, 101),
     ).rejects.toBeInstanceOf(BadRequestException);
     await expect(
-      service.updateProgress(userId, 5, 2, -1),
+      service.updateProgress(actor(userId), 5, 2, -1),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(roadmapRepo.findOne).not.toHaveBeenCalled();
   });
@@ -244,7 +323,7 @@ describe('RoadmapsService', () => {
     };
     roadmapRepo.findOne.mockResolvedValue(existing);
 
-    const result = await service.updateProgress(userId, 5, 2, 80);
+    const result = await service.updateProgress(actor(userId), 5, 2, 80);
 
     expect(membershipRepo.save).toHaveBeenCalledWith(
       expect.objectContaining({ courseId: 2, progress: 80 }),
@@ -261,20 +340,98 @@ describe('RoadmapsService', () => {
     });
 
     await expect(
-      service.updateProgress(userId, 5, 99, 50),
+      service.updateProgress(actor(userId), 5, 99, 50),
     ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('copies a global roadmap into a personal one at 0 progress', async () => {
+    roadmapRepo.findOne
+      .mockResolvedValueOnce({
+        id: 9,
+        title: 'Shared',
+        userId: otherUserId,
+        scope: RoadmapScope.Global,
+        courses: [{ courseId: 3, progress: 80, sortOrder: 0, roadmapId: 9 }],
+      })
+      .mockResolvedValueOnce(null);
+
+    const result = await service.copyToPersonal(actor(userId), 9);
+
+    expect(catalog.validateRoadmapSelection).toHaveBeenCalledWith([3], []);
+    expect(manager.create).toHaveBeenCalledWith(
+      Roadmap,
+      expect.objectContaining({
+        title: 'Shared',
+        userId,
+        scope: RoadmapScope.Personal,
+        sourceRoadmapId: 9,
+      }),
+    );
+    expect(result.scope).toBe(RoadmapScope.Personal);
+    expect(result.sourceRoadmapId).toBe(9);
+    expect(result.courses).toEqual([
+      expect.objectContaining({ courseId: 3, progress: 0, sortOrder: 0 }),
+    ]);
+  });
+
+  it('returns the existing personal copy instead of creating another', async () => {
+    const copy = {
+      id: 4,
+      title: 'Shared',
+      userId,
+      scope: RoadmapScope.Personal,
+      sourceRoadmapId: 9,
+      courses: [{ courseId: 3, progress: 20, sortOrder: 0, roadmapId: 4 }],
+    };
+    roadmapRepo.findOne
+      .mockResolvedValueOnce({
+        id: 9,
+        title: 'Shared',
+        userId: otherUserId,
+        scope: RoadmapScope.Global,
+        courses: [{ courseId: 3, progress: 80, sortOrder: 0, roadmapId: 9 }],
+      })
+      .mockResolvedValueOnce(copy);
+
+    const result = await service.copyToPersonal(actor(userId), 9);
+
+    expect(result.id).toBe(4);
+    expect(result.courses[0].progress).toBe(20);
+    expect(manager.save).not.toHaveBeenCalled();
+  });
+
+  it('rejects an admin copying a global roadmap', async () => {
+    await expect(
+      service.copyToPersonal(actor(userId, ValidRoles.admin), 9),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(roadmapRepo.findOne).not.toHaveBeenCalled();
+  });
+
+  it('rejects copying a roadmap that is not global', async () => {
+    roadmapRepo.findOne.mockResolvedValue({
+      id: 5,
+      title: 'Mine',
+      userId,
+      scope: RoadmapScope.Personal,
+      courses: [{ courseId: 3, progress: 0, sortOrder: 0, roadmapId: 5 }],
+    });
+
+    await expect(service.copyToPersonal(actor(userId), 5)).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+    expect(manager.save).not.toHaveBeenCalled();
   });
 
   it('deletes only when the current user owns the roadmap', async () => {
     roadmapRepo.findOne.mockResolvedValue(null);
-    await expect(service.remove(otherUserId, 5)).rejects.toBeInstanceOf(
+    await expect(service.remove(actor(otherUserId), 5)).rejects.toBeInstanceOf(
       NotFoundException,
     );
     expect(roadmapRepo.remove).not.toHaveBeenCalled();
 
     const owned = { id: 5, title: 'Path', userId, courses: [] };
     roadmapRepo.findOne.mockResolvedValue(owned);
-    await service.remove(userId, 5);
+    await service.remove(actor(userId), 5);
     expect(roadmapRepo.remove).toHaveBeenCalledWith(owned);
   });
 });

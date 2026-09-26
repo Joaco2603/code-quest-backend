@@ -393,6 +393,45 @@ describe('UserService', () => {
     ).rejects.toThrow(BadRequestException);
   });
 
+  it('lets a standard user read their own account', async () => {
+    const own = {
+      id: 'student-1',
+      email: 'student@example.com',
+      role: ValidRoles.user,
+      client: { id: 'client-1' },
+    };
+    userRepository.findOne.mockResolvedValue(own);
+
+    await expect(
+      service.findOneById('student-1', {
+        id: 'student-1',
+        email: 'student@example.com',
+        role: ValidRoles.user,
+        is_two_factor_enabled: false,
+        is_two_factor_validated: false,
+      }),
+    ).resolves.toBe(own);
+  });
+
+  it('rejects a standard user reading someone else', async () => {
+    userRepository.findOne.mockResolvedValue({
+      id: 'other-user',
+      email: 'other@example.com',
+      role: ValidRoles.user,
+      client: { id: 'client-1' },
+    });
+
+    await expect(
+      service.findOneById('other-user', {
+        id: 'student-1',
+        email: 'student@example.com',
+        role: ValidRoles.user,
+        is_two_factor_enabled: false,
+        is_two_factor_validated: false,
+      }),
+    ).rejects.toThrow(ForbiddenException);
+  });
+
   it('returns 404 (not 400) for missing ids on findOneById, update and remove', async () => {
     userRepository.findOne.mockResolvedValue(null);
     userRepository.findOneBy.mockResolvedValue(null);

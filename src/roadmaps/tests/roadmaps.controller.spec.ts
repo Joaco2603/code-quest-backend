@@ -3,6 +3,7 @@ import { PassportModule } from '@nestjs/passport';
 import { vi, type Mocked } from 'vitest';
 import { ValidRoles } from '../../auth/interfaces/index.js';
 import type { AuthUser } from '../../auth/interfaces/auth-user.type.js';
+import { RoadmapGenerationService } from '../roadmap-generation.service.js';
 import { RoadmapsController } from '../roadmaps.controller.js';
 import { RoadmapsService } from '../roadmaps.service.js';
 
@@ -16,6 +17,7 @@ describe('RoadmapsController', () => {
       | 'findOne'
       | 'update'
       | 'updateProgress'
+      | 'copyToPersonal'
       | 'remove'
     >
   >;
@@ -35,13 +37,17 @@ describe('RoadmapsController', () => {
       findOne: vi.fn(),
       update: vi.fn(),
       updateProgress: vi.fn(),
+      copyToPersonal: vi.fn(),
       remove: vi.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       imports: [PassportModule.register({ defaultStrategy: 'jwt' })],
       controllers: [RoadmapsController],
-      providers: [{ provide: RoadmapsService, useValue: service }],
+      providers: [
+        { provide: RoadmapsService, useValue: service },
+        { provide: RoadmapGenerationService, useValue: { generate: vi.fn() } },
+      ],
     }).compile();
 
     controller = module.get(RoadmapsController);
@@ -53,7 +59,7 @@ describe('RoadmapsController', () => {
 
     await controller.create(user, dto);
 
-    expect(service.create).toHaveBeenCalledWith(user.id, dto);
+    expect(service.create).toHaveBeenCalledWith(user, dto);
   });
 
   it('loads one roadmap scoped to the current user', async () => {
@@ -61,7 +67,7 @@ describe('RoadmapsController', () => {
 
     await controller.findOne(user, 4);
 
-    expect(service.findOne).toHaveBeenCalledWith(user.id, 4);
+    expect(service.findOne).toHaveBeenCalledWith(user, 4);
   });
 
   it('updates progress through the service', async () => {
@@ -69,6 +75,14 @@ describe('RoadmapsController', () => {
 
     await controller.updateProgress(user, 4, 9, { progress: 25 });
 
-    expect(service.updateProgress).toHaveBeenCalledWith(user.id, 4, 9, 25);
+    expect(service.updateProgress).toHaveBeenCalledWith(user, 4, 9, 25);
+  });
+
+  it('copies a global roadmap for the authenticated student', async () => {
+    service.copyToPersonal.mockResolvedValue({ id: 8 } as never);
+
+    await controller.copy(user, 3);
+
+    expect(service.copyToPersonal).toHaveBeenCalledWith(user, 3);
   });
 });

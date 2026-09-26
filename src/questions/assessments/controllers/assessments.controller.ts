@@ -89,6 +89,17 @@ export class AssessmentsController {
     return this.assessmentsService.listMine(user);
   }
 
+  @Get('all')
+  @Auth(ValidRoles.admin)
+  @ApiOperation({
+    summary: 'List every assessment',
+    description: 'Admin overview of student questionnaire attempts.',
+  })
+  @ApiOkResponse({ description: 'All assessments.' })
+  listAll() {
+    return this.assessmentsService.listAll();
+  }
+
   @Get(':id')
   @Auth(ValidRoles.user)
   @ApiOperation({

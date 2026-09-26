@@ -83,6 +83,13 @@ export class AssessmentsService {
     return rows.map((row) => this.toView(row));
   }
 
+  async listAll(): Promise<AssessmentView[]> {
+    const rows = await this.assessments.find({
+      order: { createdAt: 'DESC' },
+    });
+    return rows.map((row) => this.toView(row));
+  }
+
   async findMine(user: AuthUser, id: number): Promise<AssessmentView> {
     const assessment = await this.getOwned(user, id);
     const answers = await this.answers.find({

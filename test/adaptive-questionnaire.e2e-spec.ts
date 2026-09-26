@@ -66,7 +66,9 @@ beforeAll(async () => {
       0,
       migrationDb.migrations.length,
       ...migrations.filter(
-        (m) => m.name !== 'AdaptiveQuestionnaire1789600005000',
+        (m) =>
+          m.name !== 'AdaptiveQuestionnaire1789600005000' &&
+          m.name !== 'PersonalQuestionnaire1789600009000',
       ),
     );
     await migrationDb.runMigrations();

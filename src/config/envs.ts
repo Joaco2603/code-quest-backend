@@ -9,7 +9,7 @@ export function parseAllowedOrigins(
       .filter(Boolean) ??
     (env === 'production'
       ? []
-      : ['http://localhost:8080', 'http://localhost:3000']);
+      : ['http://localhost:8080', 'http://localhost:3000', 'http://localhost:3001']);
   if (origins.includes('*'))
     throw new Error('ALLOWED_ORIGINS must list explicit origins');
   return origins;

@@ -20,6 +20,7 @@ describe('AssessmentsController', () => {
   const assessmentsService = {
     start: vi.fn(),
     listMine: vi.fn(),
+    listAll: vi.fn(),
     findMine: vi.fn(),
     upsertAnswer: vi.fn(),
     complete: vi.fn(),
@@ -54,6 +55,14 @@ describe('AssessmentsController', () => {
     await controller.listMine(student);
 
     expect(assessmentsService.listMine).toHaveBeenCalledWith(student);
+  });
+
+  it('lists every assessment for an admin', async () => {
+    assessmentsService.listAll.mockResolvedValue([]);
+
+    await controller.listAll();
+
+    expect(assessmentsService.listAll).toHaveBeenCalled();
   });
 
   it('loads one owned assessment', async () => {

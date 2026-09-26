@@ -99,7 +99,7 @@ describe('DTO validation', () => {
     ).toBeGreaterThan(0);
   });
 });
-it('denies administrative operations until trusted authentication is integrated', () => {
+it('denies catalog administration when the request is not HTTP', () => {
   expect(new CatalogAdminGuard().canActivate({} as ExecutionContext)).toBe(
     false,
   );

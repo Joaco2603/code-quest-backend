@@ -65,13 +65,9 @@ Para archivar o pasar a borrador un prerrequisito de cursos publicados, primero 
 
 Errores: `400` para datos inválidos o publicación incompleta; `403` para administración sin autorización; `404` para recursos inexistentes/no visibles; `409` para duplicados, categorías o tecnologías en uso, ciclos y conflictos de estado. Los nombres se comparan sin distinguir mayúsculas y tras quitar espacios exteriores.
 
-## Integrar autenticación — Persona 2
+## Autenticación administrativa
 
-`CatalogAdminGuard` deniega todas las operaciones administrativas por defecto. No acepta un rol por cabecera o cuerpo y no existe una clave administrativa provisional.
-
-Reemplazar su implementación por un adaptador al guard de autenticación del equipo: primero verificar la sesión/token y luego el rol administrador. Si la autenticación usa un guard global, este debe producir una identidad verificada antes de ejecutar el guard del catálogo. Importar el módulo de autenticación si requiere inyección de dependencias. Mantener las lecturas accesibles a estudiantes y añadir pruebas de usuario anónimo, estudiante y administrador. El decorador Bearer en Swagger describe el contrato futuro; no implementa autenticación.
-
-El guard se sustituye **solo dentro del harness de pruebas** para verificar escrituras. El servidor normal sigue bloqueándolas.
+`CatalogAdminGuard` verifica el JWT de acceso y exige rol `admin`. No acepta un rol por cabecera o cuerpo. Las lecturas públicas (`GET /courses`, niveles, categorías y tecnologías) siguen abiertas. El guard se sustituye solo dentro del harness e2e para probar escrituras sin levantar Passport.
 
 ## Integrar roadmaps y LLM — Persona 2
 

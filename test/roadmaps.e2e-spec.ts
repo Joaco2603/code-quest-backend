@@ -4,6 +4,11 @@ import { DataSource } from 'typeorm';
 import { CatalogService } from '../dist/catalog/catalog.service.js';
 import { catalogEntities } from '../dist/catalog/entities/catalog.entities.js';
 import { CreateCatalog1789600000000 } from '../dist/database/migrations/1789600000000-CreateCatalog.js';
+import { ValidRoles } from '../dist/auth/interfaces/index.js';
+import type { AuthUser } from '../dist/auth/interfaces/auth-user.type.js';
+import { AddRoadmapScope1789600006000 } from '../dist/database/migrations/1789600006000-AddRoadmapScope.js';
+import { AddRoadmapSource1789600007000 } from '../dist/database/migrations/1789600007000-AddRoadmapSource.js';
+import { PersonalRoadmaps1789600008000 } from '../dist/database/migrations/1789600008000-PersonalRoadmaps.js';
 import { CreateRoadmaps1789600004000 } from '../dist/database/migrations/1789600004000-CreateRoadmaps.js';
 import { CreateUsersAndAuditLogs1760000000000 } from '../dist/database/migrations/1760000000000-CreateUsersAndAuditLogs.js';
 import { RoadmapCourse } from '../dist/roadmaps/entities/roadmap-course.entity.js';
@@ -38,6 +43,9 @@ describe('roadmaps persistence', () => {
         CreateUsersAndAuditLogs1760000000000,
         CreateCatalog1789600000000,
         CreateRoadmaps1789600004000,
+        AddRoadmapScope1789600006000,
+        AddRoadmapSource1789600007000,
+        PersonalRoadmaps1789600008000,
       ],
       synchronize: false,
     };
@@ -81,16 +89,24 @@ describe('roadmaps persistence', () => {
       [advanced, basics],
     );
 
-    const created = await service.create(userId, {
+    const owner: AuthUser = {
+      id: userId,
+      email: 'owner@example.com',
+      is_two_factor_enabled: false,
+      is_two_factor_validated: true,
+      role: ValidRoles.user,
+    };
+    const created = await service.create(owner, {
       title: 'Path',
       courseIds: [basics],
     });
+    expect(created.scope).toBe('personal');
     await expect(
-      service.update(userId, created.id, { courseIds: [advanced] }),
+      service.update(owner, created.id, { courseIds: [advanced] }),
     ).rejects.toThrow(/missing or incorrectly ordered prerequisites/);
 
-    await service.updateProgress(userId, created.id, basics, 100);
-    const replaced = await service.update(userId, created.id, {
+    await service.updateProgress(owner, created.id, basics, 100);
+    const replaced = await service.update(owner, created.id, {
       courseIds: [basics, advanced],
     });
     expect(replaced.courses.map((item) => item.courseId)).toEqual([
@@ -99,7 +115,7 @@ describe('roadmaps persistence', () => {
     ]);
     expect(replaced.courses[0].progress).toBe(100);
 
-    const dropped = await service.update(userId, created.id, {
+    const dropped = await service.update(owner, created.id, {
       courseIds: [advanced],
     });
     expect(dropped.courses.map((item) => item.courseId)).toEqual([advanced]);

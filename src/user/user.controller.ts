@@ -111,14 +111,15 @@ export class UserController {
   @Get(':id')
   @ApiOperation({
     summary: 'Get user by id',
-    description: 'Returns one user by UUID.',
+    description:
+      'Returns one user by UUID. A standard user can only read their own account.',
   })
   @ApiOkResponse({
     description: 'User detail.',
     type: UserDetailDataResponseDto,
   })
   @ApiNotFoundResponse({ description: 'User was not found.' })
-  @Auth(ValidRoles.admin, ValidRoles.client)
+  @Auth(ValidRoles.admin, ValidRoles.client, ValidRoles.user)
   async findOneById(
     @GetUser() actor: AuthUser,
     @Param('id', ParseUUIDPipe) id: string,

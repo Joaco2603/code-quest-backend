@@ -17,7 +17,7 @@ Las respuestas usan `{ data }` o `{ data, meta }` en camelCase. La contraseña y
 | --- | --- | --- |
 | `POST /user` | `admin`, `client` | Crea la cuenta y responde el detalle |
 | `GET /user` | `admin`, `client` | Listado paginado `{ data, meta: { total, limit, offset } }` |
-| `GET /user/:id` | `admin`, `client` | Detalle por UUID |
+| `GET /user/:id` | `admin`, `client`, `user` | Detalle por UUID. Un `user` solo lee su propia cuenta |
 | `POST /user/search` | `admin`, `client` | Busca por email, nombre o rol |
 | `POST /user/byClient` | `client` | Usuarios hijos de ese cliente |
 | `PATCH /user/:id` | `admin`, `client` | Actualiza perfil; el rol y el dueño solo los cambia un `admin` |
@@ -47,7 +47,7 @@ Detalle serializado: `id, email, discordId|null, firstName, lastName|null, addre
 | --- | --- |
 | `admin` | Todas las cuentas. Puede cambiar `role` y `client_id` |
 | `client` | Su propia cuenta y los usuarios cuyo `client` es él. No cambia rol ni dueño |
-| `user` | El controlador exige `admin` o `client`; un estudiante no administra cuentas |
+| `user` | Solo `GET /user/:id` de su propia cuenta. No lista, busca, crea ni edita otras cuentas |
 
 `GET /user` filtra `isActive=true` salvo `all=true`. Si no llega `limit` ni `pageSize`, el listado usa 100; el máximo es 100. `page` y `offset` se resuelven a `meta.offset`. Un cliente que pide `POST /user/byClient` con un `user_id` distinto del suyo recibe `403`.
 

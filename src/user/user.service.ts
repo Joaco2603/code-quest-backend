@@ -153,7 +153,14 @@ export class UserService {
     }
 
     if (actor) {
-      this.assertCanAccessUser(actor, user);
+      if (actor.role === ValidRoles.user && actor.id !== user.id) {
+        throw new ForbiddenException(
+          'You can only manage users that belong to you',
+        );
+      }
+      if (actor.role !== ValidRoles.user) {
+        this.assertCanAccessUser(actor, user);
+      }
     }
 
     return user;

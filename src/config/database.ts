@@ -17,6 +17,10 @@ import { RenameUserResponsesToUserAnswers1789600003000 } from '../database/migra
 import { RoadmapCourse } from '../roadmaps/entities/roadmap-course.entity.js';
 import { Roadmap } from '../roadmaps/entities/roadmap.entity.js';
 import { CreateRoadmaps1789600004000 } from '../database/migrations/1789600004000-CreateRoadmaps.js';
+import { AddRoadmapScope1789600006000 } from '../database/migrations/1789600006000-AddRoadmapScope.js';
+import { AddRoadmapSource1789600007000 } from '../database/migrations/1789600007000-AddRoadmapSource.js';
+import { PersonalRoadmaps1789600008000 } from '../database/migrations/1789600008000-PersonalRoadmaps.js';
+import { PersonalQuestionnaire1789600009000 } from '../database/migrations/1789600009000-PersonalQuestionnaire.js';
 
 export function databaseOptions(
   env: NodeJS.ProcessEnv = process.env,
@@ -53,6 +57,10 @@ export function databaseOptions(
       RenameUserResponsesToUserAnswers1789600003000,
       CreateRoadmaps1789600004000,
       AdaptiveQuestionnaire1789600005000,
+      AddRoadmapScope1789600006000,
+      AddRoadmapSource1789600007000,
+      PersonalRoadmaps1789600008000,
+      PersonalQuestionnaire1789600009000,
     ],
   };
 }

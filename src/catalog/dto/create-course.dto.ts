@@ -14,7 +14,7 @@ import {
   Min,
   ValidateIf,
 } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional, PartialType } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { SkillLevel } from '../entities/skill-level.enum.js';
 import { MAX_CATALOG_ID } from '../pipes/catalog-id.pipe.js';
 import { trim } from './trim.js';
@@ -103,7 +103,3 @@ export class CreateCourseDto {
   @Max(MAX_CATALOG_ID, { each: true })
   prerequisiteIds?: number[];
 }
-
-export class UpdateCourseDto extends PartialType(CreateCourseDto, {
-  skipNullProperties: false,
-}) {}
