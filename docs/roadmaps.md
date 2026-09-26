@@ -76,9 +76,13 @@ pertenecer a una evaluación del usuario autenticado enviada al nuevo
 createdAt, courses } }`. El CRUD y el progreso por curso conservan sus rutas y,
 en la lectura, los mismos `rationale`, `assessmentId` y `createdAt`.
 
-Configura `OPENAI_API_KEY` y, opcionalmente, `OPENAI_MODEL` y
-`OPENAI_TIMEOUT_MS`. Sin clave, la generación devuelve 503. El backend valida
+Configura `OPENAI_API_KEY` y, opcionalmente, `OPENAI_MODEL`,
+`OPENAI_TIMEOUT_MS` y `OPENAI_BASE_URL` (para un modelo local con API
+compatible OpenAI, p. ej. `http://localhost:1234/v1`). Sin clave ni base local,
+la generación devuelve 503. El backend valida
 que la selección use cursos publicados y respete sus prerrequisitos antes de
 persistirla. La prueba de integración usa un cliente simulado; no consume la API.
+
+Guía paso a paso para el frontend: [roadmap-frontend](roadmap-frontend.md).
 
 Ver [el flujo de evaluaciones](assessments.md) y [la integración de ramas](integracion-pendientes.md).
