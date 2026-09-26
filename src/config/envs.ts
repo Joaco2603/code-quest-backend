@@ -74,6 +74,7 @@ export function readEnvironment(env: NodeJS.ProcessEnv = process.env) {
       apiKey: env.OPENAI_API_KEY?.trim() || undefined,
       model,
       timeoutMs: number('OPENAI_TIMEOUT_MS', 25_000, 120_000),
+      maxTokens: number('OPENAI_MAX_TOKENS', 600, 8000),
       baseURL,
     },
   };

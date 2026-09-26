@@ -32,6 +32,9 @@ export class OpenAiRoadmapClient {
         'Roadmap generation is not configured',
       );
     const timeout = this.config.get<number>('openai.timeoutMs') ?? 25_000;
+    // Reasoning models spend tokens thinking before answering; a small budget
+    // returns empty content on large catalogs. Cloud default stays 600.
+    const maxTokens = this.config.get<number>('openai.maxTokens') ?? 600;
     const client = baseURL
       ? new OpenAI({ apiKey: effectiveApiKey, baseURL, timeout, maxRetries: 1 })
       : new OpenAI({ apiKey: effectiveApiKey, timeout, maxRetries: 1 });
@@ -42,7 +45,7 @@ export class OpenAiRoadmapClient {
     try {
       const completion = await client.chat.completions.create({
         model,
-        max_completion_tokens: 600,
+        max_completion_tokens: maxTokens,
         messages: [...messages],
         response_format: ROADMAP_RESPONSE_FORMAT,
       });
@@ -64,7 +67,7 @@ export class OpenAiRoadmapClient {
       try {
         const completion = await client.chat.completions.create({
           model,
-          max_tokens: 600,
+          max_tokens: maxTokens,
           messages: [...messages],
         });
         const content = completion.choices[0]?.message?.content;
